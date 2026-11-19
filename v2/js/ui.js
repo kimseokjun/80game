@@ -13,20 +13,22 @@ function render(){
   if(S.sat)kv.push(['수능',`평균 ${S.sat}등급`]);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=Object.entries(STATS).map(([k,n])=>bar(n,S[k])).join('');
-  $('#pInts').innerHTML=Object.entries(INTERESTS).map(([k,n])=>bar(n,S[k],'int')).join('');
-  $('#friendList').innerHTML=S.friends.length?S.friends.map((f,i)=>`<button type="button" class="friend" data-i="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">관심: ${INTERESTS[f.int]}${f.last===S.age?' · 올해 만남':''}</div><div class="fr-bar"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill int" style="width:${Math.round(f.fr)}%"></div></div></div></button>`).join(''):'<p class="empty">초등학교에 들어가면 친구가 생긴다.</p>';
+  const ex=S.exp.slice().reverse(),line=e=>`<li><span class="mono">${gradeLabel(e.age)}</span> ${e.text}${e.f?` <span class="ef">${FIELDS[e.f]}</span>`:''}</li>`;
+  $('#pExp').innerHTML=ex.length?`<ul class="exp">${ex.slice(0,5).map(line).join('')}</ul>`+(ex.length>5?`<details class="exp-more"><summary>전체 보기 (${ex.length})</summary><ul class="exp">${ex.slice(5).map(line).join('')}</ul></details>`:''):'<p class="empty">아직 기록된 경험이 없다.</p>';
+  $('#friendList').innerHTML=S.friends.length?S.friends.map((f,i)=>`<button type="button" class="friend" data-i="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">관심: ${FIELDS[f.int]}${f.last===S.age?' · 올해 만남':''}</div><div class="fr-bar"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill int" style="width:${Math.round(f.fr)}%"></div></div></div></button>`).join(''):'<p class="empty">초등학교에 들어가면 친구가 생긴다.</p>';
   $('#barDate').textContent=`${S.birthY+S.age}년 · ${S.age}살`;
 }
 
 function showEnding(){
   clearTimeout(timer);
-  const ints=topInts(2).map(k=>`${INTERESTS[k]} ${Math.round(S[k])}`).join(', ');
+  const ints=Object.keys(FIELDS).filter(k=>S.fc[k]).sort((a,b)=>S.fc[b]-S.fc[a]).map(k=>`${FIELDS[k]} ${S.fc[k]}건`).join(', ')||'없음';
   const best=S.friends.slice().sort((a,b)=>b.fr-a.fr)[0];
   const rows=[
     ['출생',`${S.birthY}년 · ${S.famName} · ${S.regionName} · ${S.sibName}`],
     ['고등학교',HIGH_SCHOOLS.find(h=>h.k===S.school)?.name||'-'],
     [S.school==='gen'?'수능':'자격증',S.school==='gen'?`평균 ${S.sat}등급 (${univHint(S.sat)})`:`${S.cert}개`],
-    ['관심 분야',ints],
+    ['분야별 경험',ints],
+    ['경험 기록',S.exp.map(e=>`${gradeLabel(e.age)} ${e.text}`).join(' / ')||'-'],
     ['성장 스탯',Object.entries(STATS).map(([k,n])=>`${n} ${Math.round(S[k])}`).join(' · ')],
     ['가장 친한 친구',best?`${best.name} (${best.from}, 친밀도 ${Math.round(best.fr)})`:'-'],
   ];
@@ -45,7 +47,7 @@ segBind('#autoSeg','auto',v=>settings.auto=v==='1');
 
 $('#btnBorn').addEventListener('click',()=>{
   S=makeChild();
-  const rows=[['성명',S.name,''],['성별',S.genderName,S.genderP+'%'],['태어난 집',S.famName,S.famP+'%'],['지역',S.regionName,S.regionP+'%'],['형제',S.sibName,S.sibP+'%'],['타고난 관심',INTERESTS[S.bornInt],'20%']];
+  const rows=[['성명',S.name,''],['성별',S.genderName,S.genderP+'%'],['태어난 집',S.famName,S.famP+'%'],['지역',S.regionName,S.regionP+'%'],['형제',S.sibName,S.sibP+'%']];
   $('#nAvatar').innerHTML=avatarSVG(S.gender,0);
   $('#noticeRows').innerHTML=rows.map(([k,v,p],i)=>`<div class="row" style="animation-delay:${i*90}ms"><span class="k">${k}</span><span>${v}</span><span class="p">${p}</span></div>`).join('');
   $('#noticeNo').textContent=`${S.birthY}년 · 출생신고 제${randint(1000,9999)}호`;

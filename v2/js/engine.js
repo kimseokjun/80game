@@ -4,13 +4,10 @@ let S=null,settings={auto:false,pace:1};
 let timer=null,speed=1,busy=false,baseMs=2600;
 
 function E(o){
-  const gained=[];
   for(const k in o){
     if(k==='money'){S.money+=o[k];continue;}
-    const before=S[k];S[k]=clamp(S[k]+o[k],0,100);
-    if(INTERESTS[k]&&o[k]>0)gained.push(`${INTERESTS[k]} +${Math.round(S[k]-before)}`);
+    S[k]=clamp(S[k]+o[k],0,100);
   }
-  if(gained.length)pendingGain.push(...gained);
 }
 let pendingGain=[];
 
@@ -45,7 +42,7 @@ function renderHint(el,h){
   (h.d||'').split(' ').filter(Boolean).forEach((tk,i)=>{
     if(i)el.appendChild(document.createTextNode(' '));
     const sp=document.createElement('span');sp.textContent=tk;
-    if(/^(정보보안|개발|연구|경영|창업)/.test(tk)&&tk.includes('↑'))sp.className='in';
+    if(/^(정보보안|개발|연구|경영|창업)$/.test(tk))sp.className='in';
     else if(tk.includes('↑'))sp.className='up';else if(tk.includes('↓')||/^−.*원$/.test(tk))sp.className='dn';
     el.appendChild(sp);
   });

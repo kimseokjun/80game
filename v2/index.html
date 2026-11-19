@@ -11,7 +11,7 @@
 </head>
 <body>
 <header class="bar">
-  <div class="brand">직장생활 N분의 1<small>v2.0 개발 중 · 1단계 · 비공식 팬메이드</small></div>
+  <div class="brand">직장생활 N분의 1<small>v2.0 개발 중 · 2단계 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -87,7 +87,7 @@
 
 <div id="modal" class="modal" hidden>
   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-    <div class="d-when" id="mWhen"></div>
+    <div class="d-top"><div class="d-when" id="mWhen"></div><span class="big-tag" id="mBig" hidden>중대 결정</span><button type="button" class="park" id="mPark">잠깐 내려 두기</button></div>
     <h4 id="mTitle"></h4>
     <p id="mText"></p>
     <div class="note" id="mNote" hidden></div>
@@ -96,6 +96,8 @@
   </div>
 </div>
 
+<button type="button" class="btn primary resume" id="mResume" hidden>선택 이어서 하기</button>
+
 <footer>비공식 팬메이드 시뮬레이션입니다. 실존 인물·기관과 관계없습니다. 확률과 이벤트는 추정입니다. '80억 분의 1'에서 영감을 받았습니다.</footer>
 
 <script src="js/util.js"></script>
@@ -103,6 +105,7 @@
 <script src="js/avatar.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/life.js"></script>
+<script src="js/college.js"></script>
 <script src="js/ui.js"></script>
 </body>
 </html>

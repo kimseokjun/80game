@@ -5,10 +5,13 @@ function bar(label,v,cls){v=Math.round(v);return `<div class="stat"><span>${labe
 function render(){
   $('#pAvatar').innerHTML=avatarSVG(S.gender,S.age);
   $('#pName').textContent=S.name;
-  $('#pSub').textContent=`${S.age}살${S.age>7?' · '+gradeLabel(S.age):''} · ${S.genderName}`;
+  $('#pSub').textContent=`${S.age}살 · ${S.phase&&S.phase!=='school'?S.label:(S.age>7?gradeLabel(S.age):'미취학')} · ${S.genderName}`;
   const school=S.school?HIGH_SCHOOLS.find(h=>h.k===S.school).name:'-';
   const kv=[['집',S.famName],['지역',S.regionName],['형제',S.sibName],['고등학교',S.age>=17||S.school?school:'-'],['용돈 통장',fmtMoney(S.money)+'원']];
   if(S.sat)kv.push(['수능',`평균 ${S.sat}등급`]);
+  if(S.univ)kv.push(['대학',`${S.univ.tierName} ${S.univ.majorName}`]);
+  if(S.army)kv.push(['군 복무',S.armyDone?`${S.army.name} 만기`:`${S.army.name} · ${S.army.left}학기 남음`]);
+  if(S.loan)kv.push(['학자금 대출',fmtMoney(S.loan)+'원']);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=Object.entries(STATS).map(([k,n])=>bar(n,S[k])).join('');
 
@@ -26,12 +29,23 @@ function showEnding(){
     [S.school==='gen'?'수능':'자격증',S.school==='gen'?`평균 ${S.sat}등급 (${univHint(S.sat)})`:`${S.cert}개`],
     ['행동특성 및 종합의견',teacherComment()],
     ['성장 스탯',Object.entries(STATS).map(([k,n])=>`${n} ${Math.round(S[k])}`).join(' · ')],
-    ['창의적 체험활동',S.exp.map(e=>`${gradeLabel(e.age)} ${e.text}`).join(' / ')||'-'],
+    ['창의적 체험활동',S.exp.map(e=>`${e.when||gradeLabel(e.age)} ${e.text}`).join(' / ')||'-'],
     ['분야별 경험',ints],
     ['가장 친한 친구',best?`${best.name} (${best.from}, 친밀도 ${Math.round(best.fr)})`:'-'],
   ];
   if(S.awards.length)rows.push(['수상',S.awards.join(', ')]);
-  $('#endingWrap').innerHTML=`<div class="ending"><div class="mono" style="font-size:12px;color:var(--muted)">생활기록부 · 1단계</div><h2>${S.name}</h2><p class="lead">${S.ended.text}</p>
+  if(S.ended.kind==='2단계 완료'){
+    const edu=S.gradDone?'대학원 석사':S.univ?`${S.univ.tierName} 졸업`:`${HIGH_SCHOOLS.find(h=>h.k===S.school).name} 졸업`;
+    const side=S.jobs||[];
+    const r2=[['최종 학력',edu]];
+    if(S.univ)r2.push(['학과',S.univ.majorName],['평균 학점',S.univ.avg?S.univ.avg.toFixed(2)+' / 4.5':'-']);
+    if(S.gender==='m')r2.push(['군 복무',S.armyDone?S.armyName+' 만기':'미필']);
+    if(S.abroad)r2.push(['해외 경험','교환학생']);
+    if(side.length)r2.push(['알바 · 인턴',side.join(', ')]);
+    r2.push(['학자금 대출',S.loan?fmtMoney(S.loan)+'원':'없음'],['통장',fmtMoney(S.money)+'원']);
+    rows.splice(1,0,...r2);
+  }
+  $('#endingWrap').innerHTML=`<div class="ending"><div class="mono" style="font-size:12px;color:var(--muted)">${S.ended.kind==='2단계 완료'?'성장 기록 · 2단계':'생활기록부 · 1단계'}</div><h2>${S.name}</h2><p class="lead">${S.ended.text}</p>
     <div>${rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join('')}</div>
     <div class="acts"><button type="button" class="btn primary" id="btnAgain">다시 태어나기</button></div></div>`;
   $('#endingWrap').hidden=false;$('#gameCtrl').hidden=true;window.scrollTo({top:0,behavior:'smooth'});

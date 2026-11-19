@@ -44,6 +44,7 @@ const famPayRate=()=>famOf().allow;
 
 /* ---------- 고교 졸업 후 ---------- */
 async function afterHigh(){
+  S.tutorWas=S.tutor;S.tutor=false;
   const voc=S.school==='voc'||S.school==='meister';
   const g=voc?clamp(Math.round(9-(S.ac-15)/8),2,9):S.sat;
   const ti=tierIdx(g)+(voc?1:0),tier=UNIV_TIERS[Math.min(ti,4)];
@@ -58,7 +59,7 @@ async function afterHigh(){
   ch.wAuto=c=>c.t.includes('진학')||c.t.includes('체대')?4:1;
   await resolve('졸업 후 진로',voc?'바로 일을 시작할까, 공부를 더 할까?':`수능 평균 ${g}등급. 갈 수 있는 곳이 어느 정도 정해졌다. 어떻게 할까?`,ch,'key',voc?NOTES.voc_after:NOTES.univ,{big:true});
   if(S.route==='work'){S.phase='done';endStage2('고등학교를 졸업하고 바로 취업 준비를 시작한다.');return;}
-  if(S.route==='retake'){S.phase='retake';S.retakeLeft=2;S.retook=true;return;}
+  if(S.route==='retake'){S.phase='retake';S.tutor=S.tutorWas;S.retakeLeft=2;S.retook=true;return;}
   await chooseMajor();
 }
 async function chooseMajor(){
@@ -95,6 +96,7 @@ function friendYear2(){if(S.semAbs%2===0)friendYear();}
 async function retakeSem(){
   S.whenLabel='재수';S.label='재수생';
   S.retakeLeft--;
+  tutorYear(true);
   E({ac:4,mn:-4});
   if(S.retakeLeft>0){addLog(pick(['모의고사 성적이 조금씩 올랐다.','독서실 칸막이에 목표 대학을 붙였다.','고등학교 친구들이 대학 이야기를 할 때 단톡방을 껐다.']));return;}
   S.sat=suneung();addLog(`두 번째 수능을 봤다. 평균 ${S.sat}등급.`,{kind:'key'});

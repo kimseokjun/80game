@@ -16,6 +16,12 @@ function render(){
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=Object.entries(STATS).map(([k,n])=>bar(n,S[k])).join('');
 
+  const act=$('#actions');
+  if(canTutor()){
+    const asked=!S.tutor&&S.tutorAsked===S.age;
+    act.innerHTML=`<button type="button" class="act" id="btnTutor"${asked?' disabled':''}>${S.tutor?'과외 그만두기':'부모님께 과외 부탁하기'}<span class="meta">${S.tutor?`과외 ${S.tutorYears||0}년째`:asked?'올해는 이미 부탁했다':'1년에 한 번 부탁할 수 있다'}</span></button>`;
+    $('#btnTutor').onclick=tutorAction;
+  }else act.innerHTML=`<p class="empty">${S.age<14?'중학생이 되면 할 수 있는 일이 생긴다.':'지금 할 수 있는 행동이 없다.'}</p>`;
   $('#friendList').innerHTML=S.friends.length?S.friends.map((f,i)=>`<button type="button" class="friend" data-i="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">요즘 ${FIELDS[f.int]}에 관심${f.last===S.age?' · 올해 만남':''}</div><div class="fr-bar"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill int" style="width:${Math.round(f.fr)}%"></div></div></div></button>`).join(''):'<p class="empty">초등학교에 들어가면 친구가 생긴다.</p>';
   $('#barDate').textContent=`${S.birthY+S.age}년 · ${S.age}살`;
 }
@@ -35,6 +41,7 @@ function showEnding(){
     ['가장 친한 친구',best?`${best.name} (${best.from}, 친밀도 ${Math.round(best.fr)})`:'-'],
   ];
   if(S.awards.length)rows.push(['수상',S.awards.join(', ')]);
+  if(S.tutorYears)rows.push(['과외',`${S.tutorYears}년`]);
   if(S.ended.kind!=='1단계 완료'){
     const edu=S.gradDone?'대학원 석사':S.univ?`${S.univ.tierName} 졸업`:`${HIGH_SCHOOLS.find(h=>h.k===S.school).name} 졸업`;
     const side=S.jobs||[];

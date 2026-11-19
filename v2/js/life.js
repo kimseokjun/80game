@@ -157,6 +157,7 @@ async function yearTick(){
   const a=S.age,st=stageOf(a).k;
   header();
   if(a>=8)S.money+=famOf().pocket*12;
+  tutorYear(false);
   if(st==='baby'){
     if(DAILY.baby[a])addLog(DAILY.baby[a],{kind:'sys'});
     if(a===5)await choose('다섯 살, 좋아하는 놀이','이제 제법 혼자 놀 줄 안다. 요즘 아이는 무엇에 빠져 있을까? 고른 쪽으로 아이의 성향이 조금씩 기운다.',PLAY,NOTES.play);
@@ -202,4 +203,33 @@ async function peTrackAsk(){
   await resolve('체대 입시','체육 선생님이 따로 불렀다. 체력이 이 정도면 체대 입시를 준비해볼 만하다고 한다.',[
     X('체대 입시를 준비한다',()=>{S.peTrack=true;E({hp:4,ac:-2});return '방과 후마다 실기 학원에 다녔다.';},'체력+ 학업−'),
     X('하던 공부를 계속한다',()=>{E({ac:2});return '고맙지만 하던 대로 가기로 했다.';},'학업+')],'key',null,{big:true});
+}
+
+/* ---------- 행동: 부모님께 과외 부탁 ---------- */
+const TUTOR_P={rich:0.85,mid:0.55,poor:0.25};
+const canTutor=()=>S&&!S.ended&&((S.phase==='school'&&S.age>=14)||S.phase==='retake');
+async function tutorAction(){
+  if(!canTutor()||busy||!$('#modal').hidden)return;
+  clearTimeout(timer);busy=true;const prev=settings.auto;settings.auto=false;
+  if(S.tutor){
+    const k=await ask('과외 그만두기',`과외를 받은 지 ${S.tutorYears||1}년째다. 그만둘까?`,[X('그만둔다',()=>'','멘탈+'),X('계속 받는다',()=>'')]);
+    if(k===0){S.tutor=false;E({mn:3});addLog('과외를 그만뒀다. 저녁 시간이 생겼다.',{kind:'sys'});}
+  }else{
+    const p=TUTOR_P[S.fam];
+    const k=await ask('부모님께 과외 부탁하기','저녁을 먹다가 말을 꺼내본다. 성적을 올리고 싶으니 과외를 시켜달라고.',[
+      X('진지하게 부탁한다',()=>'','받아들여지면 매년 학업+ 멘탈−',()=>p,'허락 가능성'),
+      X('다음에 말한다',()=>'')]);
+    if(k===0){
+      S.tutorAsked=S.age;
+      if(chance(p)){S.tutor=true;addLog(S.fam==='poor'?'엄마가 한참 생각하더니 해보자고 했다. 다음 주부터 과외 선생님이 온다.':pick(['아빠가 바로 과외 선생님을 알아봤다.','엄마가 학원 대신 과외를 해보자고 했다.']),{kind:'key'});}
+      else{E({mn:-2});addLog(pick(['아빠가 통장을 보더니 고개를 저었다.','엄마가 지금은 어렵다고, 내년에 다시 얘기하자고 했다.','인강으로 해보면 안 되겠냐는 답이 돌아왔다.']),{kind:'sys'});}
+    }
+  }
+  settings.auto=prev;busy=false;render();schedule();
+}
+function tutorYear(half){
+  if(!S.tutor)return;
+  E(half?{ac:2}:{ac:4,mn:-1});S.tutorYears=(S.tutorYears||0)+(half?0.5:1);
+  if(S.fam==='poor'&&chance(0.3)&&!S.dailyUsed.tutorPoor){S.dailyUsed.tutorPoor=1;addLog('엄마가 부업을 하나 더 시작했다.',{kind:'sys'});}
+  else if(chance(0.25))addLog(pick(['과외 선생님이 오답 노트를 만들어 오라고 했다.','과외 숙제를 하느라 새벽 1시에 잤다.','과외 선생님 덕에 수학 점수가 올랐다.']),{kind:'sys'});
 }

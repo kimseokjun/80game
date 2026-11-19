@@ -149,6 +149,7 @@ R("</style>",".dialog{max-height:calc(100vh - 32px);overflow-y:auto}.d-top{displ
 R("  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))){",
   "  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&S.mi-(S.propMi??-99)>=12&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))&&(await proposeOk())){")
 PARK="\n$('#mPark').addEventListener('click',()=>{$('#modal').hidden=true;$('#mResume').hidden=false;});\n$('#mResume').addEventListener('click',()=>{$('#modal').hidden=false;$('#mResume').hidden=true;});\n"
+R("  S.money+=inc-life-kid-cm-par-car;","  S.money+=inc-life-kid-cm-par-car;\n  if(HAND)addLog(S.leave>0&&S.leaveType==='parental'?`육아휴직 급여 ${fmtMoney(Math.round(inc))}원이 들어왔다.`:`월급날이다. ${fmtMoney(Math.round(inc))}원이 들어왔다.`,{kind:'sys'});")
 # ---- 성장기에서 바로 이어지기 ----
 R("const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;","const Y0=HAND?HAND.birthY+HAND.age:NOW.getFullYear(), M0=HAND?3:NOW.getMonth()+1;")
 R("if(rv.length)addLog(`업계 경쟁사는 ${rv.join(', ')}이다.","if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다.")

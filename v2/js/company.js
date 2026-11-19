@@ -181,7 +181,7 @@ async function companyMonth(m){
       if(rk>before)E({mn:-2});else if(rk<before)E({mn:2});
     }
   }
-  if(PRIV()&&S.leave===0&&S.rivals.length&&chance(0.08))await rivalEvent();
+  if(PRIV()&&S.leave===0&&S.rivals.length&&S.mi-(S.rvMi??-99)>=24&&chance(0.025)){S.rvMi=S.mi;await rivalEvent();}
   if(CO.k==='st'&&m===1&&S.mi>0){await startupYear();if(S.ended)return;}
   if(CO.layoff&&m===1&&a>=50&&S.rank<5&&S.leave===0&&chance(CO.layoff)){
     const pay=Math.round(salary(S,S.mi)*2);
@@ -191,27 +191,38 @@ async function companyMonth(m){
     if(S.ended)return;
   }
   if(S.friends&&S.friends.length&&S.leave===0&&chance(0.035))await friendEvent();
-  if(!S.founder&&S.leave===0&&a<52&&(S.sk>=62||S.rp>=66)&&S.mi-(S.scoutMi??-99)>=24&&chance(0.015)){S.scoutMi=S.mi;await scoutEvent();if(S.ended)return;}
+  const hunting=S.huntUntil&&S.mi<S.huntUntil;
+  if(!S.founder&&S.leave===0&&a<52&&(hunting?(S.sk>=50||S.rp>=55):(S.sk>=62||S.rp>=66))&&S.mi-(S.scoutMi??-99)>=(hunting?3:24)&&chance(hunting?0.2:0.015)){S.scoutMi=S.mi;await scoutEvent();if(S.ended)return;}
   if(!S.founder&&S.leave===0&&a>=27&&a<=45&&S.mi-(S.coFoundAsk??-99)>=36&&chance(0.006)){const f=(S.friends||[]).filter(x=>x.fr>=55).sort((x,y)=>y.fr-x.fr)[0];if(f){S.coFoundAsk=S.mi;await cofoundEvent(f);}}
 }
+// 경쟁 이벤트는 선택 없이 역량·사교로 결과가 정해진다.
+const RIVAL_TX={
+  bid:[['큰 고객사 사업을 두고 {r}{와} 수주 경쟁을 했다.','수주했다. 팀장이 회식을 잡았다.','근소한 차이로 졌다. 발표장에서 나오는 경쟁사 사람들 표정이 밝았다.'],
+       ['공공 사업 입찰에서 {r}{와} 마지막 두 곳에 남았다.','최종 사업자로 선정됐다. 제안서에 이름을 올린 사람들끼리 저녁을 먹었다.','기술 점수는 앞섰다. 가격에서 밀렸다.'],
+       ['오래 거래하던 고객사가 {r} 쪽으로 넘어가려 한다.','고객사를 지켰다. 담당자가 다음 해 계약서를 먼저 보내왔다.','고객사가 넘어갔다. 월요일 회의가 길어졌다.'],
+       ['해외 고객사 계약을 두고 {r}{와} 맞붙었다.','계약을 따냈다. 출장 일정이 잡혔다.','계약은 {r}에게 갔다. 번역해 둔 제안서만 남았다.']],
+  launch:[['{r}에서 우리와 비슷한 서비스를 먼저 내놨다.','차별점을 잡아 다시 냈다. 이용자가 돌아왔다.','따라 하는 서비스라는 기사가 났다.'],
+          ['{r}{와} 같은 주에 신제품을 냈다.','첫 달 이용자 수에서 앞섰다.','첫 달 이용자 수가 절반에 그쳤다.'],
+          ['{r}{이} 우리 핵심 기능을 그대로 베꼈다는 말이 돈다.','먼저 특허를 내둔 덕에 정리가 됐다.','대응이 늦었다. 고객 문의만 늘었다.']],
+  price:[['{r}{이} 가격을 20% 내렸다.','서비스를 묶어 가격을 지켰다.','고객 일부가 넘어갔다. 영업팀 분위기가 가라앉았다.'],
+         ['{r}{이} 무료 체험 기간을 석 달로 늘렸다.','기존 고객 재계약률이 오히려 올랐다.','신규 가입이 눈에 띄게 줄었다.'],
+         ['{r}에서 우리 고객사에 할인 제안서를 돌렸다.','고객사 담당자가 그 제안서를 우리에게 보여줬다.','고객사 두 곳이 계약을 미뤘다.']],
+  talent:[['{r}에서 우리 팀 핵심 인력에게 연락했다는 소문이 돈다.','팀원들과 이야기를 나눴다. 아무도 떠나지 않았다.','팀 선임 한 명이 {r}{으로} 옮겼다. 일이 늘었다.']],
+};
 async function rivalEvent(){
   const rv=pick(S.rivals),intel=S.intelUntil&&S.mi<S.intelUntil?0.12:0;
-  const kind=pick(S.dept==='mgmt'?['bid','price']:['bid','launch']);
-  const win=(p,good,bad)=>{if(chance(clamp(p+intel,0.05,0.9))){S.coScore=clamp(S.coScore+5,0,100);rv.score=clamp(rv.score-3,0,100);E({rp:4,mn:3});rel(boss(),4,`${rv.name}${J(rv.name,'과','와')}의 경쟁에서 이겼다`);return good;}S.coScore=clamp(S.coScore-3,0,100);rv.score=clamp(rv.score+3,0,100);E({mn:-3});return bad;};
-  if(kind==='bid'){
-    await resolve('수주 경쟁',`큰 고객사 사업을 두고 ${rv.name}${J(rv.name,'과','와')} 맞붙었다. 제안 발표까지 2주가 남았다.`,[
-      X('제안서를 밤새 다듬는다',()=>{E({hp:-4});return win(0.35+(S.sk-50)/150+(S.hp-50)/300,'수주했다. 팀장이 회식을 잡았다.','근소한 차이로 졌다. 발표장에서 나오는 경쟁사 사람들 표정이 밝았다.');},'체력↓',()=>0.35+(S.sk-50)/150+(S.hp-50)/300+intel,'이길 가능성'),
-      X('경쟁사 약점을 분석한다',()=>win(0.33+(S.sk-50)/120,'경쟁사 약점을 정확히 찔렀다. 수주했다.','분석은 맞았다. 가격에서 밀렸다.'),'역량이 중요',()=>0.33+(S.sk-50)/120+intel,'이길 가능성'),
-      X('고객사 담당자를 직접 만난다',()=>win(0.3+(S.sc-50)/120,'담당자가 우리 쪽 손을 들어줬다.','미팅은 좋았다. 결정은 위에서 났다.'),'사교가 중요',()=>0.3+(S.sc-50)/120+intel,'이길 가능성')],true,'key');
-  }else if(kind==='launch'){
-    await resolve('신제품 경쟁',`${rv.name}에서 우리와 비슷한 서비스를 먼저 내놨다.`,[
-      X('출시 일정을 당긴다',()=>{E({hp:-5});return win(0.35+(S.hp-50)/200,'한 달 당겨 냈다. 반응이 더 좋았다.','서둘러 낸 탓에 버그 기사가 났다.');},'체력↓',()=>0.35+(S.hp-50)/200+intel,'이길 가능성'),
-      X('차별점을 다시 잡는다',()=>win(0.35+(S.sk-50)/140,'기능 하나를 바꿨더니 이용자가 돌아왔다.','차별점이 잘 안 보였다.'),'역량이 중요',()=>0.35+(S.sk-50)/140+intel,'이길 가능성'),
-      X('그대로 간다',()=>{S.coScore=clamp(S.coScore-1,0,100);return '일정대로 냈다. 시장은 조용히 나뉘었다.';},'')],true,'key');
+  const kind=pick(S.dept==='mgmt'?['bid','price','price','talent']:['bid','launch','launch','talent']);
+  S.rvUsed=S.rvUsed||{};
+  const list=RIVAL_TX[kind].map((t,i)=>({t,i})).filter(x=>!S.rvUsed[kind+x.i]);
+  const it=(list.length?pick(list):pick(RIVAL_TX[kind].map((t,i)=>({t,i}))));S.rvUsed[kind+it.i]=1;
+  const f=x=>x.replace(/\{r\}/g,rv.name).replace('{와}',J(rv.name,'과','와')).replace('{이}',J(rv.name,'이','가')).replace('{으로}',J(rv.name,'으로','로'));
+  const p=clamp(0.25+(S.sk-50)/120+(S.sc-50)/200+intel,0.05,0.9);
+  if(chance(p)){
+    S.coScore=clamp(S.coScore+5,0,100);rv.score=clamp(rv.score-3,0,100);E({rp:4,mn:3});rel(boss(),4,`${rv.name}${J(rv.name,'과','와')}의 경쟁에서 이겼다`);
+    addLog(f(it.t[0])+' '+f(it.t[1])+(intel?' 친구에게 들은 이야기가 도움이 됐다.':''),{kind:'key',tag:'경쟁'});
   }else{
-    await resolve('가격 경쟁',`${rv.name}${J(rv.name,'이','가')} 가격을 20% 내렸다. 영업팀이 대응 방안을 달라고 한다.`,[
-      X('따라서 내린다',()=>win(0.4,'고객은 지켰다. 이익은 줄었다.','고객도 이익도 같이 줄었다.'),'',()=>0.4+intel,'이길 가능성'),
-      X('서비스 묶음으로 맞선다',()=>win(0.32+(S.sk-50)/130+(S.sc-50)/300,'묶음 상품이 먹혔다. 가격을 지켰다.','고객 절반이 넘어갔다.'),'역량·사교가 중요',()=>0.32+(S.sk-50)/130+(S.sc-50)/300+intel,'이길 가능성')],true,'key');
+    S.coScore=clamp(S.coScore-3,0,100);rv.score=clamp(rv.score+3,0,100);E({rp:-3,mn:-3});
+    addLog(f(it.t[0])+' '+f(it.t[2]),{kind:'key',tag:'경쟁'});
   }
 }
 async function startupYear(){
@@ -428,7 +439,7 @@ async function founderYear(){
   }else addLog(pick(['이번 달도 월급날을 겨우 맞췄다.','첫 고객사가 재계약을 해줬다.','직원 한 명이 더 큰 회사로 떠났다.','데모데이 발표를 마쳤다. 명함을 스무 장 받았다.']),{kind:'sys',tag:'창업'});
 }
 const CO_ACTIONS=[
-  {k:'jobhunt',name:'이직 알아보기',cost:0,cd:12,when:()=>!S.founder&&age()<55&&S.leave===0,why:'지금은 어렵다',run:()=>{setTimeout(jobHuntFlow,0);return '이직 사이트에 이력서를 올렸다.';}},
+  {k:'jobhunt',name:'이직 알아보기',cost:0,cd:12,when:()=>!S.founder&&age()<55&&S.leave===0,why:'지금은 어렵다',run:()=>{S.huntUntil=S.mi+6;setTimeout(jobHuntFlow,0);return '이직 사이트에 이력서를 올렸다. 한동안 연락이 올 수도 있다.';}},
   {k:'found',name:'창업하기',cost:3000,cd:24,when:()=>!S.founder&&age()<50&&S.leave===0,why:'지금은 어렵다',run:()=>{E({money:3000});setTimeout(foundFlow,0);return '창업을 진지하게 고민하기 시작했다.';}},
 ];
 

@@ -1302,6 +1302,7 @@ function monthlyMoney(){
   const life=((140+(S.married?90:0)+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.money<0?0:Math.max(0,sal-(S.sal0||sal)*infl)*0.35/12))*tight+(S.mortgage>0?(S.mortgagePay||110):0);
   const kid=kidCost(m)*infl,ac=ageCosts(),cm=(ac.cere+ac.med)*infl,par=ac.parent*infl,car=S.car?30*infl:0;
   S.money+=inc-life-kid-cm-par-car;
+  if(HAND)addLog(S.leave>0&&S.leaveType==='parental'?`육아휴직 급여 ${fmtMoney(Math.round(inc))}원이 들어왔다.`:`월급날이다. ${fmtMoney(Math.round(inc))}원이 들어왔다.`,{kind:'sys'});
   S.yr.inc+=gross+(S.certPay||0);S.yr.tax+=gross-net;S.yr.exp+=life;S.yr.kid+=kid;S.yr.cm+=cm;S.yr.par+=par;S.yr.car+=car;
   if(m===7){const t=(S.house==='big'?120:S.house==='small'?30:0)+(S.ofs?50:0);if(t){S.money-=t;S.yr.prop+=t;}}
   if(S.mortgage>0){S.mortgage--;S.houseLoan=Math.max(0,S.houseLoan-(S.houseLoanInit||0)/240);}

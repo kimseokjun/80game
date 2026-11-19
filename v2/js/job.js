@@ -16,7 +16,8 @@ function eduBonus(co){
   return {top:0.2,seoul:0.12,natl:0.05,local:0,jc:-0.08}[UNIV_TIERS[S.univ.tier].k];
 }
 function jobP(co,extra=0){
-  let p=co.base+S.ac/100+eduBonus(co)+extra;
+  // 면접에서는 사교도 본다
+  let p=co.base+S.ac/100+eduBonus(co)+(S.sc-50)*0.004+extra;
   if(S.univ&&S.univ.avg)p+=(S.univ.avg-3.2)*0.1;
   const best=Math.max(...co.teams.map(t=>S.fc[t]));p+=Math.min(0.1,best*0.03);
   if(co.k==='st')p+=Math.min(0.15,S.fc.fnd*0.05);

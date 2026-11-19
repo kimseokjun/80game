@@ -10,9 +10,9 @@ function makeChild(){
     region:reg.k,regionName:reg.name,regionP:pct(reg,REGION),
     sib:sib.k,sibName:sib.name,sibP:pct(sib,SIBLINGS),
     phase:'school',loan:0,age:0,birthY:new Date().getFullYear(),
-    ac:randint(32,48)+(fam.k==='rich'?5:fam.k==='poor'?-3:0),hp:randint(42,62),sc:randint(40,60),mn:randint(55,72),
+    ac:randint(32,48)+(fam.k==='rich'?6:fam.k==='poor'?-4:0),hp:randint(42,62)+(fam.k==='poor'?3:0),sc:randint(40,60)+(fam.k==='rich'?3:0),mn:randint(55,72)+(fam.k==='rich'?3:fam.k==='poor'?-3:0),
     money:0,friends:[],school:null,cert:0,awards:[],
-    tags:{},exp:[],fc:{sec:0,dev:0,res:0,biz:0,fnd:0},cur:null,dailyUsed:{},tr:{cur:0,grit:0,act:0,soc:0,lead:0,bold:0},
+    tags:{},exp:[],fc:{sec:0,dev:0,res:0,biz:0,fnd:0},cur:null,dailyUsed:{},tr:{cur:0,grit:fam.k==='poor'?2:0,act:0,soc:0,lead:0,bold:0},
   };
 }
 const famOf=()=>FAMILY.find(f=>f.k===S.fam);

@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>고용정보원 N분의 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* 공문서·인사기록카드 톤: 회녹색 종이, 남색 잉크, 붉은 직인. 좌측 카드 / 중앙 로그 / 우측 동기 */
+:root{
+  --paper:#ECEEEA;
+  --surface:#F8F9F6;
+  --ink:#1C2127;
+  --muted:#5D6670;
+  --line:#CDD2CC;
+  --accent:#1F4E79;
+  --accent-soft:#DCE5EE;
+  --stamp:#B23A2E;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#14181C;--surface:#1C2126;--ink:#E3E6E2;--muted:#9AA3AB;--line:#2F363D;
+    --accent:#86AFD9;--accent-soft:#22303D;--stamp:#E0796C;color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#14181C;--surface:#1C2126;--ink:#E3E6E2;--muted:#9AA3AB;--line:#2F363D;
+  --accent:#86AFD9;--accent-soft:#22303D;--stamp:#E0796C;color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.65}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5}
+.brand{font-weight:700;letter-spacing:-0.01em}
+.brand small{font-weight:400;color:var(--muted);margin-left:8px;font-size:12px}
+.bar .date{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.bar .spacer{flex:1}
+.ctrl{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.ctrl button,.btn{border:1px solid var(--line);background:var(--surface);padding:5px 11px;border-radius:4px;cursor:pointer;font-size:13px}
+.ctrl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.ctrl label{font-size:13px;display:flex;gap:6px;align-items:center;margin-left:8px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--surface);border-color:var(--accent);padding:10px 22px;font-size:15px;font-weight:600}
+.btn.danger{color:var(--stamp);border-color:var(--stamp)}
+.screen{max-width:1240px;margin:0 auto;padding:28px 20px}
+[hidden]{display:none!important}
+
+/* 시작 */
+.start{max-width:640px}
+.start h1{font-size:40px;line-height:1.2;margin:8px 0 16px;letter-spacing:-0.02em;text-wrap:balance}
+.start .eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.start p{color:var(--ink);max-width:62ch}
+.opts{display:grid;gap:18px;margin:28px 0;padding:20px;border:1px solid var(--line);background:var(--surface);border-radius:6px}
+.opt-label{font-size:13px;color:var(--muted);margin-bottom:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:7px 14px;border-radius:4px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin:24px 0}
+.fact{border-top:2px solid var(--ink);padding-top:8px}
+.fact b{display:block;font-family:var(--font-mono);font-size:20px;font-weight:500}
+.fact span{font-size:12px;color:var(--muted)}
+
+/* 입사 통지서 */
+.notice{max-width:560px;background:var(--surface);border:1px solid var(--line);padding:32px;border-radius:6px;position:relative}
+.notice h2{margin:0 0 4px;font-size:24px;letter-spacing:0.2em;text-align:center}
+.notice .no{text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-bottom:24px}
+.rows{display:grid;gap:0}
+.row{display:grid;grid-template-columns:96px 1fr auto;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);align-items:baseline}
+.row .k{color:var(--muted);font-size:13px}
+.row .p{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+.row{animation:rise .35s ease both}
+@keyframes rise{from{opacity:.0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.notice .foot{margin-top:20px;font-size:14px;color:var(--muted)}
+.seal{position:absolute;right:28px;bottom:84px;width:74px;height:74px;border:2.5px solid var(--stamp);border-radius:50%;color:var(--stamp);display:grid;place-items:center;font-size:12px;font-weight:700;text-align:center;line-height:1.25;transform:rotate(-12deg);opacity:.85}
+
+/* 게임 */
+.game{display:grid;grid-template-columns:290px minmax(0,1fr) 260px;gap:20px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.card h3,.cohort h3{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0.05em}
+.pname{font-size:22px;font-weight:700;margin-bottom:2px}
+.kv{display:grid;grid-template-columns:64px 1fr;gap:4px 10px;font-size:13px;margin:12px 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.stats{display:grid;gap:9px;margin:14px 0}
+.stat{display:grid;grid-template-columns:40px 1fr 30px;gap:8px;align-items:center;font-size:13px}
+.track{height:6px;background:var(--paper);border-radius:3px;overflow:hidden;border:1px solid var(--line)}
+.fill{height:100%;background:var(--accent);transition:width .3s}
+.fill.low{background:var(--stamp)}
+.stat .v{font-family:var(--font-mono);font-size:12px;text-align:right}
+.money{display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.money b{font-family:var(--font-mono);font-weight:500}
+.focus{margin-top:14px}
+.focus .seg button{padding:5px 10px;font-size:13px}
+.focus .hint{font-size:12px;color:var(--muted);margin-top:6px;min-height:2.6em}
+.resign{margin-top:16px;width:100%}
+
+.logwrap{background:var(--surface);border:1px solid var(--line);border-radius:6px;height:calc(100vh - 120px);min-height:420px;overflow-y:auto;padding:4px 20px 40px}
+.year{position:sticky;top:0;background:var(--surface);display:flex;gap:12px;align-items:baseline;padding:14px 0 8px;border-bottom:1px solid var(--ink);margin-top:10px;z-index:1}
+.year b{font-family:var(--font-mono);font-size:18px;font-weight:500}
+.year span{font-size:13px;color:var(--muted)}
+.entry{display:grid;grid-template-columns:38px 1fr;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.entry .when{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding-top:2px}
+.entry p{margin:0;max-width:66ch}
+.entry .pick{color:var(--accent);font-size:14px;margin-top:4px}
+.entry .res{margin-top:2px}
+.entry.peer p{color:var(--muted);font-size:14px}
+.entry.peer .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}
+.entry.sys p{color:var(--muted);font-size:14px}
+.entry.key p{font-weight:600}
+
+.cohort .peer-card{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
+.cohort .peer-card:last-child{border-bottom:0}
+.peer-card b{font-size:14px}
+.peer-card .meta{color:var(--muted)}
+.peer-card .st{font-size:12px;font-family:var(--font-mono)}
+.peer-card.out{opacity:.6}
+
+/* 모달 */
+.modal{position:fixed;inset:0;background:rgba(10,14,18,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.dialog{background:var(--surface);border:1px solid var(--line);border-radius:6px;max-width:520px;width:100%;padding:24px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+.dialog .d-when{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.dialog h4{margin:4px 0 10px;font-size:18px}
+.dialog p{margin:0 0 18px}
+.choices{display:grid;gap:8px}
+.choices button{text-align:left;border:1px solid var(--line);background:var(--paper);padding:11px 14px;border-radius:4px;cursor:pointer}
+.choices button:hover{border-color:var(--accent)}
+.choices button.auto{border-color:var(--accent);background:var(--accent-soft)}
+.choices small{display:block;color:var(--muted);font-size:12px}
+
+/* 엔딩 */
+.ending{max-width:760px;margin:0 auto 24px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:28px;position:relative}
+.ending h2{margin:0 0 4px;font-size:24px}
+.ending .lead{margin:8px 0 18px;max-width:60ch}
+.ending .seal{top:24px;right:24px;bottom:auto}
+.ending .rows .row{grid-template-columns:96px 1fr}
+.ending h3{font-size:14px;margin:22px 0 6px;color:var(--muted);font-weight:500}
+.ending .acts{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+.copied{font-size:13px;color:var(--muted);align-self:center}
+textarea.fallback{width:100%;height:140px;margin-top:10px;font-family:var(--font-mono);font-size:12px;background:var(--paper);color:var(--ink);border:1px solid var(--line)}
+
+footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;color:var(--muted)}
+
+@media (max-width:980px){
+  .game{grid-template-columns:1fr}
+  .logwrap{height:62vh}
+  .start h1{font-size:30px}
+}
+@media (prefers-reduced-motion: reduce){
+  .row{animation:none}.fill{transition:none}
+}
+</style>
+</head>
+<body>
+<header class="bar">
+  <div class="brand">고용정보원 N분의 1<small>비공식 팬메이드</small></div>
+  <div class="date" id="barDate"></div>
+  <div class="spacer"></div>
+  <div class="ctrl" id="gameCtrl" hidden>
+    <button type="button" data-speed="0" aria-pressed="false">일시정지</button>
+    <button type="button" data-speed="1" aria-pressed="true">1×</button>
+    <button type="button" data-speed="4" aria-pressed="false">4×</button>
+    <button type="button" data-speed="16" aria-pressed="false">16×</button>
+    <label for="autoPick"><input type="checkbox" id="autoPick"> 자동 선택</label>
+  </div>
+</header>
+
+<main id="start" class="screen">
+  <div class="start">
+    <div class="eyebrow">인사 시뮬레이션 · 입사부터 정년까지</div>
+    <h1>같은 날 입사한 다섯 명 중 한 명으로 30년을 산다</h1>
+    <p>입사 직렬, 고용형태, 배치 부서, 연고지는 고를 수 없다. 실제 채용 구조를 바탕으로 정해진다. 한 달이 한 턴이다. 대부분의 달은 그냥 지나가고, 가끔 무언가를 골라야 한다. 고른다고 결과가 정해지지는 않는다. 확률이 조금 바뀔 뿐이다.</p>
+    <div class="facts">
+      <div class="fact"><b>약 525명</b><span>임직원 수</span></div>
+      <div class="fact"><b>4,317만</b><span>신입 초봉(원)</span></div>
+      <div class="fact"><b>8개 팀</b><span>배치 가능 부서</span></div>
+      <div class="fact"><b>4년</b><span>순환보직 주기</span></div>
+    </div>
+    <div class="opts">
+      <div>
+        <div class="opt-label">한 번의 커리어에 쓸 시간</div>
+        <div class="seg" id="durSeg">
+          <button type="button" data-dur="30" aria-pressed="true">약 30분</button>
+          <button type="button" data-dur="60" aria-pressed="false">약 1시간</button>
+          <button type="button" data-dur="90" aria-pressed="false">약 1시간 30분</button>
+        </div>
+      </div>
+      <div>
+        <div class="opt-label">선택지</div>
+        <div class="seg" id="autoSeg">
+          <button type="button" data-auto="0" aria-pressed="true">직접 고른다</button>
+          <button type="button" data-auto="1" aria-pressed="false">자동으로 지켜본다</button>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn primary" id="btnJoin">입사하기</button>
+  </div>
+</main>
+
+<main id="notice" class="screen" hidden>
+  <div class="notice">
+    <h2>입사 통지서</h2>
+    <div class="no mono" id="noticeNo"></div>
+    <div class="rows" id="noticeRows"></div>
+    <p class="foot" id="noticeFoot"></p>
+    <div class="seal">인사<br>담당</div>
+    <button type="button" class="btn primary" id="btnFirstDay">첫 출근하기</button>
+  </div>
+</main>
+
+<div id="endingWrap" class="screen" hidden style="padding-bottom:0"></div>
+
+<main id="game" class="screen game" hidden>
+  <aside class="panel card">
+    <h3>인사기록카드</h3>
+    <div class="pname" id="pName"></div>
+    <dl class="kv" id="pKv"></dl>
+    <div class="stats" id="pStats"></div>
+    <div class="money"><span>통장</span><b id="pMoney"></b></div>
+    <div class="money" style="border-top:0"><span>연봉</span><b id="pSalary"></b></div>
+    <div class="focus">
+      <h3 style="margin-top:12px">요즘 집중하는 것</h3>
+      <div class="seg" id="focusSeg"></div>
+      <div class="hint" id="focusHint"></div>
+    </div>
+    <button type="button" class="btn danger resign" id="btnResign">사직서 내기</button>
+  </aside>
+  <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
+  <aside class="panel cohort">
+    <h3>같은 날 입사한 동기</h3>
+    <div id="cohortList"></div>
+  </aside>
+</main>
+
+<div id="modal" class="modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="d-when" id="mWhen"></div>
+    <h4 id="mTitle"></h4>
+    <p id="mText"></p>
+    <div class="choices" id="mChoices"></div>
+  </div>
+</div>
+
+<footer>비공식 팬메이드 시뮬레이션입니다. 실제 기관의 공식 자료가 아니며 실존 인물과 관계없습니다. 인원·초봉·채용 구조는 공개된 채용 공고와 공공기관 공시 정보를 참고했고, 승진 연수·확률·이벤트는 추정입니다. '80억 분의 1'에서 영감을 받았습니다.</footer>
+
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const R=Math.random;
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const pick=a=>a[Math.floor(R()*a.length)];
+const chance=p=>R()<p;
+const randint=(a,b)=>a+Math.floor(R()*(b-a+1));
+function randn(){let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+function wpick(items){const t=items.reduce((s,i)=>s+i.w,0);let r=R()*t;for(const i of items){r-=i.w;if(r<=0)return i;}return items[items.length-1];}
+const pct=(item,arr)=>Math.round(item.w/arr.reduce((s,i)=>s+i.w,0)*1000)/10;
+function fmtMoney(v){const s=v<0?'-':'';v=Math.abs(v);if(v>=10000){const e=Math.floor(v/10000),r=Math.round(v%10000);return s+e+'억'+(r?' '+r.toLocaleString()+'만':'');}return s+Math.round(v).toLocaleString()+'만';}
+
+/* ---------- 데이터 ---------- */
+const DEPTS={
+  daemin:{name:'고용24 대민포털팀',hp:-0.6,mn:-1.0,sk:0.2,rp:0.25},
+  haeng:{name:'고용24 행정포털팀',hp:-0.9,mn:-0.6,sk:0.35,rp:0.2},
+  chwi1:{name:'취업지원서비스1팀',hp:-0.8,mn:-1.3,sk:0.3,rp:0.4},
+  chwi2:{name:'취업지원서비스2팀',hp:-0.8,mn:-1.3,sk:0.3,rp:0.4},
+  sec:{name:'정보보호팀',hp:-1.1,mn:-0.6,sk:0.4,rp:0.15},
+  ai:{name:'AI서비스팀',hp:-0.7,mn:-0.9,sk:0.5,rp:0.3},
+  research:{name:'연구팀',hp:-0.8,mn:-0.6,sk:0.4,rp:0.2},
+  mgmt:{name:'경영지원팀',hp:-0.6,mn:-1.0,sk:0.25,rp:0.35},
+};
+const IT_DEPTS=[{k:'daemin',w:18},{k:'haeng',w:18},{k:'chwi1',w:16},{k:'chwi2',w:16},{k:'sec',w:12},{k:'ai',w:20}];
+const TRACKS=[{k:'it',name:'정보화',w:75},{k:'admin',name:'경영사무',w:15},{k:'research',name:'연구',w:10}];
+const TYPES={
+  it:[{k:'reg5',name:'일반직 5급(대리)',w:60},{k:'reg6',name:'일반직 6급(주임) · 고졸',w:10},{k:'perm',name:'무기계약직(전문원)',w:10},{k:'temp',name:'기간제 계약직',w:20}],
+  admin:[{k:'reg5',name:'일반직 5급(대리)',w:75},{k:'reg6',name:'일반직 6급(주임) · 고졸',w:10},{k:'temp',name:'기간제 계약직',w:15}],
+  research:[{k:'reg5',name:'5급 연구원',w:80},{k:'temp',name:'기간제 연구원',w:20}],
+};
+const HOMES=[{k:'near',name:'음성·진천',w:20},{k:'mid',name:'청주·대전',w:20},{k:'metro',name:'수도권',w:40},{k:'far',name:'울산·부산·대구·광주',w:20}];
+const RANKS=['주임','대리','과장','차장','팀장','실장','원장'];
+const RRANKS=['연구원보','연구원','부연구위원','연구위원','팀장','실장','원장'];
+const MIN_Y=[4,5,5,4,4];
+const P_BASE=[0.55,0.5,0.45,0.35,0.25];
+const SAL=[3700,4317,5300,6400,7400,8600,12500];
+const SUR=['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권','황','안','송','류','홍'];
+const GIVEN=['민준','서연','지훈','하은','도윤','지우','예준','수아','시우','지민','현우','유진','준서','다은','건우','채원','우진','소윤','선우','지아','연우','윤서','태윤','하린','주원','은서','성민','혜진','동현','보람'];
+const FOCUS={
+  work:{name:'업무',hp:-0.5,mn:-0.4,sk:0.45,rp:0.4,cost:0,hint:'역량과 평판이 오른다. 체력과 멘탈이 깎인다.'},
+  self:{name:'자기계발',hp:-0.3,mn:-0.1,sk:0.5,rp:0,cost:15,hint:'역량이 오른다. 이직·공채 기회가 늘어난다. 돈이 조금 든다.'},
+  rel:{name:'관계',hp:-0.1,mn:0.4,sk:0,rp:0.55,cost:20,hint:'평판과 멘탈이 오른다. 모임 비용이 든다.'},
+  health:{name:'건강',hp:1.2,mn:0.6,sk:-0.05,rp:-0.05,cost:10,hint:'체력과 멘탈이 회복된다. 일은 조금 덜 한다.'},
+  money:{name:'재테크',hp:0,mn:-0.1,sk:0,rp:0,cost:0,hint:'통장의 절반 이상이 시장에 들어간다. 오르기도 하고 내리기도 한다.'},
+};
+const STAT_NAMES={sk:'역량',rp:'평판',hp:'체력',mn:'멘탈'};
+
+/* ---------- 시간 ---------- */
+const NOW=new Date();
+const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;
+const ym=mi=>({y:Y0+Math.floor((M0-1+mi)/12),m:((M0-1+mi)%12)+1});
+const ageOf=(p,mi)=>Math.floor((mi-p.birthMi)/12);
+function deathQ(a){return a<30?0.0004:a<40?0.0008:a<50?0.0018:0.0045;}
+function tenureStr(months){const y=Math.floor(months/12),m=months%12;return (y?y+'년 ':'')+m+'개월';}
+
+/* ---------- 인물 ---------- */
+function makePerson(){
+  const tr=wpick(TRACKS), tys=TYPES[tr.k], ty=wpick(tys);
+  let dept,deptP=100;
+  if(tr.k==='it'){const d=wpick(IT_DEPTS);dept=d.k;deptP=pct(d,IT_DEPTS);}else dept=tr.k==='admin'?'mgmt':'research';
+  const home=wpick(HOMES);
+  const age=ty.k==='reg6'?randint(19,22):tr.k==='research'?randint(29,35):ty.k==='temp'?randint(23,32):randint(25,31);
+  const type=ty.k.startsWith('reg')?'reg':ty.k;
+  const p={
+    name:pick(SUR)+pick(GIVEN),track:tr.k,trackName:tr.name,trackP:pct(tr,TRACKS),
+    typeName:ty.name,typeP:pct(ty,tys),type,rank:ty.k==='reg6'?0:1,
+    dept,deptP,home:home.k,homeName:home.name,homeP:pct(home,HOMES),
+    birthMi:-(age*12+randint(0,11)),
+    sk:randint(30,48)+(tr.k==='research'?8:0),rp:randint(38,52),hp:randint(66,84),mn:randint(62,80),
+    money:randint(300,2500),married:false,dating:false,kids:0,house:false,moved:home.k==='near',
+    rankSince:0,deptSince:0,joinMi:0,promoFails:0,ended:null,deptHist:[DEPTS[dept].name],
+  };
+  if(type==='temp'){const c=pick([6,10,12]);p.contractEnd=c;p.contractTotal=c;}
+  return p;
+}
+function rankTitle(p){
+  if(p.type==='temp')return p.track==='research'?'기간제 연구원':'계약직';
+  if(p.type==='perm')return '전문원';
+  return (p.track==='research'?RRANKS:RANKS)[p.rank];
+}
+function deptLabel(p){
+  if(p.rank>=6&&p.type==='reg')return '원장실';
+  if(p.rank===5&&p.type==='reg')return ({it:'정보화',admin:'경영',research:'연구'})[p.track]+' 부문 실';
+  return DEPTS[p.dept].name;
+}
+function salary(p,mi){
+  const yrs=Math.max(0,(mi-p.joinMi)/12);
+  if(p.type==='temp')return p.track==='research'?3600:3200;
+  if(p.type==='perm')return Math.round(3800*Math.pow(1.015,yrs));
+  return Math.round(SAL[p.rank]*Math.pow(1.02,yrs));
+}
+
+/* ---------- 상태 ---------- */
+let S=null, cohort=[], settings={dur:30,auto:false};
+let timer=null, speed=1, busy=false, baseMs=5000, resignReq=false;
+const age=()=>ageOf(S,S.mi);
+function E(o){for(const k in o){if(k==='money')S.money+=o[k];else S[k]=clamp(S[k]+o[k],0,100);}}
+
+/* ---------- 로그 ---------- */
+let lastYearHeader=null;
+function yearHeader(){
+  const {y}=ym(S.mi);
+  if(lastYearHeader===y)return;
+  lastYearHeader=y;
+  const d=document.createElement('div');d.className='year';
+  d.innerHTML=`<b>${y}</b><span>${age()}세 · ${rankTitle(S)} · ${deptLabel(S)}</span>`;
+  $('#log').appendChild(d);
+}
+function addLog(text,opt={}){
+  yearHeader();
+  const {m}=ym(S.mi);
+  const wrap=$('#logWrap'), stick=wrap.scrollHeight-wrap.scrollTop-wrap.clientHeight<80;
+  const d=document.createElement('div');
+  d.className='entry'+(opt.kind?' '+opt.kind:'');
+  const body=document.createElement('div');
+  const p=document.createElement('p');
+  if(opt.tag){const t=document.createElement('span');t.className='tag';t.textContent=opt.tag;p.appendChild(t);}
+  p.appendChild(document.createTextNode(text));body.appendChild(p);
+  if(opt.pick){const q=document.createElement('p');q.className='pick';q.textContent='→ '+opt.pick;body.appendChild(q);}
+  if(opt.res){const q=document.createElement('p');q.className='res';q.textContent=opt.res;body.appendChild(q);}
+  d.innerHTML=`<div class="when">${m}월</div>`;d.appendChild(body);
+  $('#log').appendChild(d);
+  if(stick)wrap.scrollTop=wrap.scrollHeight;
+}
+
+/* ---------- 모달 ---------- */
+function ask(title,text,choices){
+  return new Promise(res=>{
+    const {y,m}=ym(S.mi);
+    $('#mWhen').textContent=`${y}년 ${m}월 · ${deptLabel(S)}`;
+    $('#mTitle').textContent=title;$('#mText').textContent=text;
+    const box=$('#mChoices');box.innerHTML='';
+    let done=false;
+    const finish=i=>{if(done)return;done=true;$('#modal').hidden=true;res(i);};
+    choices.forEach((c,i)=>{
+      const b=document.createElement('button');b.type='button';
+      b.textContent=c.t;
+      if(c.d){const s=document.createElement('small');s.textContent=c.d;b.appendChild(s);}
+      b.addEventListener('click',()=>finish(i));box.appendChild(b);
+    });
+    $('#modal').hidden=false;
+    if(settings.auto){
+      const i=Math.floor(R()*choices.length);
+      setTimeout(()=>box.children[i]&&box.children[i].classList.add('auto'),Math.min(700,1400/speed));
+      setTimeout(()=>finish(i),Math.max(250,1800/Math.max(speed,1)));
+    }else{box.firstChild.focus();}
+  });
+}
+
+/* ---------- 이벤트 ---------- */
+const X=(t,f,d)=>({t,f,d});
+const EV=[
+// 고용24 대민포털팀
+{id:'d_outage',dept:['daemin'],title:'접속 지연',text:'월요일 오전, 실업급여 신청이 몰리며 고용24 접속이 느려졌다. 민원 전화가 콜센터를 넘어 팀으로 들어오기 시작했다.',choices:[
+  X('원인부터 찾는다',()=>chance(0.4+S.sk/250)?(E({sk:3,rp:3,hp:-3}),'DB 커넥션 풀 설정이 원인이었다. 오후 2시에 정상화됐다. 팀장이 회의에서 내 이름을 한 번 말했다.'):(E({sk:1,hp:-4,mn:-3}),'원인을 찾지 못한 채 저녁이 됐다. 트래픽이 줄면서 저절로 정상화됐다.')),
+  X('상황 보고부터 올린다',()=>(E({rp:1,mn:-2}),'보고서는 세 번 고쳐졌다. 장애는 협력사가 해결했다.')),
+  X('협력사에 맡기고 지켜본다',()=>(E({rp:-1,mn:-1}),'해결은 됐다. 경위서는 내 이름으로 나갔다.'))]},
+{id:'d_complaint',dept:['daemin'],title:'반복 민원',text:'같은 민원인이 일주일째 같은 내용으로 민원을 넣고 있다. 이번 건은 국민신문고를 거쳐 왔다.',choices:[
+  X('규정대로 답변서를 쓴다',()=>(E({mn:-3,rp:1}),'답변서는 일곱 번째였다. 민원은 종결됐다가 다시 열렸다.')),
+  X('직접 전화해서 설명한다',()=>chance(0.5)?(E({mn:1,rp:2}),'통화는 40분 걸렸다. 민원인은 마지막에 고맙다고 했다.'):(E({mn:-6}),'통화는 고성으로 끝났다. 녹취 파일이 감사실로 넘어갔다.')),
+  X('팀장에게 넘긴다',()=>(E({rp:-2}),'팀장은 말없이 받아갔다. 다음 회의에서 민원 대응 매뉴얼 이야기가 나왔다.'))]},
+{id:'d_news',dept:['daemin'],title:'',text:"'고용24 또 먹통' 기사가 났다. 장애는 15분이었다. 기사는 사흘 동안 포털 메인에 걸려 있었다.",auto:()=>E({mn:-3})},
+{id:'d_ui',dept:['daemin'],title:'화면 개편',text:"대민 화면 개편 시안이 세 번째로 반려됐다. 이번 이유는 '어르신도 쓸 수 있게'였다.",choices:[
+  X('고령 사용자를 직접 만나본다',()=>(E({sk:2,rp:2,hp:-2}),'고용센터 대기석에서 열두 명을 만났다. 버튼이 1.5배 커졌다. 시안은 통과됐다.')),
+  X('지적 사항만 반영한다',()=>(E({mn:-1}),'네 번째 시안이 올라갔다.'))]},
+// 고용24 행정포털팀
+{id:'h_requests',dept:['haeng'],title:'개선 요청 누적',text:"고용센터 개선 요청이 128건 쌓였다. 절반은 '엑셀 다운로드 버튼'에 관한 것이다.",choices:[
+  X('우선순위 표를 만들어 센터와 공유한다',()=>(E({sk:2,rp:3,hp:-2}),'센터 담당자 회의가 잡혔다. 요청은 41건으로 정리됐다.')),
+  X('들어온 순서대로 처리한다',()=>(E({hp:-4,mn:-2,sk:1}),'석 달 동안 63건을 처리했다. 그 사이 70건이 더 들어왔다.')),
+  X('다음 고도화 사업으로 넘긴다',()=>(E({rp:-2}),'사업은 내후년 예산에 반영됐다. 요청은 계속 들어온다.'))]},
+{id:'h_rollback',dept:['haeng'],title:'금요일 배포',text:'금요일 저녁 배포 후, 센터 화면 하나가 열리지 않는다는 연락이 왔다.',choices:[
+  X('직접 롤백을 주도한다',()=>chance(0.55+S.sk/300)?(E({sk:3,rp:2,hp:-3}),'밤 11시에 롤백이 끝났다. 월요일 아침 센터에서는 아무 일도 없었다.'):(E({hp:-6,mn:-4,rp:-1}),'롤백 중 다른 화면도 멈췄다. 토요일 오후에 복구됐다.')),
+  X('협력사 대응을 기다린다',()=>(E({rp:-2,mn:-1}),'협력사는 토요일 오전에 접속했다. 센터 몇 곳이 오전 업무를 수기로 했다.'))]},
+{id:'h_thanks',dept:['haeng'],text:'한 고용센터 상담사가 바뀐 화면 덕분에 상담 시간이 줄었다며 메일을 보냈다. 메일은 팀 채팅방에 공유됐다.',auto:()=>E({mn:3,rp:1})},
+{id:'h_visit',dept:['haeng'],title:'현장 방문',text:'지방 고용센터 현장 방문 일정이 잡혔다. 1박 2일이다.',choices:[
+  X('간다',()=>(E({hp:-2,sk:2,rp:1}),'상담 창구 옆에서 하루를 보냈다. 요청서에 적힌 문장의 뜻을 처음 이해했다.')),
+  X('다른 팀원에게 양보한다',()=>'출장 보고서를 읽었다.')]},
+// 취업지원서비스1팀
+{id:'c1_deadline',dept:['chwi1'],title:'지침 변경',text:'본부에서 구직자도약보장패키지 지침이 바뀌었다. 시행은 30일 뒤다. 일정은 바뀌지 않는다.',choices:[
+  X('야근으로 맞춘다',()=>(E({hp:-6,mn:-4,sk:2,rp:3}),'시행일 0시에 오픈했다. 본부 담당 사무관이 수고했다는 문자를 보냈다.')),
+  X('단계 오픈을 제안한다',()=>chance(0.35+S.rp/250)?(E({rp:2,sk:1}),'제안이 받아들여졌다. 핵심 기능만 먼저 나갔다.'):(E({hp:-5,mn:-5}),"본부는 '일정은 정해진 것'이라고 답했다. 결국 야근했다.")),
+  X('그대로 진행하고 리스크를 문서로 남긴다',()=>(E({mn:-2}),'문서는 결재됐다. 오픈 후 문제가 두 건 생겼고, 문서가 한 번 인용됐다.'))]},
+{id:'c1_meeting',dept:['chwi1','chwi2'],text:'세종 본부 회의에 다녀왔다. 왕복 네 시간, 회의는 40분이었다.',auto:()=>E({hp:-2,mn:-1})},
+{id:'c1_kpi',dept:['chwi1'],title:'지표 하락',text:'취업알선 매칭률이 전년보다 떨어졌다는 자료가 본부에서 내려왔다. 원인 분석을 사흘 안에 내라고 한다.',choices:[
+  X('데이터를 직접 뜯어본다',()=>(E({sk:3,hp:-3,rp:2}),'구인 공고 분류 코드가 바뀐 시점과 하락 시점이 겹쳤다. 보고서는 그대로 본부 회의 자료가 됐다.')),
+  X('작년 보고서 틀에 맞춰 낸다',()=>(E({mn:-1}),'보고서는 접수됐다. 같은 요청이 한 달 뒤 다시 왔다.'))]},
+{id:'c1_late',dept:['chwi1','chwi2'],text:'본부 요청 자료가 밤 9시에 왔다. 마감은 다음 날 오전 10시다.',auto:()=>E({hp:-3,mn:-2})},
+// 취업지원서비스2팀
+{id:'c2_reform',dept:['chwi2'],title:'제도 개편',text:'국민취업지원제도 수당 기준이 바뀐다. 법 시행일에 맞춰 시스템이 바뀌어야 한다.',choices:[
+  X('주말에도 나와서 맞춘다',()=>(E({hp:-6,mn:-3,sk:2,rp:3}),'시행일 아침, 첫 수당 지급이 정상적으로 나갔다.')),
+  X('테스트 기간 확보를 요청한다',()=>chance(0.4+S.rp/250)?(E({rp:2,mn:1}),'일주일이 확보됐다. 오류 두 건을 오픈 전에 잡았다.'):(E({mn:-4,hp:-3}),'요청은 반려됐다. 오픈 첫 주에 정정 공지를 두 번 냈다.')),
+  X('협력사 인력 추가를 요청한다',()=>(E({mn:-3}),'예산이 없다는 답이 왔다.'))]},
+{id:'c2_youth',dept:['chwi2'],title:'청년 신규 사업',text:'청년도약 프로젝트 신규 사업이 확정됐다. 기획부터 오픈까지 넉 달이다.',choices:[
+  X('PL을 자원한다',()=>(E({hp:-5,sk:4,rp:4,mn:-3}),'넉 달 동안 쉰 주말은 다섯 번이었다. 사업은 예정일에 열렸다. 보도자료에 시스템 이야기는 한 줄 있었다.')),
+  X('맡은 모듈만 한다',()=>(E({sk:1}),'내 모듈은 일정대로 끝났다.'))]},
+{id:'c2_minister',dept:['chwi2'],title:'장관 시연',text:'장관 현장 방문에서 청년성장 프로젝트 시연을 한다. 시연 PC를 맡게 됐다.',choices:[
+  X('시연 환경을 따로 만들어 둔다',()=>chance(0.85)?(E({rp:4,hp:-2}),'시연은 3분 만에 끝났다. 장관이 고개를 두 번 끄덕였다.'):(E({mn:-3}),'시연 중 로딩이 길었다. 사진에는 화면이 찍히지 않았다.')),
+  X('운영 환경 그대로 보여준다',()=>chance(0.55)?(E({rp:3}),'문제없이 끝났다.'):(E({rp:-3,mn:-4}),'세션이 만료됐다. 다시 로그인하는 사이 장관은 다음 장소로 이동했다.'))]},
+{id:'c2_pressure',dept:['chwi2','chwi1'],text:'본부 과장이 주간 회의에 직접 들어오기 시작했다.',auto:()=>E({mn:-3})},
+// 정보보호팀
+{id:'s_alert',dept:['sec'],title:'새벽 알림',text:'새벽 3시 12분, 보안관제 알림이 울렸다. 해외 IP에서 로그인 시도가 반복되고 있다.',choices:[
+  X('바로 원격 접속한다',()=>chance(0.7)?(E({hp:-4,sk:2,rp:2}),'자동화된 대입 공격이었다. 차단 정책을 넣고 다시 잤다. 두 시간 뒤 출근했다.'):(E({hp:-5,sk:3,rp:3}),'실제로 계정 하나가 뚫려 있었다. 아침까지 영향 범위를 확인했다. 개인정보 접근은 없었다.')),
+  X('아침에 확인한다',()=>chance(0.8)?'오탐이었다.':(E({rp:-5,mn:-5}),'확인했을 때 이미 여섯 시간이 지나 있었다. 경위서를 썼다.'))]},
+{id:'s_phish',dept:['sec'],text:'해킹메일 모의훈련 결과가 나왔다. 열람률 11%. 그중 두 명은 첨부파일까지 열었다. 재교육 공지는 내가 썼다.',auto:()=>E({sk:1})},
+{id:'s_leak',dept:['sec'],title:'유출 의심 신고',text:'개인정보 유출 의심 신고가 들어왔다. 구직자 한 명이 다른 사람의 이력서를 봤다고 한다.',choices:[
+  X('로그부터 전수 확인한다',()=>(E({sk:3,hp:-4,rp:3}),'캐시 설정 문제였다. 노출은 3건이었다. 신고 기한 안에 보고를 마쳤다.')),
+  X('개발팀 확인을 기다린다',()=>(E({rp:-2,mn:-3}),'개발팀은 이틀 뒤 답했다. 신고 기한이 하루 남아 있었다.'))]},
+{id:'s_audit',dept:['sec'],text:'보안 실태 평가 대비 점검이 시작됐다. 서류철이 책상 높이로 쌓였다.',auto:()=>E({hp:-3,sk:1})},
+// AI서비스팀
+{id:'a_budget',dept:['ai'],text:'신규 AI 일자리 매칭 사업 예산이 확보됐다. 팀 인원은 그대로다.',auto:()=>E({sk:2,mn:-1})},
+{id:'a_demo',dept:['ai'],title:'기자단 시연',text:'외부 기자단 대상 AI 상담 챗봇 시연이 잡혔다.',choices:[
+  X('예상 질문 200개를 미리 돌려본다',()=>chance(0.8)?(E({hp:-3,rp:4,sk:2}),"시연은 무난했다. 기사 제목은 '정부도 AI 상담'이었다."):(E({hp:-3,rp:-2,mn:-4}),'준비하지 않은 질문에 챗봇이 다른 지원금을 안내했다. 기사 한 줄이 그 이야기였다.')),
+  X('그대로 시연한다',()=>chance(0.5)?(E({rp:2}),'문제없이 끝났다.'):(E({rp:-3,mn:-4}),'챗봇이 같은 답을 세 번 반복했다. 영상이 돌았다.'))]},
+{id:'a_guide',dept:['ai'],title:'활용 가이드',text:'원내 생성형 AI 활용 가이드를 만들어 달라는 요청이 왔다. 개인정보를 어디까지 넣어도 되는지 아무도 정하지 않았다.',choices:[
+  X('정보보호팀과 기준부터 정한다',()=>(E({sk:3,rp:3,hp:-2}),'가이드는 두 달 늦게 나왔다. 다른 기관에서 참고하겠다며 문의가 왔다.')),
+  X('타 기관 가이드를 참고해 빨리 낸다',()=>(E({rp:1}),'가이드는 일정대로 나왔다. 반년 뒤 개정판을 냈다.'))]},
+{id:'a_model',dept:['ai'],text:'추천 모델이 특정 연령대 구직자에게 같은 공고만 보여준다는 지적이 국회에서 나왔다.',auto:()=>E({mn:-4,rp:-1,sk:1})},
+{id:'a_hype',dept:['ai'],text:"원장 신년사에 'AI'가 열한 번 나왔다.",auto:()=>E({mn:-1,rp:1})},
+// 연구팀
+{id:'r_deadline',dept:['research'],title:'보고서 마감',text:'연구보고서 마감이 2주 남았다. 분석은 절반이다.',choices:[
+  X('주말을 반납한다',()=>(E({hp:-5,mn:-2,sk:3,rp:2}),'보고서는 제때 나왔다. 다운로드 수는 213이었다.')),
+  X('분석 범위를 줄인다',()=>(E({sk:1,rp:-1}),"보고서는 제때 나왔다. 심사 의견에 '후속 연구 필요'가 적혔다.")),
+  X('마감 연장을 요청한다',()=>chance(0.5)?(E({mn:2}),'한 달이 연장됐다.'):(E({rp:-2,mn:-2}),'연장은 안 된다는 답이 왔다. 남은 열흘을 회사에서 보냈다.'))]},
+{id:'r_conf',dept:['research'],text:'학회에서 고용보험 데이터 분석 결과를 발표했다. 질문이 세 개 나왔다.',auto:()=>E({sk:2,rp:2})},
+{id:'r_brief',dept:['research'],title:'의원실 자료 요청',text:'국회 의원실에서 청년 고용 통계를 내일 오전까지 달라고 한다.',choices:[
+  X('밤새 정리한다',()=>(E({hp:-4,rp:3}),'자료는 오전 9시 50분에 나갔다. 오후 질의에서 숫자 하나가 인용됐다.')),
+  X('공표된 통계만 정리해 보낸다',()=>(E({rp:1}),'의원실은 추가 자료를 다시 요청했다.'))]},
+{id:'r_media',dept:['research'],text:'인터뷰 내용이 기사에 실렸다. 말한 적 없는 문장이 따옴표 안에 있었다.',auto:()=>E({mn:-3})},
+// 경영지원팀
+{id:'m_audit',dept:['mgmt'],title:'감사 지적',text:'감사 지적 사항이 내려왔다. 수당 지급 기준 하나가 규정과 맞지 않았다.',choices:[
+  X('규정 개정안을 직접 만든다',()=>(E({sk:3,hp:-3,rp:3}),'개정안은 이사회를 통과했다. 같은 지적은 다시 나오지 않았다.')),
+  X('전임자 시절 일로 정리한다',()=>(E({rp:-2,mn:-1}),"결과 보고서에 '관련자 주의 조치'가 적혔다. 이름은 없었다."))]},
+{id:'m_reorg',dept:['mgmt'],title:'조직개편안',text:'조직개편안을 맡게 됐다. 팀 두 개가 합쳐지고, 하나가 새로 생긴다.',choices:[
+  X('팀장들을 직접 만나 의견을 듣는다',()=>(E({hp:-3,rp:3,mn:-3}),'열네 번의 면담 끝에 안이 확정됐다. 완전히 만족한 사람은 없었다.')),
+  X('위에서 정한 안대로 문서화한다',()=>(E({rp:-1}),'개편 첫날, 두 팀장이 서로 인사하지 않았다.'))]},
+{id:'m_budget',dept:['mgmt'],text:'예산 전용 문의가 하루 서른 통씩 온다.',auto:()=>E({mn:-3})},
+{id:'m_union',dept:['mgmt'],text:'노사협의회 실무 자료를 준비했다. 회의는 두 번 정회됐다.',auto:()=>E({mn:-2,sk:1})},
+// IT 공통
+{id:'it_vendor',when:()=>S.track==='it',text:'협력사 PM이 바뀌었다. 인수인계 문서는 열두 쪽이었다.',auto:()=>E({hp:-2,mn:-2})},
+{id:'it_phish',when:()=>S.dept!=='sec',text:'해킹메일 모의훈련 메일이 왔다.',auto:()=>chance(0.12+(100-S.sk)/600)?(E({rp:-2,mn:-1}),'첨부파일을 열었다. 다음 주 재교육 명단에 이름이 올라갔다.'):'열지 않았다.'},
+// 사내 정치·관계
+{id:'pol_line',w:1.2,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=4&&!S.faction,title:'두 라인',text:'다음 실장 자리를 두고 두 팀장 사이 기류가 묘하다. 누가 누구 점심 자리에 앉는지가 이야기된다.',choices:[
+  X('A팀장 쪽 점심에 간다',()=>{S.faction='A';S.factionY=ym(S.mi).y+1;E({rp:1});return '같은 메뉴를 시켰다. 이야기는 대부분 내년 인사에 관한 것이었다.';}),
+  X('B팀장 쪽 점심에 간다',()=>{S.faction='B';S.factionY=ym(S.mi).y+1;E({rp:1});return '식사는 빨리 끝났다. 커피는 B팀장이 샀다.';}),
+  X('혼자 먹는다',()=>(E({mn:1}),'편했다. 대신 들리는 이야기도 없었다.'))]},
+{id:'pol_credit',title:'성과 가로채기',text:'주간 회의에서 내가 만든 자료를 옆 팀 차장이 자기 성과처럼 보고했다.',choices:[
+  X('그 자리에서 정정한다',()=>chance(0.5)?(E({rp:3}),'회의실이 잠깐 조용해졌다. 팀장은 나중에 잘했다고 했다.'):(E({rp:-1,mn:-2}),'정정은 됐다. 그 차장은 그 뒤로 내 협조 요청을 늦게 처리했다.')),
+  X('나중에 따로 말한다',()=>(E({mn:-2}),'차장은 오해였다고 했다. 다음 회의에서도 같은 일이 있었다.')),
+  X('넘어간다',()=>(E({mn:-4}),'아무도 그 이야기를 하지 않았다.'))]},
+{id:'pol_gossip',title:'퇴근 후 술자리',text:'퇴근 후 몇몇이 모이는 술자리가 있다. 주로 윗사람 이야기가 오간다.',choices:[
+  X('간다',()=>chance(0.15)?(E({rp:-5,mn:-4,money:-8}),'내가 한 말이 돌고 돌아 당사자 귀에 들어갔다.'):(E({rp:2,mn:1,money:-8}),'들은 이야기가 두 달 뒤 인사에서 맞았다.')),
+  X('자리를 피한다',()=>'다음 날 아침 대화에 끼지 못했다.')]},
+{id:'pol_gapjil',title:'목격',text:'옆자리 직원이 회의 중 상사에게 공개적으로 모욕당하는 걸 봤다.',choices:[
+  X('고충 상담 창구에 알린다',()=>chance(0.6)?(E({mn:2,rp:1}),'조사가 시작됐다. 그 상사는 다음 인사 때 다른 부서로 갔다.'):(E({mn:-3}),"조사는 '확인 불가'로 끝났다. 분위기는 그대로였다.")),
+  X('따로 위로한다',()=>(E({mn:-1,rp:1}),'커피를 한 잔 샀다. 그는 괜찮다고 했다.')),
+  X('모른 척한다',()=>(E({mn:-3}),'그 뒤로 그 사람과 눈을 잘 마주치지 않게 됐다.'))]},
+{id:'soc_lunch',title:'점심 총무',text:'팀 점심 모임 총무를 맡아 달라고 한다.',choices:[
+  X('맡는다',()=>(E({rp:3,mn:-1}),'혁신도시 맛집 목록이 엑셀 파일이 됐다.')),
+  X('거절한다',()=>(E({rp:-1}),'막내가 맡았다.'))]},
+{id:'soc_workshop',text:'부서 워크숍으로 1박 2일을 다녀왔다. 비전 수립 세션에서 포스트잇 마흔 장을 붙였다.',auto:()=>E({rp:1,hp:-1})},
+{id:'soc_wedding',text:'같은 팀 선배 결혼식에 다녀왔다. 축의금은 10만 원이었다.',auto:()=>E({money:-10,rp:1})},
+{id:'soc_mentor',when:()=>S.mi>=36,title:'멘토 지정',text:'신입 직원 멘토로 지정됐다.',choices:[
+  X('매주 점심을 같이 먹는다',()=>(E({rp:3,mn:1,money:-8}),'석 달 뒤 신입이 업무 노트를 보여줬다. 내가 한 말이 몇 줄 적혀 있었다.')),
+  X('질문이 오면 답한다',()=>'신입은 질문을 많이 하지 않았다.')]},
+{id:'soc_blind',text:'블라인드에 우리 기관 이야기가 올라왔다. 누가 썼는지 다들 짐작하는 눈치다.',auto:()=>E({mn:-1})},
+{id:'soc_edu',text:'법정 의무교육 다섯 개를 하루에 몰아서 들었다.',auto:()=>E({mn:-1})},
+{id:'soc_bus',when:()=>S.home==='metro'&&!S.moved,text:'통근버스가 고속도로에서 40분 멈춰 있었다. 지각 처리는 되지 않았다.',auto:()=>E({hp:-2,mn:-1})},
+{id:'club_act',w:1.5,when:()=>!!S.club,text:()=>({
+    '등산':'동호회에서 속리산에 갔다. 정상에서 단체 사진을 찍었다.',
+    '풋살':'풋살 동호회가 지역 대회 8강에 올랐다. 다음 날 출근길 계단이 힘들었다.',
+    '보드게임':'보드게임 동호회 정기 모임. 다른 부서 차장과 처음 말을 텄다.',
+    '독서':'독서 모임에서 같은 책을 읽은 다른 팀 사람과 오래 이야기했다.'})[S.club],
+  auto:()=>{E({mn:3,rp:2,hp:S.club==='등산'||S.club==='풋살'?2:0});if(!S.married&&!S.dating&&age()<40&&chance(0.12)){S.dating=true;return '모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}return '';}},
+{id:'dating_intro',when:()=>!S.married&&!S.dating&&age()<40,title:'소개팅',text:'같은 층 다른 팀 직원이 소개팅을 주선하겠다고 한다.',choices:[
+  X('나간다',()=>chance(0.35)?(S.dating=true,E({mn:4}),'세 번째 만남부터 주말이 기다려졌다.'):'좋은 사람이었다. 연락은 자연스럽게 끊겼다.'),
+  X('괜찮다고 한다',()=>'주선자는 아쉬워했다.')]},
+// 개인
+{id:'health_check',when:()=>age()>=35&&S.hp<45,text:"건강검진 결과지에 '추적 관찰' 항목이 하나 생겼다.",auto:()=>E({mn:-2})},
+{id:'parents',when:()=>age()>=42,title:'부모님 입원',text:'부모님이 입원하셨다는 연락을 받았다.',choices:[
+  X('연차를 몰아 쓴다',()=>(E({hp:-2,mn:-2,rp:-1,money:-150}),'2주 동안 병원과 회사를 오갔다. 부모님은 퇴원하셨다.')),
+  X('주말마다 내려간다',()=>(E({hp:-4,mn:-4,money:-80}),'두 달 동안 주말이 없었다. 부모님은 퇴원하셨다.'))]},
+{id:'move',w:1.2,cool:36,when:()=>(S.home==='far'||S.home==='metro')&&!S.moved,title:'거처',text:()=>S.home==='far'?'주말마다 왕복 다섯 시간을 운전한다. 혁신도시 원룸 계약이 곧 끝난다.':'통근버스로 매일 왕복 세 시간을 다닌다. 혁신도시 원룸 공고가 눈에 들어온다.',choices:[
+  X('혁신도시로 완전히 이사한다',()=>{S.moved=true;E({hp:4,mn:-2,money:-300});return S.home==='far'?'본가에는 한 달에 한 번 가게 됐다.':'퇴근 후 시간이 두 시간 늘었다. 주말엔 서울로 올라간다.';}),
+  X('지금처럼 다닌다',()=>(E({hp:-2}),'익숙해졌다고 생각하기로 했다.'))]},
+{id:'house',w:2,cool:24,when:()=>S.money>=20000&&!S.house,title:'내 집',text:'통장 잔고가 2억을 넘었다. 혁신도시 아파트 분양 공고가 났다.',choices:[
+  X('혁신도시 아파트를 산다',()=>{S.house=true;S.moved=true;S.mortgage=240;E({money:-18000,mn:4});return '잔금일에 연차를 냈다. 대출은 20년이다.';}),
+  X('연고지에 집을 산다',()=>{S.house=true;S.mortgage=240;E({money:-18000,mn:3});return '주말에만 머무는 집이 생겼다.';}),
+  X('아직 보류한다',()=>'분양은 마감됐다.')]},
+{id:'job_offer',w:0.5,cool:48,when:()=>S.track==='it'&&S.sk>=72&&age()<45,title:'이직 제안',text:'민간 IT기업에서 연락이 왔다. 연봉은 지금의 1.4배다.',choices:[
+  X('옮긴다',()=>{endGame('민간 이직','민간 IT기업으로 옮겼다. 마지막 출근일에 사원증을 반납했다.');return '면접은 두 번이었다. 처우 협의는 일주일 걸렸다.';}),
+  X('거절한다',()=>(E({mn:1}),'답장을 쓰는 데 사흘이 걸렸다.'))]},
+{id:'other_pe',w:2,cool:24,when:()=>S.selfdev>=9&&age()<42,title:'필기 합격',text:()=>S.home==='far'||S.home==='mid'?'준비해 오던 다른 공기업 필기에 합격했다. 연고지에서 가까운 곳이다. 면접이 2주 뒤다.':'준비해 오던 다른 공기업 필기에 합격했다. 면접이 2주 뒤다.',choices:[
+  X('면접을 본다',()=>{if(chance(0.35+S.sk/300)){endGame('공기업 이직','최종 합격 문자를 받았다. 사직서를 썼다.');return '최종 합격이었다.';}S.selfdev=0;E({mn:-4});return '최종에서 떨어졌다. 다음 날 평소처럼 출근했다.';}),
+  X('지금 자리에 남는다',()=>{S.selfdev=0;return '면접 날, 평소처럼 출근했다.';})]},
+{id:'discipline',w:0.3,cool:120,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=5,title:'징계위원회',text:'보안 서약 위반으로 징계위원회가 열렸다. 승인받지 않은 USB 반출 기록이 문제였다.',choices:[
+  X('경위를 소명한다',()=>chance(0.6)?(E({rp:-4,mn:-5}),'견책으로 끝났다.'):(demote('강등 처분을 받았다.'),'')),
+  X('처분을 받아들인다',()=>chance(0.5)?(E({rp:-5,mn:-4,money:-200}),'감봉 3개월 처분을 받았다.'):(demote('강등 처분을 받았다.'),''))]},
+// 고위직
+{id:'x_assembly',when:()=>S.type==='reg'&&S.rank>=5,text:'국정감사에 배석했다. 질의는 받지 않았다. 대기 시간은 아홉 시간이었다.',auto:()=>E({hp:-3})},
+{id:'x_eval',when:()=>S.type==='reg'&&S.rank>=5,text:'경영평가 결과를 두고 책임 이야기가 나왔다. 회의록에 내 이름이 두 번 있었다.',auto:()=>E({mn:-4,rp:-2})},
+];
+
+/* ---------- 인사·상태 변화 ---------- */
+function demote(text){
+  if(S.rank>0){S.rank--;S.rankSince=S.mi;}
+  E({rp:-6,mn:-8});
+  addLog(text+` ${rankTitle(S)}(으)로 내려갔다.`,{kind:'key'});
+}
+function promoText(){
+  const t=rankTitle(S);
+  if(S.rank===4)return `${DEPTS[S.dept].name} 팀장 보직을 받았다.`;
+  if(S.rank===5)return '실장으로 승진했다. 결재 라인 맨 끝에서 두 번째가 됐다.';
+  return `${t}(으)로 승진했다. 사령장은 메일로 왔다.`;
+}
+function changeDept(k){
+  S.dept=k;S.deptSince=S.mi;
+  if(S.deptHist[S.deptHist.length-1]!==DEPTS[k].name)S.deptHist.push(DEPTS[k].name);
+}
+async function personnel(){
+  const {y}=ym(S.mi);
+  if(S.faction&&S.factionY<=y){
+    const win=chance(0.5)?'A':'B';
+    if(win===S.faction){E({rp:5,mn:2});addLog(`실장 인사가 났다. ${win}팀장이었다. 점심 자리가 조금 넓어졌다.`);}
+    else{E({rp:-4,mn:-3});addLog(`실장 인사가 났다. ${win}팀장이었다. 다음 날 점심은 혼자 먹었다.`);}
+    S.faction=null;
+  }
+  if(S.type!=='reg'||S.leave>0)return;
+  if((S.rank===4||S.rank===5)&&((S.rp<35&&chance(0.5))||chance(0.03))){
+    S.rank--;S.rankSince=S.mi;E({mn:-8});
+    addLog(`보직에서 해임됐다. ${rankTitle(S)}(으)로 돌아갔다.`,{kind:'key'});
+    return;
+  }
+  if(S.rank<5){
+    const yrs=(S.mi-S.rankSince)/12;
+    if(yrs>=MIN_Y[S.rank]){
+      const p=P_BASE[S.rank]*clamp((S.sk+S.rp)/110,0.3,1.5)+S.promoFails*0.08;
+      if(chance(p)){S.rank++;S.rankSince=S.mi;S.promoFails=0;E({mn:5,rp:2});addLog(promoText(),{kind:'key'});}
+      else{S.promoFails++;E({mn:-3});addLog('승진 명단에 이름이 없었다.');}
+    }
+  }
+  if(S.rank<=4&&S.mi-S.deptSince>=48)await rotation();
+}
+async function rotation(){
+  if(S.track==='admin'){
+    const tasks=['인사','예산','회계','총무','기획'];S.task=pick(tasks.filter(t=>t!==S.task));S.deptSince=S.mi;
+    addLog(`순환 시기다. 경영지원팀 안에서 담당 업무가 ${S.task}(으)로 바뀌었다.`);return;
+  }
+  if(S.track==='research'){
+    S.deptSince=S.mi;addLog(`연구 주제가 바뀌었다. 이번엔 ${pick(['청년 고용','디지털 일자리','고령자 재취업','직업 전망','고용보험 데이터'])}이다.`);return;
+  }
+  const others=IT_DEPTS.map(d=>d.k).filter(k=>k!==S.dept).sort(()=>R()-0.5).slice(0,3);
+  const choices=others.map(k=>X(DEPTS[k].name+' 희망',()=>k)).concat([X('지금 부서 유지 희망',()=>S.dept)]);
+  const i=await ask('순환보직','같은 부서에서 4년이 지났다. 희망 부서를 적어 내라는 공문이 왔다.',choices);
+  const want=choices[i].f();
+  let got=want;
+  if(!chance(0.35+S.rp/200)){got=pick(IT_DEPTS.map(d=>d.k).filter(k=>k!==want));}
+  const res=got===S.dept?'발령 명단에 이름이 없었다. 같은 자리에 남았다.':got===want?`희망대로 ${DEPTS[got].name}(으)로 발령 났다.`:`${DEPTS[got].name}(으)로 발령 났다. 희망과는 달랐다.`;
+  if(got!==S.dept)changeDept(got);else S.deptSince=S.mi;
+  addLog('같은 부서에서 4년이 지났다. 희망 부서를 적어 냈다.',{pick:choices[i].t,res});
+}
+
+/* ---------- 월간 처리 ---------- */
+function monthlyStats(){
+  const d=DEPTS[S.dept],f=FOCUS[S.focus];
+  let hp=d.hp+0.65+f.hp,mn=d.mn+0.75+f.mn,sk=d.sk*0.6+f.sk,rp=d.rp*0.6+f.rp;
+  if(S.type==='reg'&&S.rank>=4){mn-=0.4;rp+=0.1;}
+  if(age()>=45)hp-=0.25;
+  if(!S.moved)hp-=S.home==='far'?0.5:S.home==='metro'?0.3:S.home==='mid'?0.1:0;
+  hp+=(70-S.hp)*0.03;mn+=(65-S.mn)*0.03;
+  rp-=(S.rp-50)*0.015;sk=sk*(1-S.sk/110);
+  S.hp=clamp(S.hp+hp+randn()*0.8,0,100);S.mn=clamp(S.mn+mn+randn()*1.0,0,100);
+  S.sk=clamp(S.sk+sk+randn()*0.2,0,100);S.rp=clamp(S.rp+rp+randn()*0.5,0,100);
+  if(S.focus==='self')S.selfdev++;
+}
+function monthlyMoney(){
+  const sal=salary(S,S.mi);
+  let inc=S.leave>0&&S.leaveType==='parental'?150:sal/12*0.8;
+  const infl=Math.pow(1.025,S.mi/12);
+  let exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?110:0);
+  S.money+=inc-exp;
+  if(S.mortgage>0)S.mortgage--;
+  const base=Math.max(S.money,0);
+  if(S.focus==='money'){const r=0.005+randn()*0.04;S.money+=base*0.5*r;S.yrInvest=(S.yrInvest||0)+base*0.5*r;}
+  else S.money+=base*0.0015;
+  S.maxSal=Math.max(S.maxSal||0,sal);
+}
+function pool(){
+  const out=[];
+  const dEvents=S.type==='reg'&&S.rank>=5;
+  for(const ev of EV){
+    if(ev.dept&&(dEvents||!ev.dept.includes(S.dept)))continue;
+    if(ev.when&&!ev.when())continue;
+    const cd=S.cd[ev.id];if(cd!==undefined&&S.mi-cd<(ev.cool||30))continue;
+    out.push({w:(ev.w||1)*(ev.dept?2.2:1),ev});
+  }
+  return out;
+}
+async function runEvent(ev){
+  S.cd[ev.id]=S.mi;
+  const text=typeof ev.text==='function'?ev.text():ev.text;
+  if(ev.auto){const r=ev.auto();addLog(r?text+' '+r:text);return;}
+  const i=await ask(ev.title||'선택',text,ev.choices);
+  const res=ev.choices[i].f();
+  addLog(text,{pick:ev.choices[i].t,res:res||''});
+}
+function endGame(kind,text){
+  if(S.ended)return;
+  S.ended={kind,text,mi:S.mi};
+}
+
+async function calendar(m){
+  if(m===1)await personnel();
+  if(m===2||m===9){
+    if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`);}
+  }
+  if(m===3&&!S.club&&chance(0.35)){
+    const ch=['등산','풋살','보드게임','독서'].map(c=>X(c+' 동호회에 든다',()=>{S.club=c;E({mn:2,rp:1});return '첫 모임에 나갔다. 회비는 월 2만 원이었다.';}));
+    ch.push(X('가입하지 않는다',()=>'공고 창을 닫았다.'));
+    const t='사내 동호회 신규 회원 모집 공고가 올라왔다.';const i=await ask('동호회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+  }
+  if((m===3||m===9)&&S.type!=='reg'){
+    const t=`원내 ${m===3?'1차':'2차'} 직원 채용 공고가 났다. ${S.track==='research'?'5급 연구원':'정보화 직렬 일반직 5급'}을 뽑는다.`;
+    const ch=[X('지원한다',()=>{
+      const p=0.1+S.sk/350+Math.min(S.selfdev,12)*0.012;
+      if(chance(p)){S.type='reg';S.rank=1;S.rankSince=S.mi;S.joinMi=S.mi;S.contractEnd=null;E({mn:10});S.selfdev=0;return '필기와 면접을 거쳐 합격했다. 같은 건물에서 새 사번을 받았다.';}
+      E({mn:-3});return pick(['서류는 통과했다. 필기에서 떨어졌다.','면접까지 갔다. 결과 문자는 짧았다.']);
+    }),X('이번엔 넘긴다',()=>'공고 마감일이 지나갔다.')];
+    const i=await ask('채용 공고',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f(),kind:''});
+  }
+  if(m===4&&S.leave===0){
+    if(S.dept==='mgmt'&&S.rank<5){
+      const t='경영평가 실적보고서 작성 기간이다. 같은 표를 열네 번째 고치고 있다.';
+      const ch=[X('주말까지 붙잡는다',()=>{S.evalBoost=0.15;E({hp:-4,sk:2,rp:2});return '보고서는 마감 30분 전에 제출됐다.';}),X('정시에 퇴근한다',()=>{S.evalBoost=0;E({mn:1});return '보고서는 제때 제출됐다. 표 하나는 열세 번째 버전으로 나갔다.';})];
+      const i=await ask('경영평가',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+    }else if(chance(0.4))addLog('경영평가 실적 자료 요청이 왔다. 작년 자료를 열어 숫자를 바꿨다.',{kind:'sys'});
+  }
+  if(m===5&&S.leave===0&&chance(0.6)){
+    const t='올해 체육대회가 열린다.';
+    const ch=[X('계주에 나간다',()=>chance(0.4)?(E({rp:3,mn:3,hp:-2}),'팀이 1등을 했다. 상품은 온누리상품권이었다.'):(E({rp:1,mn:-1,hp:-2}),'바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.')),
+      X('응원석에 앉는다',()=>(E({rp:1}),'햇볕이 따가웠다. 도시락은 김밥이었다.')),
+      X('연차를 쓴다',()=>(E({mn:2,rp:-2}),'단체 사진에 내가 없었다.'))];
+    const i=await ask('체육대회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+  }
+  if(m===6){
+    const g=wpick([{w:2,v:'S',r:1.5},{w:20+(S.evalBoost||0)*60,v:'A',r:1.2},{w:45,v:'B',r:0.9},{w:25,v:'C',r:0.6},{w:8,v:'D',r:0}]);
+    S.evalBoost=0;
+    if(S.type==='temp')addLog(`경영평가 결과 ${g.v}등급이 나왔다. 계약직은 성과급 대상이 아니었다.`,{kind:'sys'});
+    else{const b=salary(S,S.mi)/12*g.r*0.8;S.money+=b;E({mn:g.v==='D'?-3:g.v==='S'||g.v==='A'?2:0});addLog(`경영평가 결과 ${g.v}등급이 나왔다. 성과급 ${fmtMoney(b)}원이 들어왔다.`,{kind:'sys'});}
+  }
+  if(m===10&&S.leave===0){
+    if(['chwi1','chwi2','research','mgmt'].includes(S.dept)&&S.rank<5){
+      const t='국정감사 요구자료가 내려왔다. 마감은 48시간 뒤다.';
+      const ch=[X('밤새 정리한다',()=>(E({hp:-4,rp:3}),'자료는 마감 두 시간 전에 나갔다.')),X('확인된 숫자만 낸다',()=>(E({rp:1,mn:-1}),'의원실에서 보완 요청이 한 번 왔다.'))];
+      const i=await ask('국정감사',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+    }else if(chance(0.4)){E({hp:-1});addLog('국정감사 기간이다. 의원실 자료 요청이 한 건 내려왔다.',{kind:'sys'});}
+  }
+  if(m===12){
+    if(S.leave===0&&chance(0.8)){
+      const t='송년회가 잡혔다.';
+      const ch=[X('2차까지 간다',()=>(E({rp:3,hp:-3,money:-10}),'노래방에서 팀장이 같은 노래를 두 번 불렀다.')),X('1차만 있다가 나온다',()=>(E({rp:1}),'고기는 맛있었다.')),X('불참한다',()=>(E({mn:1,rp:-1}),'다음 날 단체 사진에 내가 없었다.'))];
+      const i=await ask('송년회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+    }
+  }
+}
+
+async function monthTick(){
+  S.mi++;
+  const {y,m}=ym(S.mi);
+  yearHeader();
+  if(resignReq){resignReq=false;await resignFlow();if(S.ended)return;}
+  // 휴직 처리
+  if(S.leave>0){
+    S.leave--;E({hp:1,mn:1.2});monthlyMoney();
+    if(S.leave===0)addLog(S.leaveType==='parental'?'육아휴직이 끝나고 복직했다. 자리 배치가 바뀌어 있었다.':'병가를 마치고 복직했다.');
+  }else{monthlyStats();monthlyMoney();}
+  cohort.forEach(p=>peerTick(p,S.mi,false));
+  // 강제 종료 조건
+  const a=age();
+  if(chance(deathQ(a)/12)){
+    const cause=a<45?pick(['교통사고','심근경색','뇌출혈']):pick(['암','심근경색','뇌졸중']);
+    endGame('사망',`${y}년 ${m}월, ${cause}로 세상을 떠났다. ${a}세였다. 원내 게시판에 부고가 올라왔다.`);return;
+  }
+  if(m===12&&a>=60){endGame('정년퇴직',`${y}년 12월, 정년퇴직했다. 근속 ${tenureStr(S.mi)}. 마지막 날 팀에서 꽃다발을 받았다.`);return;}
+  if(S.type==='reg'&&S.rank===6&&S.mi>=S.chiefUntil){endGame('원장 임기 만료','원장 임기 3년을 마쳤다. 이임식은 강당에서 30분 동안 열렸다.');return;}
+  if(S.type==='temp'&&S.mi>=S.contractEnd){
+    if(S.contractTotal<24&&chance(0.6)){const ext=pick([4,6,12]);S.contractEnd+=ext;S.contractTotal+=ext;addLog(`계약이 ${ext}개월 연장됐다.`,{kind:'key'});}
+    else{endGame('계약 만료',`계약 기간이 끝났다. 근무 ${tenureStr(S.mi)}. 사원증을 반납했다.`);return;}
+  }
+  if(S.leave===0&&S.hp<10){S.leave=1;S.leaveType='sick';S.hp=40;addLog('출근길에 쓰러져 응급실에 실려 갔다. 과로였다. 한 달 병가를 냈다.',{kind:'key'});}
+  if(S.leave===0&&S.mn<15){
+    const t='아침에 출근 버스를 타지 못했다. 몸은 멀쩡했다.';
+    const ch=[X('병가를 낸다(3개월)',()=>{S.leave=3;S.leaveType='sick';S.mn=45;E({rp:-2});return '석 달 동안 휴대폰 알림을 껐다.';}),
+      X('상담 프로그램을 신청한다',()=>(E({mn:18}),'상담을 여섯 번 받았다.')),
+      X('버틴다',()=>(E({mn:4}),'버티는 동안 반년이 지났다.')),
+      X('사직서를 낸다',()=>{endGame('번아웃 퇴사','사직서를 냈다. 이유란에는 일신상의 사유라고 적었다.');return '';})];
+    const i=await ask('번아웃',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f(),kind:'key'});
+    if(S.ended)return;
+  }
+  // 가족
+  if(!S.married&&!S.dating&&a<40&&chance(0.004)){S.dating=true;addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
+  if(S.dating&&!S.married&&chance(0.03)){S.married=true;S.dating=false;E({mn:8,money:-2500});addLog('결혼했다. 팀에서 버스 한 대를 대절해 내려왔다. 축의금 정산은 두 달 뒤에 끝났다.',{kind:'key'});}
+  if(S.married&&S.kids<3&&a<43&&S.leave===0&&chance(S.kids===0?0.025:0.012)){
+    S.kids++;
+    const t=S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`;
+    const ch=[X('육아휴직 1년',()=>{S.leave=12;S.leaveType='parental';E({mn:6,rp:-2});return '휴직 신청서는 하루 만에 결재됐다.';}),
+      X('육아휴직 3개월',()=>{S.leave=3;S.leaveType='parental';E({mn:3});return '석 달 뒤 복귀하기로 했다.';}),
+      X('휴직하지 않는다',()=>(E({mn:-3,rp:1}),'출산휴가만 썼다.'))];
+    const i=await ask('출산',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f(),kind:'key'});
+  }
+  if(S.ended)return;
+  // 달력·랜덤
+  await calendar(m);
+  if(S.ended)return;
+  if(S.leave===0&&chance(0.25)){
+    const pl=pool();
+    if(pl.length){await runEvent(wpick(pl).ev);}
+  }
+  if(S.ended)return;
+  if(S.type==='reg'&&S.rank===5&&!S.chiefTried&&a>=52&&S.mi-S.rankSince>=24&&chance(0.04)){
+    S.chiefTried=true;
+    const t='원장 공모 공고가 났다.';
+    const ch=[X('지원한다',()=>{if(chance(0.06+S.rp/600)){S.rank=6;S.rankSince=S.mi;S.chiefUntil=S.mi+36;E({mn:6});return '임명장을 받았다. 임기는 3년이다.';}E({mn:-3});return '최종 3배수에 들었다. 임명되지 않았다.';}),X('지원하지 않는다',()=>'공고 마감일이 지나갔다.')];
+    const i=await ask('원장 공모',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f(),kind:'key'});
+  }
+  if(settings.auto&&(m===1||m===4||m===7||m===10))autoFocus();
+  if(m===12){
+    const inv=S.yrInvest?` 재테크 손익 ${S.yrInvest>=0?'+':''}${fmtMoney(S.yrInvest)}원.`:'';
+    S.yrInvest=0;
+    addLog(`올해 연봉 ${fmtMoney(salary(S,S.mi))}원. 통장 ${fmtMoney(S.money)}원.${inv}`,{kind:'sys'});
+  }
+}
+function autoFocus(){
+  let f;
+  if(S.hp<35||S.mn<30)f='health';else f=pick(['work','work','self','rel','money']);
+  setFocus(f,true);
+}
+
+/* ---------- 동기 ---------- */
+function peerNote(p,text,silent){if(!silent)addLog(text,{kind:'peer',tag:'동기 '+p.name});}
+function peerEnd(p,mi,kind,text){p.ended={kind,text,mi,age:ageOf(p,mi),title:rankTitle(p)};}
+function peerTick(p,mi,silent){
+  if(p.ended)return;
+  const a=ageOf(p,mi),{y,m}=ym(mi);
+  p.sk=clamp(p.sk+0.35*(1-p.sk/110)+randn()*0.5,0,100);
+  p.rp=clamp(p.rp+randn()*1.2-(p.rp-55)*0.02,0,100);
+  p.mn=clamp(p.mn+randn()*2.5+(62-p.mn)*0.03,0,100);
+  if(chance(deathQ(a)/12)){peerEnd(p,mi,'사망',`${a}세에 세상을 떠났다.`);peerNote(p,'부고가 올라왔다.',silent);return;}
+  if(m===12&&a>=60){peerEnd(p,mi,'정년퇴직','정년퇴직했다.');peerNote(p,'정년퇴직했다.',silent);return;}
+  if(p.type==='reg'&&p.rank===6&&mi>=p.chiefUntil){peerEnd(p,mi,'원장 임기 만료','원장 임기를 마쳤다.');return;}
+  if(p.type==='temp'&&mi>=p.contractEnd){
+    if(p.contractTotal<24&&chance(0.6)){const e=pick([4,6,12]);p.contractEnd+=e;p.contractTotal+=e;}
+    else{peerEnd(p,mi,'계약 만료','계약이 끝났다.');peerNote(p,'계약이 끝나 사원증을 반납했다.',silent);return;}
+  }
+  if((m===3||m===9)&&p.type!=='reg'&&chance(0.08+p.sk/700)){p.type='reg';p.rank=1;p.rankSince=mi;p.joinMi=mi;peerNote(p,'정규직 공채에 합격했다.',silent);}
+  const q=0.0022+(p.mn<25?0.006:0)+(a<35?0.002:0);
+  if(chance(q)){const r=pick(['다른 공기업으로 이직','민간 기업으로 이직','고향 근처 기관으로 이직','창업','대학원 진학']);peerEnd(p,mi,'퇴사',r+'했다.');peerNote(p,`${r}을 이유로 퇴사했다.`,silent);return;}
+  if(!p.married&&a<40&&chance(0.006)){p.married=true;peerNote(p,'결혼했다. 청첩장이 책상 위에 놓여 있었다.',silent);}
+  if(m===1&&p.type==='reg'){
+    if((p.rank===4||p.rank===5)&&chance(0.04)){p.rank--;p.rankSince=mi;peerNote(p,'보직에서 해임됐다.',silent);}
+    else if(p.rank<5&&(mi-p.rankSince)/12>=MIN_Y[p.rank]){
+      if(chance(P_BASE[p.rank]*clamp((p.sk+p.rp)/110,0.3,1.5)+p.promoFails*0.08)){p.rank++;p.rankSince=mi;p.promoFails=0;peerNote(p,`${rankTitle(p)}(으)로 승진했다.`,silent);}
+      else p.promoFails++;
+    }else if(p.rank===5&&a>=52&&!p.chiefTried&&chance(0.15)){p.chiefTried=true;if(chance(0.1)){p.rank=6;p.chiefUntil=mi+36;peerNote(p,'원장으로 임명됐다.',silent);}}
+    if(p.track==='it'&&p.rank<=4&&mi-p.deptSince>=48){const k=pick(IT_DEPTS.map(d=>d.k).filter(k=>k!==p.dept));p.dept=k;p.deptSince=mi;p.deptHist.push(DEPTS[k].name);}
+  }
+}
+function finishPeers(){
+  let mi=S.mi;
+  while(cohort.some(p=>!p.ended)&&mi<S.mi+600){mi++;cohort.forEach(p=>peerTick(p,mi,true));}
+}
+
+/* ---------- 렌더 ---------- */
+function renderCard(){
+  $('#pName').textContent=S.name;
+  const kv=[
+    ['나이',age()+'세'],['직렬',S.trackName],['고용',S.type==='reg'?'정규직':S.type==='perm'?'무기계약직':'기간제 계약직'],
+    ['직급',rankTitle(S)],['부서',deptLabel(S)+(S.track==='admin'&&S.task?` · ${S.task}`:'')],
+    ['근속',tenureStr(S.mi)],['거주',S.moved&&S.home!=='near'?'혁신도시 (연고 '+S.homeName+')':S.homeName],
+    ['가족',S.married?('기혼'+(S.kids?` · 자녀 ${S.kids}`:'')):S.dating?'연애 중':'미혼'],
+  ];
+  if(S.type==='temp')kv.splice(3,0,['계약',`${tenureStr(Math.max(0,S.contractEnd-S.mi))} 남음`]);
+  if(S.club)kv.push(['동호회',S.club]);
+  if(S.leave>0)kv.push(['상태',(S.leaveType==='parental'?'육아휴직':'병가')+` · ${S.leave}개월 남음`]);
+  $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
+  $('#pStats').innerHTML=['sk','rp','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
+  $('#pMoney').textContent=fmtMoney(S.money)+'원';
+  $('#pSalary').textContent=fmtMoney(salary(S,S.mi))+'원';
+  const {y,m}=ym(S.mi);
+  $('#barDate').textContent=`${y}.${String(m).padStart(2,'0')} · 근속 ${tenureStr(S.mi)}`;
+}
+function renderCohort(){
+  $('#cohortList').innerHTML=cohort.map(p=>{
+    const st=p.ended?`${p.ended.kind} · ${ym(p.ended.mi).y}`:'재직 중';
+    return `<div class="peer-card${p.ended?' out':''}"><b>${p.name}</b> <span class="meta">${ageOf(p,p.ended?p.ended.mi:S.mi)}세</span><div class="meta">${p.ended?p.ended.title:rankTitle(p)} · ${p.ended?'':deptLabel(p)}</div><div class="st">${st}</div></div>`;
+  }).join('');
+}
+function render(){renderCard();renderCohort();}
+function setFocus(k,silent){
+  S.focus=k;
+  [...$('#focusSeg').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===k?'true':'false'));
+  $('#focusHint').textContent=FOCUS[k].hint;
+  if(!silent)addLog(`요즘은 ${FOCUS[k].name}에 집중하기로 했다.`,{kind:'sys'});
+}
+
+/* ---------- 루프 ---------- */
+function schedule(){
+  clearTimeout(timer);
+  if(!S||S.ended||speed===0)return;
+  timer=setTimeout(async()=>{
+    busy=true;
+    await monthTick();
+    busy=false;
+    render();
+    if(S.ended){showEnding();return;}
+    schedule();
+  },baseMs/speed);
+}
+async function resignFlow(){
+  const t='사직서 양식을 열었다.';
+  const ch=[X('제출한다',()=>{endGame('자진 퇴사',`사직서를 냈다. 근속 ${tenureStr(S.mi)}. 마지막 날 책상을 정리하는 데 20분이 걸렸다.`);return '';}),X('다시 닫는다',()=>'창을 닫고 메일함을 열었다.')];
+  const prev=settings.auto;settings.auto=false;
+  const i=await ask('사직서',t,ch);settings.auto=prev;
+  const r=ch[i].f();if(!S.ended)addLog(t,{pick:ch[i].t,res:r});
+}
+
+/* ---------- 엔딩 ---------- */
+function showEnding(){
+  clearTimeout(timer);
+  finishPeers();render();
+  const e=S.ended,{y,m}=ym(e.mi),j=ym(0);
+  addLog(e.text,{kind:'key'});
+  const fam=S.married?('기혼'+(S.kids?`, 자녀 ${S.kids}명`:'')):'미혼';
+  const rows=[
+    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.typeName}`],
+    ['퇴직',`${y}.${String(m).padStart(2,'0')} · ${age()}세`],
+    ['재직 기간',tenureStr(e.mi)],
+    ['최종 직급',rankTitle(S)],
+    ['거친 부서',S.deptHist.join(' → ')],
+    ['최고 연봉',fmtMoney(S.maxSal||salary(S,S.mi))+'원'],
+    ['남은 통장',fmtMoney(S.money)+'원'],
+    ['가족',fam],
+  ];
+  const peers=cohort.map(p=>`<div class="row"><span class="k">${p.name}</span><span>${p.ended.title} · ${p.ended.kind} · ${p.ended.age}세 (${ym(p.ended.mi).y})</span></div>`).join('');
+  const w=$('#endingWrap');
+  w.innerHTML=`<div class="ending">
+    <div class="seal">${e.kind.replace(' ','<br>')}</div>
+    <div class="mono" style="font-size:12px;color:var(--muted)">인사기록 최종본</div>
+    <h2>${S.name}</h2>
+    <p class="lead">${e.text}</p>
+    <div class="rows">${rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join('')}</div>
+    <h3>같은 날 입사한 동기들</h3>
+    <div class="rows">${peers}</div>
+    <div class="acts">
+      <button type="button" class="btn primary" id="btnAgain">다시 입사하기</button>
+      <button type="button" class="btn" id="btnCopy">결과 복사</button>
+      <span class="copied" id="copied"></span>
+    </div>
+    <div id="fallback"></div>
+  </div>`;
+  w.hidden=false;$('#gameCtrl').hidden=true;$('#btnResign').disabled=true;
+  window.scrollTo({top:0,behavior:'smooth'});
+  $('#btnAgain').addEventListener('click',()=>{w.hidden=true;$('#game').hidden=true;$('#start').hidden=false;$('#barDate').textContent='';window.scrollTo(0,0);});
+  $('#btnCopy').addEventListener('click',async()=>{
+    const txt=`[고용정보원 N분의 1]\n${S.name} · ${e.kind}\n${rows.map(r=>r.join(': ')).join('\n')}\n\n동기\n${cohort.map(p=>`${p.name}: ${p.ended.title}, ${p.ended.kind} (${p.ended.age}세)`).join('\n')}`;
+    try{await navigator.clipboard.writeText(txt);$('#copied').textContent='복사됐다.';}
+    catch(_){$('#fallback').innerHTML='<textarea class="fallback" id="fbTxt" readonly></textarea>';$('#fbTxt').value=txt;$('#fbTxt').select();$('#copied').textContent='아래 내용을 직접 복사해 줘.';}
+  });
+}
+
+/* ---------- 시작 ---------- */
+function segBind(id,attr,cb){
+  $(id).addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b)return;[...$(id).children].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));cb(b.dataset[attr]);});
+}
+segBind('#durSeg','dur',v=>settings.dur=+v);
+segBind('#autoSeg','auto',v=>settings.auto=v==='1');
+
+$('#btnJoin').addEventListener('click',()=>{
+  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,yrInvest:0,maxSal:0});
+  cohort=[0,1,2,3].map(()=>makePerson());
+  const sal=salary(S,0);
+  const rows=[
+    ['성명',S.name,''],['나이',ageOf(S,0)+'세',''],
+    ['직렬',S.trackName,S.trackP+'%'],['고용형태',S.typeName,S.typeP+'%'],
+    ['배치 부서',DEPTS[S.dept].name,S.deptP+'%'],['연고지',S.homeName,S.homeP+'%'],
+    ['초봉',fmtMoney(sal)+'원',''],['통장',fmtMoney(S.money)+'원',''],
+  ];
+  if(S.type==='temp')rows.splice(4,0,['계약 기간',S.contractEnd+'개월','']);
+  $('#noticeRows').innerHTML=rows.map(([k,v,p],i)=>`<div class="row" style="animation-delay:${i*90}ms"><span class="k">${k}</span><span>${v}</span><span class="p">${p}</span></div>`).join('');
+  $('#noticeNo').textContent=`${Y0}년 ${M0}월 · 제${randint(100,999)}호`;
+  $('#noticeFoot').textContent='임직원 약 525명 중 한 명이 된다. 같은 날 입사한 동기는 4명이다. 근무지는 충북 음성 본원이다.';
+  $('#start').hidden=true;$('#notice').hidden=false;window.scrollTo(0,0);
+});
+$('#btnFirstDay').addEventListener('click',()=>{
+  $('#notice').hidden=true;$('#game').hidden=false;$('#gameCtrl').hidden=false;$('#btnResign').disabled=false;
+  $('#log').innerHTML='';lastYearHeader=null;
+  $('#focusSeg').innerHTML=Object.entries(FOCUS).map(([k,f])=>`<button type="button" data-f="${k}" aria-pressed="false">${f.name}</button>`).join('');
+  setFocus('work',true);
+  $('#autoPick').checked=settings.auto;
+  const months=Math.max(60,(60-ageOf(S,0))*12);
+  baseMs=settings.dur*60000/months;
+  speed=1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',b.dataset.speed==='1'?'true':'false'));
+  addLog(`${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});
+  addLog(`같은 날 입사한 동기는 ${cohort.map(p=>p.name).join(', ')}이다.`,{kind:'sys'});
+  render();schedule();
+});
+$('#focusSeg').addEventListener('click',ev=>{const b=ev.target.closest('button');if(b&&S&&!S.ended)setFocus(b.dataset.f);});
+$('#gameCtrl').addEventListener('click',ev=>{
+  const b=ev.target.closest('button[data-speed]');if(!b)return;
+  speed=+b.dataset.speed;
+  [...$('#gameCtrl').querySelectorAll('button')].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));
+  if(!busy)schedule();
+});
+$('#autoPick').addEventListener('change',e=>{settings.auto=e.target.checked;});
+$('#btnResign').addEventListener('click',async()=>{
+  if(!S||S.ended)return;
+  if(busy){resignReq=true;return;}
+  clearTimeout(timer);busy=true;
+  await resignFlow();
+  busy=false;render();
+  if(S.ended){showEnding();return;}
+  schedule();
+});
+</script>
+</body>
+</html>

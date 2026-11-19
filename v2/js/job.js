@@ -64,5 +64,5 @@ function hired(co){
 }
 function endFinal(co){
   S.phase='done';
-  S.ended={kind:'v2.0 결산',text:co?`${S.age}살, ${co.name} ${S.job.teamName}에 입사했다. 회사 생활은 다음 버전에서 이어진다.`:'취업 준비가 길어지고 있다. 이야기는 다음 버전에서 이어진다.'};
+  S.ended={kind:'v2.0 결산',text:co?`${S.age}살, ${co.name} ${S.job.teamName}에 입사했다. 아래 버튼을 누르면 회사생활이 이어진다.`:'취업 준비가 길어지고 있다. 이야기는 다음 버전에서 이어진다.'};
 }

@@ -55,8 +55,9 @@ function showEnding(){
   }
   $('#endingWrap').innerHTML=`<div class="ending"><div class="mono" style="font-size:12px;color:var(--muted)">${S.ended.kind==='v2.0 결산'?'인생 기록 · 0살부터 첫 직장까지':'생활기록부 · 1단계'}</div><h2>${S.name}</h2><p class="lead">${S.ended.text}</p>
     <div>${rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join('')}</div>
-    <div class="acts"><button type="button" class="btn primary" id="btnAgain">다시 태어나기</button></div></div>`;
+    <div class="acts">${S.job?'<button type="button" class="btn primary" id="btnWork">회사생활 시작하기 →</button>':''}<button type="button" class="btn${S.job?'':' primary'}" id="btnAgain">다시 태어나기</button></div></div>`;
   $('#endingWrap').hidden=false;$('#gameCtrl').hidden=true;window.scrollTo({top:0,behavior:'smooth'});
+  if(S.job)$('#btnWork').addEventListener('click',()=>goWork(rows));
   $('#btnAgain').addEventListener('click',()=>{$('#endingWrap').hidden=true;$('#game').hidden=true;$('#start').hidden=false;$('#barDate').textContent='';});
 }
 
@@ -86,3 +87,16 @@ $('#btnStart').addEventListener('click',()=>{
 $('#gameCtrl').addEventListener('click',ev=>{const b=ev.target.closest('button[data-speed]');if(!b)return;speed=+b.dataset.speed;[...$('#gameCtrl').querySelectorAll('button')].forEach(x=>x.setAttribute('aria-pressed',x===b?'true':'false'));if(!busy)schedule();});
 $('#autoPick').addEventListener('change',e=>{settings.auto=e.target.checked;});
 $('#friendList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)friendMenu(+b.dataset.i);});
+
+/* ---------- 회사생활(work.html)로 넘기기 ---------- */
+function goWork(rows){
+  const d={v:1,name:S.name,gender:S.gender,age:S.age,birthY:S.birthY,fam:S.fam,famName:S.famName,region:S.region,regionName:S.regionName,
+    ac:Math.round(S.ac),hp:Math.round(S.hp),sc:Math.round(S.sc),mn:Math.round(S.mn),money:Math.round(S.money),loan:Math.round(S.loan||0),
+    co:S.job.co,team:S.job.team,fc:S.fc,gradDone:!!S.gradDone,jc:!!(S.univ&&UNIV_TIERS[S.univ.tier].k==='jc'),
+    univ:S.univ?{tierName:S.univ.tierName,majorName:S.univ.majorName}:null,
+    friends:S.friends.slice().sort((a,b)=>b.fr-a.fr).slice(0,4).map(f=>({name:f.name,from:f.from,fr:Math.round(f.fr),int:f.int})),
+    life:rows.filter(([k])=>!['성장 스탯','분야별 경험','가장 친한 친구','창의적 체험활동'].includes(k)).map(([k,v])=>[k,String(v)])};
+  const js=JSON.stringify(d);
+  try{localStorage.setItem('n1_handoff',js);}catch(_){}
+  location.href='work.html#d='+encodeURIComponent(js);
+}

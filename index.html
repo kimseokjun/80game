@@ -159,7 +159,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.1 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -289,13 +289,13 @@ const SAL=[3700,4317,5300,6400,7400,8600,12500];
 const SUR=['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권','황','안','송','류','홍'];
 const GIVEN=['민준','서연','지훈','하은','도윤','지우','예준','수아','시우','지민','현우','유진','준서','다은','건우','채원','우진','소윤','선우','지아','연우','윤서','태윤','하린','주원','은서','성민','혜진','동현','보람'];
 const FOCUS={
-  work:{name:'업무',hp:-0.5,mn:-0.4,sk:0.45,rp:0.4,cost:0,hint:'역량과 평판이 오른다. 체력과 멘탈이 깎인다.'},
-  self:{name:'자기계발',hp:-0.3,mn:-0.1,sk:0.5,rp:0,cost:15,hint:'역량이 오른다. 이직·공채 기회가 늘어난다. 돈이 조금 든다.'},
-  rel:{name:'관계',hp:-0.1,mn:0.4,sk:0,rp:0.55,cost:20,hint:'평판과 멘탈이 오른다. 모임 비용이 든다.'},
-  health:{name:'건강',hp:1.2,mn:0.6,sk:-0.05,rp:-0.05,cost:10,hint:'체력과 멘탈이 회복된다. 일은 조금 덜 한다.'},
-  money:{name:'재테크',hp:0,mn:-0.1,sk:0,rp:0,cost:0,hint:'통장의 절반 이상이 시장에 들어간다. 오르기도 하고 내리기도 한다.'},
+  work:{name:'업무',sc:0,hp:-0.5,mn:-0.4,sk:0.45,rp:0.4,cost:0,hint:'역량과 평판이 오른다. 체력과 멘탈이 깎인다.'},
+  self:{name:'자기계발',sc:-0.05,hp:-0.3,mn:-0.1,sk:0.5,rp:0,cost:15,hint:'역량이 오른다. 이직·공채 기회가 늘어난다. 돈이 조금 든다.'},
+  rel:{name:'관계',sc:0.55,hp:-0.1,mn:0.4,sk:0,rp:0.35,cost:20,hint:'사교·평판·멘탈이 오른다. 모임 비용이 든다.'},
+  health:{name:'건강',sc:0.05,hp:1.2,mn:0.6,sk:-0.05,rp:-0.05,cost:10,hint:'체력과 멘탈이 회복된다. 일은 조금 덜 한다.'},
+  money:{name:'재테크',sc:0,hp:0,mn:-0.1,sk:0,rp:0,cost:0,hint:'통장의 절반 이상이 시장에 들어간다. 오르기도 하고 내리기도 한다.'},
 };
-const STAT_NAMES={sk:'역량',rp:'평판',hp:'체력',mn:'멘탈'};
+const STAT_NAMES={sk:'역량',rp:'평판',sc:'사교',hp:'체력',mn:'멘탈'};
 
 /* ---------- 시간 ---------- */
 const NOW=new Date();
@@ -318,7 +318,7 @@ function makePerson(){
     typeName:ty.name,typeP:pct(ty,tys),type,rank:ty.k==='reg6'?0:1,
     dept,deptP,home:home.k,homeName:home.name,homeP:pct(home,HOMES),
     birthMi:-(age*12+randint(0,11)),
-    sk:randint(30,48)+(tr.k==='research'?8:0),rp:randint(38,52),hp:randint(66,84),mn:randint(62,80),
+    sk:randint(30,48)+(tr.k==='research'?8:0),rp:randint(38,52),sc:randint(38,62),hp:randint(66,84),mn:randint(62,80),
     money:randint(300,2500),married:false,dating:false,kids:0,house:false,moved:home.k==='near',
     rankSince:0,deptSince:0,joinMi:0,promoFails:0,ended:null,deptHist:[DEPTS[dept].name],
   };
@@ -397,6 +397,44 @@ function ask(title,text,choices){
       setTimeout(()=>finish(i),Math.max(250,1800/Math.max(speed,1)));
     }else{box.firstChild.focus();}
   });
+}
+
+/* ---------- 자동 선택 (스탯 성향) ---------- */
+const STYLE={
+'원인부터 찾는다':'skill','상황 보고부터 올린다':'safe','협력사에 맡기고 지켜본다':'avoid',
+'규정대로 답변서를 쓴다':'safe','직접 전화해서 설명한다':'social','팀장에게 넘긴다':'avoid',
+'고령 사용자를 직접 만나본다':'social','지적 사항만 반영한다':'avoid',
+'우선순위 표를 만들어 센터와 공유한다':'skill','들어온 순서대로 처리한다':'hard','다음 고도화 사업으로 넘긴다':'avoid',
+'직접 롤백을 주도한다':'skill','협력사 대응을 기다린다':'avoid','간다':'social','다른 팀원에게 양보한다':'avoid',
+'야근으로 맞춘다':'hard','단계 오픈을 제안한다':'social','그대로 진행하고 리스크를 문서로 남긴다':'safe',
+'데이터를 직접 뜯어본다':'skill','작년 보고서 틀에 맞춰 낸다':'avoid',
+'주말에도 나와서 맞춘다':'hard','테스트 기간 확보를 요청한다':'social','협력사 인력 추가를 요청한다':'safe',
+'PL을 자원한다':'hard','맡은 모듈만 한다':'avoid','시연 환경을 따로 만들어 둔다':'skill','운영 환경 그대로 보여준다':'avoid',
+'바로 원격 접속한다':'hard','아침에 확인한다':'avoid','로그부터 전수 확인한다':'skill','개발팀 확인을 기다린다':'avoid',
+'예상 질문 200개를 미리 돌려본다':'hard','그대로 시연한다':'avoid','정보보호팀과 기준부터 정한다':'social','타 기관 가이드를 참고해 빨리 낸다':'safe',
+'주말을 반납한다':'hard','분석 범위를 줄인다':'safe','마감 연장을 요청한다':'avoid','밤새 정리한다':'hard','공표된 통계만 정리해 보낸다':'safe',
+'규정 개정안을 직접 만든다':'skill','전임자 시절 일로 정리한다':'avoid','팀장들을 직접 만나 의견을 듣는다':'social','위에서 정한 안대로 문서화한다':'safe',
+'그 자리에서 정정한다':'social','나중에 따로 말한다':'safe','넘어간다':'avoid','자리를 피한다':'avoid',
+'고충 상담 창구에 알린다':'social','따로 위로한다':'safe','모른 척한다':'avoid','맡는다':'social','거절한다':'avoid',
+'매주 점심을 같이 먹는다':'social','질문이 오면 답한다':'avoid','연차를 몰아 쓴다':'safe','주말마다 내려간다':'hard',
+'경위를 소명한다':'skill','처분을 받아들인다':'avoid','주말까지 붙잡는다':'hard','정시에 퇴근한다':'avoid','확인된 숫자만 낸다':'safe',
+};
+function styleScore(st){
+  switch(st){
+    case 'hard':return (S.hp-50)/22+(S.focus==='work'?0.8:0)-(S.focus==='health'?0.8:0);
+    case 'skill':return (S.sk-50)/18+(S.focus==='work'||S.focus==='self'?0.4:0);
+    case 'social':return (S.sc-50)/18+(S.focus==='rel'?0.8:0);
+    case 'avoid':return (45-S.mn)/14+(45-S.hp)/30;
+    default:return 0.3;
+  }
+}
+function autoChoose(choices){
+  return choices.indexOf(wpick(choices.map(c=>({w:Math.exp(styleScore(STYLE[c.t]||'safe')),c}))).c);
+}
+async function resolve(title,text,choices,manual,kind){
+  const i=manual?await ask(title,text,choices):autoChoose(choices);
+  const res=choices[i].f();
+  addLog(text,{pick:choices[i].t,res:res||'',kind:kind||''});
 }
 
 /* ---------- 이벤트 ---------- */
@@ -491,28 +529,28 @@ const EV=[
 {id:'it_vendor',when:()=>S.track==='it',text:'협력사 PM이 바뀌었다. 인수인계 문서는 열두 쪽이었다.',auto:()=>E({hp:-2,mn:-2})},
 {id:'it_phish',when:()=>S.dept!=='sec',text:'해킹메일 모의훈련 메일이 왔다.',auto:()=>chance(0.12+(100-S.sk)/600)?(E({rp:-2,mn:-1}),'첨부파일을 열었다. 다음 주 재교육 명단에 이름이 올라갔다.'):'열지 않았다.'},
 // 사내 정치·관계
-{id:'pol_line',w:1.2,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=4&&!S.faction,title:'두 라인',text:'다음 실장 자리를 두고 두 팀장 사이 기류가 묘하다. 누가 누구 점심 자리에 앉는지가 이야기된다.',choices:[
-  X('A팀장 쪽 점심에 간다',()=>{S.faction='A';S.factionY=ym(S.mi).y+1;E({rp:1});return '같은 메뉴를 시켰다. 이야기는 대부분 내년 인사에 관한 것이었다.';}),
-  X('B팀장 쪽 점심에 간다',()=>{S.faction='B';S.factionY=ym(S.mi).y+1;E({rp:1});return '식사는 빨리 끝났다. 커피는 B팀장이 샀다.';}),
-  X('혼자 먹는다',()=>(E({mn:1}),'편했다. 대신 들리는 이야기도 없었다.'))]},
+{id:'pol_line',manual:true,w:1.2,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=4&&!S.faction,title:'두 라인',text:'다음 실장 자리를 두고 두 팀장 사이 기류가 묘하다. 누가 누구 점심 자리에 앉는지가 이야기된다.',choices:[
+  X('A팀장 쪽 점심에 간다',()=>{S.faction='A';S.factionY=ym(S.mi).y+1;E({rp:1,sc:1});return '같은 메뉴를 시켰다. 이야기는 대부분 내년 인사에 관한 것이었다.';}),
+  X('B팀장 쪽 점심에 간다',()=>{S.faction='B';S.factionY=ym(S.mi).y+1;E({rp:1,sc:1});return '식사는 빨리 끝났다. 커피는 B팀장이 샀다.';}),
+  X('혼자 먹는다',()=>(E({mn:1,sc:-1}),'편했다. 대신 들리는 이야기도 없었다.'))]},
 {id:'pol_credit',title:'성과 가로채기',text:'주간 회의에서 내가 만든 자료를 옆 팀 차장이 자기 성과처럼 보고했다.',choices:[
-  X('그 자리에서 정정한다',()=>chance(0.5)?(E({rp:3}),'회의실이 잠깐 조용해졌다. 팀장은 나중에 잘했다고 했다.'):(E({rp:-1,mn:-2}),'정정은 됐다. 그 차장은 그 뒤로 내 협조 요청을 늦게 처리했다.')),
+  X('그 자리에서 정정한다',()=>chance(0.25+S.sc/200)?(E({rp:3,sc:1}),'회의실이 잠깐 조용해졌다. 팀장은 나중에 잘했다고 했다.'):(E({rp:-1,mn:-2}),'정정은 됐다. 그 차장은 그 뒤로 내 협조 요청을 늦게 처리했다.')),
   X('나중에 따로 말한다',()=>(E({mn:-2}),'차장은 오해였다고 했다. 다음 회의에서도 같은 일이 있었다.')),
   X('넘어간다',()=>(E({mn:-4}),'아무도 그 이야기를 하지 않았다.'))]},
 {id:'pol_gossip',title:'퇴근 후 술자리',text:'퇴근 후 몇몇이 모이는 술자리가 있다. 주로 윗사람 이야기가 오간다.',choices:[
-  X('간다',()=>chance(0.15)?(E({rp:-5,mn:-4,money:-8}),'내가 한 말이 돌고 돌아 당사자 귀에 들어갔다.'):(E({rp:2,mn:1,money:-8}),'들은 이야기가 두 달 뒤 인사에서 맞았다.')),
+  X('간다',()=>chance(0.27-S.sc/500)?(E({rp:-5,sc:-3,mn:-4,money:-8}),'내가 한 말이 돌고 돌아 당사자 귀에 들어갔다.'):(E({rp:2,sc:3,mn:1,money:-8}),'들은 이야기가 두 달 뒤 인사에서 맞았다.')),
   X('자리를 피한다',()=>'다음 날 아침 대화에 끼지 못했다.')]},
 {id:'pol_gapjil',title:'목격',text:'옆자리 직원이 회의 중 상사에게 공개적으로 모욕당하는 걸 봤다.',choices:[
   X('고충 상담 창구에 알린다',()=>chance(0.6)?(E({mn:2,rp:1}),'조사가 시작됐다. 그 상사는 다음 인사 때 다른 부서로 갔다.'):(E({mn:-3}),"조사는 '확인 불가'로 끝났다. 분위기는 그대로였다.")),
   X('따로 위로한다',()=>(E({mn:-1,rp:1}),'커피를 한 잔 샀다. 그는 괜찮다고 했다.')),
   X('모른 척한다',()=>(E({mn:-3}),'그 뒤로 그 사람과 눈을 잘 마주치지 않게 됐다.'))]},
 {id:'soc_lunch',title:'점심 총무',text:'팀 점심 모임 총무를 맡아 달라고 한다.',choices:[
-  X('맡는다',()=>(E({rp:3,mn:-1}),'혁신도시 맛집 목록이 엑셀 파일이 됐다.')),
-  X('거절한다',()=>(E({rp:-1}),'막내가 맡았다.'))]},
-{id:'soc_workshop',text:'부서 워크숍으로 1박 2일을 다녀왔다. 비전 수립 세션에서 포스트잇 마흔 장을 붙였다.',auto:()=>E({rp:1,hp:-1})},
-{id:'soc_wedding',text:'같은 팀 선배 결혼식에 다녀왔다. 축의금은 10만 원이었다.',auto:()=>E({money:-10,rp:1})},
+  X('맡는다',()=>(E({rp:2,sc:3,mn:-1}),'혁신도시 맛집 목록이 엑셀 파일이 됐다.')),
+  X('거절한다',()=>(E({sc:-1}),'막내가 맡았다.'))]},
+{id:'soc_workshop',text:'부서 워크숍으로 1박 2일을 다녀왔다. 비전 수립 세션에서 포스트잇 마흔 장을 붙였다.',auto:()=>E({rp:1,sc:1,hp:-1})},
+{id:'soc_wedding',text:'같은 팀 선배 결혼식에 다녀왔다. 축의금은 10만 원이었다.',auto:()=>E({money:-10,sc:1})},
 {id:'soc_mentor',when:()=>S.mi>=36,title:'멘토 지정',text:'신입 직원 멘토로 지정됐다.',choices:[
-  X('매주 점심을 같이 먹는다',()=>(E({rp:3,mn:1,money:-8}),'석 달 뒤 신입이 업무 노트를 보여줬다. 내가 한 말이 몇 줄 적혀 있었다.')),
+  X('매주 점심을 같이 먹는다',()=>(E({rp:2,sc:2,mn:1,money:-8}),'석 달 뒤 신입이 업무 노트를 보여줬다. 내가 한 말이 몇 줄 적혀 있었다.')),
   X('질문이 오면 답한다',()=>'신입은 질문을 많이 하지 않았다.')]},
 {id:'soc_blind',text:'블라인드에 우리 기관 이야기가 올라왔다. 누가 썼는지 다들 짐작하는 눈치다.',auto:()=>E({mn:-1})},
 {id:'soc_edu',text:'법정 의무교육 다섯 개를 하루에 몰아서 들었다.',auto:()=>E({mn:-1})},
@@ -522,26 +560,26 @@ const EV=[
     '풋살':'풋살 동호회가 지역 대회 8강에 올랐다. 다음 날 출근길 계단이 힘들었다.',
     '보드게임':'보드게임 동호회 정기 모임. 다른 부서 차장과 처음 말을 텄다.',
     '독서':'독서 모임에서 같은 책을 읽은 다른 팀 사람과 오래 이야기했다.'})[S.club],
-  auto:()=>{E({mn:3,rp:2,hp:S.club==='등산'||S.club==='풋살'?2:0});if(!S.married&&!S.dating&&age()<40&&chance(0.12)){S.dating=true;return '모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}return '';}},
-{id:'dating_intro',when:()=>!S.married&&!S.dating&&age()<40,title:'소개팅',text:'같은 층 다른 팀 직원이 소개팅을 주선하겠다고 한다.',choices:[
-  X('나간다',()=>chance(0.35)?(S.dating=true,E({mn:4}),'세 번째 만남부터 주말이 기다려졌다.'):'좋은 사람이었다. 연락은 자연스럽게 끊겼다.'),
+  auto:()=>{E({mn:3,rp:1,sc:2,hp:S.club==='등산'||S.club==='풋살'?2:0});if(!S.married&&!S.dating&&age()<40&&chance(0.05+S.sc/700)){S.dating=true;return '모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}return '';}},
+{id:'dating_intro',manual:true,when:()=>!S.married&&!S.dating&&age()<40,title:'소개팅',text:'같은 층 다른 팀 직원이 소개팅을 주선하겠다고 한다.',choices:[
+  X('나간다',()=>chance(0.2+S.sc/350)?(S.dating=true,E({mn:4}),'세 번째 만남부터 주말이 기다려졌다.'):'좋은 사람이었다. 연락은 자연스럽게 끊겼다.'),
   X('괜찮다고 한다',()=>'주선자는 아쉬워했다.')]},
 // 개인
 {id:'health_check',when:()=>age()>=35&&S.hp<45,text:"건강검진 결과지에 '추적 관찰' 항목이 하나 생겼다.",auto:()=>E({mn:-2})},
 {id:'parents',when:()=>age()>=42,title:'부모님 입원',text:'부모님이 입원하셨다는 연락을 받았다.',choices:[
   X('연차를 몰아 쓴다',()=>(E({hp:-2,mn:-2,rp:-1,money:-150}),'2주 동안 병원과 회사를 오갔다. 부모님은 퇴원하셨다.')),
   X('주말마다 내려간다',()=>(E({hp:-4,mn:-4,money:-80}),'두 달 동안 주말이 없었다. 부모님은 퇴원하셨다.'))]},
-{id:'move',w:1.2,cool:36,when:()=>(S.home==='far'||S.home==='metro')&&!S.moved,title:'거처',text:()=>S.home==='far'?'주말마다 왕복 다섯 시간을 운전한다. 혁신도시 원룸 계약이 곧 끝난다.':'통근버스로 매일 왕복 세 시간을 다닌다. 혁신도시 원룸 공고가 눈에 들어온다.',choices:[
+{id:'move',manual:true,w:1.2,cool:36,when:()=>(S.home==='far'||S.home==='metro')&&!S.moved,title:'거처',text:()=>S.home==='far'?'주말마다 왕복 다섯 시간을 운전한다. 혁신도시 원룸 계약이 곧 끝난다.':'통근버스로 매일 왕복 세 시간을 다닌다. 혁신도시 원룸 공고가 눈에 들어온다.',choices:[
   X('혁신도시로 완전히 이사한다',()=>{S.moved=true;E({hp:4,mn:-2,money:-300});return S.home==='far'?'본가에는 한 달에 한 번 가게 됐다.':'퇴근 후 시간이 두 시간 늘었다. 주말엔 서울로 올라간다.';}),
   X('지금처럼 다닌다',()=>(E({hp:-2}),'익숙해졌다고 생각하기로 했다.'))]},
-{id:'house',w:2,cool:24,when:()=>S.money>=20000&&!S.house,title:'내 집',text:'통장 잔고가 2억을 넘었다. 혁신도시 아파트 분양 공고가 났다.',choices:[
+{id:'house',manual:true,w:2,cool:24,when:()=>S.money>=20000&&!S.house,title:'내 집',text:'통장 잔고가 2억을 넘었다. 혁신도시 아파트 분양 공고가 났다.',choices:[
   X('혁신도시 아파트를 산다',()=>{S.house=true;S.moved=true;S.mortgage=240;E({money:-18000,mn:4});return '잔금일에 연차를 냈다. 대출은 20년이다.';}),
   X('연고지에 집을 산다',()=>{S.house=true;S.mortgage=240;E({money:-18000,mn:3});return '주말에만 머무는 집이 생겼다.';}),
   X('아직 보류한다',()=>'분양은 마감됐다.')]},
-{id:'job_offer',w:0.5,cool:48,when:()=>S.track==='it'&&S.sk>=72&&age()<45,title:'이직 제안',text:'민간 IT기업에서 연락이 왔다. 연봉은 지금의 1.4배다.',choices:[
+{id:'job_offer',manual:true,w:0.5,cool:48,when:()=>S.track==='it'&&S.sk>=72&&age()<45,title:'이직 제안',text:'민간 IT기업에서 연락이 왔다. 연봉은 지금의 1.4배다.',choices:[
   X('옮긴다',()=>{endGame('민간 이직','민간 IT기업으로 옮겼다. 마지막 출근일에 사원증을 반납했다.');return '면접은 두 번이었다. 처우 협의는 일주일 걸렸다.';}),
   X('거절한다',()=>(E({mn:1}),'답장을 쓰는 데 사흘이 걸렸다.'))]},
-{id:'other_pe',w:2,cool:24,when:()=>S.selfdev>=9&&age()<42,title:'필기 합격',text:()=>S.home==='far'||S.home==='mid'?'준비해 오던 다른 공기업 필기에 합격했다. 연고지에서 가까운 곳이다. 면접이 2주 뒤다.':'준비해 오던 다른 공기업 필기에 합격했다. 면접이 2주 뒤다.',choices:[
+{id:'other_pe',manual:true,w:2,cool:24,when:()=>S.selfdev>=9&&age()<42,title:'필기 합격',text:()=>S.home==='far'||S.home==='mid'?'준비해 오던 다른 공기업 필기에 합격했다. 연고지에서 가까운 곳이다. 면접이 2주 뒤다.':'준비해 오던 다른 공기업 필기에 합격했다. 면접이 2주 뒤다.',choices:[
   X('면접을 본다',()=>{if(chance(0.35+S.sk/300)){endGame('공기업 이직','최종 합격 문자를 받았다. 사직서를 썼다.');return '최종 합격이었다.';}S.selfdev=0;E({mn:-4});return '최종에서 떨어졌다. 다음 날 평소처럼 출근했다.';}),
   X('지금 자리에 남는다',()=>{S.selfdev=0;return '면접 날, 평소처럼 출근했다.';})]},
 {id:'discipline',w:0.3,cool:120,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=5,title:'징계위원회',text:'보안 서약 위반으로 징계위원회가 열렸다. 승인받지 않은 USB 반출 기록이 문제였다.',choices:[
@@ -572,7 +610,7 @@ async function personnel(){
   const {y}=ym(S.mi);
   if(S.faction&&S.factionY<=y){
     const win=chance(0.5)?'A':'B';
-    if(win===S.faction){E({rp:5,mn:2});addLog(`실장 인사가 났다. ${win}팀장이었다. 점심 자리가 조금 넓어졌다.`);}
+    if(win===S.faction){E({rp:5,sc:2,mn:2});addLog(`실장 인사가 났다. ${win}팀장이었다. 점심 자리가 조금 넓어졌다.`);}
     else{E({rp:-4,mn:-3});addLog(`실장 인사가 났다. ${win}팀장이었다. 다음 날 점심은 혼자 먹었다.`);}
     S.faction=null;
   }
@@ -618,7 +656,9 @@ function monthlyStats(){
   if(S.type==='reg'&&S.rank>=4){mn-=0.4;rp+=0.1;}
   if(age()>=45)hp-=0.25;
   if(!S.moved)hp-=S.home==='far'?0.5:S.home==='metro'?0.3:S.home==='mid'?0.1:0;
-  hp+=(70-S.hp)*0.03;mn+=(65-S.mn)*0.03;
+  hp+=(70-S.hp)*0.03;mn+=(65-S.mn)*0.03+(S.sc-50)*0.004;
+  let sc=f.sc-(S.sc-50)*0.015-(!S.moved&&(S.home==='far'||S.home==='metro')?0.15:0);
+  S.sc=clamp(S.sc+sc+randn()*0.4,0,100);
   rp-=(S.rp-50)*0.015;sk=sk*(1-S.sk/110);
   S.hp=clamp(S.hp+hp+randn()*0.8,0,100);S.mn=clamp(S.mn+mn+randn()*1.0,0,100);
   S.sk=clamp(S.sk+sk+randn()*0.2,0,100);S.rp=clamp(S.rp+rp+randn()*0.5,0,100);
@@ -651,9 +691,7 @@ async function runEvent(ev){
   S.cd[ev.id]=S.mi;
   const text=typeof ev.text==='function'?ev.text():ev.text;
   if(ev.auto){const r=ev.auto();addLog(r?text+' '+r:text);return;}
-  const i=await ask(ev.title||'선택',text,ev.choices);
-  const res=ev.choices[i].f();
-  addLog(text,{pick:ev.choices[i].t,res:res||''});
+  await resolve(ev.title||'선택',text,ev.choices,!!ev.manual);
 }
 function endGame(kind,text){
   if(S.ended)return;
@@ -666,7 +704,7 @@ async function calendar(m){
     if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`);}
   }
   if(m===3&&!S.club&&chance(0.35)){
-    const ch=['등산','풋살','보드게임','독서'].map(c=>X(c+' 동호회에 든다',()=>{S.club=c;E({mn:2,rp:1});return '첫 모임에 나갔다. 회비는 월 2만 원이었다.';}));
+    const ch=['등산','풋살','보드게임','독서'].map(c=>X(c+' 동호회에 든다',()=>{S.club=c;E({mn:2,sc:2});return '첫 모임에 나갔다. 회비는 월 2만 원이었다.';}));
     ch.push(X('가입하지 않는다',()=>'공고 창을 닫았다.'));
     const t='사내 동호회 신규 회원 모집 공고가 올라왔다.';const i=await ask('동호회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
   }
@@ -683,14 +721,14 @@ async function calendar(m){
     if(S.dept==='mgmt'&&S.rank<5){
       const t='경영평가 실적보고서 작성 기간이다. 같은 표를 열네 번째 고치고 있다.';
       const ch=[X('주말까지 붙잡는다',()=>{S.evalBoost=0.15;E({hp:-4,sk:2,rp:2});return '보고서는 마감 30분 전에 제출됐다.';}),X('정시에 퇴근한다',()=>{S.evalBoost=0;E({mn:1});return '보고서는 제때 제출됐다. 표 하나는 열세 번째 버전으로 나갔다.';})];
-      const i=await ask('경영평가',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+      await resolve('경영평가',t,ch,false);
     }else if(chance(0.4))addLog('경영평가 실적 자료 요청이 왔다. 작년 자료를 열어 숫자를 바꿨다.',{kind:'sys'});
   }
   if(m===5&&S.leave===0&&chance(0.6)){
     const t='올해 체육대회가 열린다.';
-    const ch=[X('계주에 나간다',()=>chance(0.4)?(E({rp:3,mn:3,hp:-2}),'팀이 1등을 했다. 상품은 온누리상품권이었다.'):(E({rp:1,mn:-1,hp:-2}),'바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.')),
-      X('응원석에 앉는다',()=>(E({rp:1}),'햇볕이 따가웠다. 도시락은 김밥이었다.')),
-      X('연차를 쓴다',()=>(E({mn:2,rp:-2}),'단체 사진에 내가 없었다.'))];
+    const ch=[X('계주에 나간다',()=>chance(0.2+(S.hp+S.sc)/500)?(E({rp:2,sc:3,mn:3,hp:-2}),'팀이 1등을 했다. 상품은 온누리상품권이었다.'):(E({sc:1,mn:-1,hp:-2}),'바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.')),
+      X('응원석에 앉는다',()=>(E({sc:1}),'햇볕이 따가웠다. 도시락은 김밥이었다.')),
+      X('연차를 쓴다',()=>(E({mn:2,sc:-2}),'단체 사진에 내가 없었다.'))];
     const i=await ask('체육대회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
   }
   if(m===6){
@@ -703,13 +741,13 @@ async function calendar(m){
     if(['chwi1','chwi2','research','mgmt'].includes(S.dept)&&S.rank<5){
       const t='국정감사 요구자료가 내려왔다. 마감은 48시간 뒤다.';
       const ch=[X('밤새 정리한다',()=>(E({hp:-4,rp:3}),'자료는 마감 두 시간 전에 나갔다.')),X('확인된 숫자만 낸다',()=>(E({rp:1,mn:-1}),'의원실에서 보완 요청이 한 번 왔다.'))];
-      const i=await ask('국정감사',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
+      await resolve('국정감사',t,ch,false);
     }else if(chance(0.4)){E({hp:-1});addLog('국정감사 기간이다. 의원실 자료 요청이 한 건 내려왔다.',{kind:'sys'});}
   }
   if(m===12){
     if(S.leave===0&&chance(0.8)){
       const t='송년회가 잡혔다.';
-      const ch=[X('2차까지 간다',()=>(E({rp:3,hp:-3,money:-10}),'노래방에서 팀장이 같은 노래를 두 번 불렀다.')),X('1차만 있다가 나온다',()=>(E({rp:1}),'고기는 맛있었다.')),X('불참한다',()=>(E({mn:1,rp:-1}),'다음 날 단체 사진에 내가 없었다.'))];
+      const ch=[X('2차까지 간다',()=>(E({rp:1,sc:4,hp:-3,money:-10}),'노래방에서 팀장이 같은 노래를 두 번 불렀다.')),X('1차만 있다가 나온다',()=>(E({sc:1}),'고기는 맛있었다.')),X('불참한다',()=>(E({mn:1,sc:-2}),'다음 날 단체 사진에 내가 없었다.'))];
       const i=await ask('송년회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
     }
   }
@@ -749,7 +787,7 @@ async function monthTick(){
     if(S.ended)return;
   }
   // 가족
-  if(!S.married&&!S.dating&&a<40&&chance(0.004)){S.dating=true;addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
+  if(!S.married&&!S.dating&&a<40&&chance(0.002+S.sc/25000)){S.dating=true;addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
   if(S.dating&&!S.married&&chance(0.03)){S.married=true;S.dating=false;E({mn:8,money:-2500});addLog('결혼했다. 팀에서 버스 한 대를 대절해 내려왔다. 축의금 정산은 두 달 뒤에 끝났다.',{kind:'key'});}
   if(S.married&&S.kids<3&&a<43&&S.leave===0&&chance(S.kids===0?0.025:0.012)){
     S.kids++;
@@ -834,7 +872,7 @@ function renderCard(){
   if(S.club)kv.push(['동호회',S.club]);
   if(S.leave>0)kv.push(['상태',(S.leaveType==='parental'?'육아휴직':'병가')+` · ${S.leave}개월 남음`]);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
-  $('#pStats').innerHTML=['sk','rp','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
+  $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
   $('#pMoney').textContent=fmtMoney(S.money)+'원';
   $('#pSalary').textContent=fmtMoney(salary(S,S.mi))+'원';
   const {y,m}=ym(S.mi);

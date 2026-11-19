@@ -104,7 +104,7 @@ async function contest(level,note){
   const fs=[...done.sort(()=>R()-0.5).slice(0,1),...all.filter(k=>!done.includes(k)||true).sort(()=>R()-0.5)].filter((k,i,a)=>a.indexOf(k)===i).slice(0,4);
   const ch=fs.map(k=>{
     const p=clamp(0.08+S.fc[k]*0.15+S.ac/400,0,0.85);
-    return X(`${names[k]}에 나간다`,()=>{S.tr.bold+=1;const tr=TRAIT_OF[k];S.tr[tr[0]]+=1;if(chance(p)){addExp(`${names[k]} 입상`,k);S.awards.push(names[k]+' 입상');return '입상했다. 상장이 생활기록부에 올라갔다.';}addExp(`${names[k]} 참가`,k);return pick(['본선까지 갔다. 상은 받지 못했다.','예선에서 떨어졌다. 문제 유형은 알게 됐다.']);},'',()=>p,'입상 가능성');
+    return X(`${names[k]}에 나간다`,()=>{S.tr.bold+=1;const tr=TRAIT_OF[k];S.tr[tr[0]]+=1;const hi=level==='high';if(chance(p)){E({ac:hi?4:3});addExp(`${names[k]} 입상`,k);S.awards.push(names[k]+' 입상');return '입상했다. 상장이 생활기록부에 올라갔다.';}addExp(`${names[k]} 참가`,k);if(chance(0.5)){E({ac:hi?2:1});return '본선까지 갔다. 상은 받지 못했지만 준비하며 실력이 늘었다.';}return '예선에서 떨어졌다. 문제 유형은 알게 됐다.';},'입상하면 학업+',()=>p,'입상 가능성');
   });
   ch.push(X('대회 대신 공부에 집중한다',()=>{E({ac:3});S.tr.grit+=1;return '대회 날, 자습실에 있었다.';},'학업+'));
   ch.push(X('이번엔 쉰다',()=>{E({mn:3});return '주말에 푹 잤다.';},'멘탈+'));
@@ -157,6 +157,7 @@ async function yearTick(){
   const a=S.age,st=stageOf(a).k;
   header();
   if(a>=8)S.money+=famOf().pocket*12;
+  if(a>=14&&a<=19)E({ac:1}); // 중학생부터 해마다 조금씩 공부가 쌓인다
   tutorYear(false);
   if(st==='baby'){
     if(DAILY.baby[a])addLog(DAILY.baby[a],{kind:'sys'});

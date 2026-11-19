@@ -162,6 +162,8 @@ function continueUniv(){
   if(a.money&&a.id!=='intern')S.money+=a.money;
   if(a.id==='exch'){addLog('교환학생 학기를 마치고 돌아왔다.');S.cur=null;return;}
   addLog(a.go[(S.goI+1)%a.go.length]);
+  // 동아리 활동은 가끔 대회 입상으로 이어진다
+  if(a.id.startsWith('u_')&&chance(0.3)){const nm={u_sec:'해킹방어대회',u_dev:'해커톤',u_res:'학부생 학술대회',u_biz:'경영 사례 공모전',u_fnd:'창업 경진대회'}[a.id];E({ac:2});S.awards.push(nm+' 입상');addLog(`${nm}에서 입상했다.`,{kind:'key'});}
 }
 
 /* ---------- 군 복무 ---------- */

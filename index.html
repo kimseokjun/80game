@@ -114,6 +114,21 @@ button{font:inherit;color:inherit}
 .entry.peer .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}
 .entry.sys p{color:var(--muted);font-size:14px}
 .entry.key p{font-weight:600}
+.entry.act .when{color:var(--accent)}
+.actions{margin-top:14px}
+.act-meta{font-size:12px;color:var(--muted);margin:-4px 0 8px}
+.act-list{display:grid;gap:6px}
+.act-list button{display:flex;justify-content:space-between;gap:8px;text-align:left;border:1px solid var(--line);background:var(--paper);padding:7px 10px;border-radius:4px;cursor:pointer;font-size:13px}
+.act-list button:hover:not(:disabled){border-color:var(--accent)}
+.act-list button:disabled{opacity:.45;cursor:not-allowed}
+.act-list .c{font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap}
+select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:5px 8px;width:100%}
+.goal-pick{margin-top:18px}
+.cohort button.peer-card{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;padding:10px 4px;border-radius:0}
+.cohort button.peer-card:hover:not(:disabled){background:var(--paper)}
+.cohort button.peer-card:disabled{cursor:default}
+.fr{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px}
+.fr .track{flex:1;height:4px}
 .amt{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--accent);margin-left:8px;white-space:nowrap}
 .amt.neg{color:var(--stamp)}
 
@@ -161,7 +176,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.2 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.3 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -210,6 +225,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
     <h2>입사 통지서</h2>
     <div class="no mono" id="noticeNo"></div>
     <div class="rows" id="noticeRows"></div>
+    <div class="goal-pick"><div class="opt-label">커리어 목표 (1년에 한 번 바꿀 수 있다)</div><div class="seg" id="goalSeg"></div></div>
     <p class="foot" id="noticeFoot"></p>
     <div class="seal">인사<br>담당</div>
     <button type="button" class="btn primary" id="btnFirstDay">첫 출근하기</button>
@@ -231,11 +247,23 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
       <div class="seg" id="focusSeg"></div>
       <div class="hint" id="focusHint"></div>
     </div>
+    <div class="focus">
+      <h3 style="margin-top:12px">커리어 목표</h3>
+      <select id="goalSel" aria-label="커리어 목표"></select>
+      <div class="hint" id="goalHint"></div>
+    </div>
+    <div class="actions">
+      <h3>행동</h3>
+      <div class="act-meta" id="actMeta"></div>
+      <div class="act-list" id="actList"></div>
+      <h3 style="margin-top:14px">투자 비중</h3>
+      <div class="seg" id="invSeg"></div>
+    </div>
     <button type="button" class="btn danger resign" id="btnResign">사직서 내기</button>
   </aside>
   <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
   <aside class="panel cohort">
-    <h3>같은 날 입사한 동기</h3>
+    <h3>같은 날 입사한 동기 · 눌러서 만나기</h3>
     <div id="cohortList"></div>
   </aside>
 </main>
@@ -261,6 +289,7 @@ const chance=p=>R()<p;
 const randint=(a,b)=>a+Math.floor(R()*(b-a+1));
 function randn(){let u=0,v=0;while(!u)u=R();while(!v)v=R();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
 function wpick(items){const t=items.reduce((s,i)=>s+i.w,0);let r=R()*t;for(const i of items){r-=i.w;if(r<=0)return i;}return items[items.length-1];}
+const J=(w,a,b)=>{const c=w.charCodeAt(w.length-1)-0xAC00;return c>=0&&c<11172&&c%28?a:b;};
 const pct=(item,arr)=>Math.round(item.w/arr.reduce((s,i)=>s+i.w,0)*1000)/10;
 function fmtMoney(v){const s=v<0?'-':'';v=Math.abs(v);if(v>=10000){const e=Math.floor(v/10000),r=Math.round(v%10000);return s+e+'억'+(r?' '+r.toLocaleString()+'만':'');}return s+Math.round(v).toLocaleString()+'만';}
 
@@ -295,7 +324,6 @@ const FOCUS={
   self:{name:'자기계발',sc:-0.05,hp:-0.3,mn:-0.1,sk:0.5,rp:0,cost:15,hint:'역량이 오른다. 이직·공채 기회가 늘어난다. 돈이 조금 든다.'},
   rel:{name:'관계',sc:0.55,hp:-0.1,mn:0.4,sk:0,rp:0.35,cost:20,hint:'사교·평판·멘탈이 오른다. 모임 비용이 든다.'},
   health:{name:'건강',sc:0.05,hp:1.2,mn:0.6,sk:-0.05,rp:-0.05,cost:10,hint:'체력과 멘탈이 회복된다. 일은 조금 덜 한다.'},
-  money:{name:'재테크',sc:0,hp:0,mn:-0.1,sk:0,rp:0,cost:0,hint:'통장의 절반 이상이 시장에 들어간다. 오르기도 하고 내리기도 한다.'},
 };
 const STAT_NAMES={sk:'역량',rp:'평판',sc:'사교',hp:'체력',mn:'멘탈'};
 
@@ -322,7 +350,7 @@ function makePerson(){
     birthMi:-(age*12+randint(0,11)),
     sk:randint(30,48)+(tr.k==='research'?8:0),rp:randint(38,52),sc:randint(38,62),hp:randint(66,84),mn:randint(62,80),
     money:randint(300,2500),married:false,dating:false,kids:0,house:false,moved:home.k==='near',
-    rankSince:0,deptSince:0,joinMi:0,promoFails:0,ended:null,deptHist:[DEPTS[dept].name],
+    rankSince:0,deptSince:0,joinMi:0,promoFails:0,ended:null,fr:randint(10,30),deptHist:[DEPTS[dept].name],
   };
   if(type==='temp'){const c=pick([6,10,12]);p.contractEnd=c;p.contractTotal=c;}
   return p;
@@ -405,6 +433,74 @@ function ask(title,text,choices){
   });
 }
 
+/* ---------- 커리어 목표 ---------- */
+const GOALS={
+  chief:{name:'원장까지',hint:'실장 이상이면 달성, 원장이면 완전 달성.',w:{pol_line:2,soc_mentor:1.5,soc_lunch:1.5}},
+  wlb:{name:'워라밸',hint:'정년까지 다니고 평균 멘탈 55 이상이면 달성.',w:{club_act:2,dating_intro:1.5,soc_workshop:1.3,pet_day:1.5}},
+  exit:{name:'이직',hint:'다른 공기업이나 민간으로 옮기면 달성.',w:{other_pe:2,job_offer:2}},
+  expert:{name:'전문가',hint:'역량 85에 한 번이라도 도달하면 달성.',w:{}},
+  fire:{name:'조기 은퇴',hint:'55세 전에 통장 10억을 넘기고 사직서를 내면 달성.',w:{house:1.5}},
+};
+function goalResult(){
+  const k=S.ended.kind,avg=S.mnN?S.mnSum/S.mnN:0;
+  switch(S.goal){
+    case 'chief':return S.maxRank>=6?'완전 달성 (원장)':S.maxRank>=5?'달성 (실장)':'미달성';
+    case 'wlb':return (k==='정년퇴직'&&avg>=55?'달성':'미달성')+` (평균 멘탈 ${Math.round(avg)})`;
+    case 'exit':return ['공기업 이직','민간 이직','동기 추천 이직'].includes(k)?'달성':'미달성';
+    case 'expert':return ((S.maxSk||0)>=85?'달성':'미달성')+` (최고 역량 ${Math.round(S.maxSk||0)})`;
+    case 'fire':return k==='자진 퇴사'&&age()<55&&S.money>=100000?'달성':'미달성';
+  }
+  return '';
+}
+
+/* ---------- 행동 ---------- */
+const CERTS={it:['정보통신기사','정보보안기사','SQLP','AWS 자격증','PMP'],admin:['전산회계 1급','공인노무사 1차','재경관리사'],research:['ADP','사회조사분석사 1급']};
+const ACTIONS=[
+  {k:'trip_d',name:'국내 여행',cost:50,days:2,cd:3,run:()=>{E({mn:8,hp:4});return pick(['연차를 내고 강릉에 다녀왔다. 바다를 오래 봤다.','연차를 내고 경주에 다녀왔다. 숙소가 조용했다.','연차를 내고 제주에 다녀왔다. 이틀 내내 비가 왔다.','연차를 내고 남해에 다녀왔다. 휴대폰을 거의 보지 않았다.']);}},
+  {k:'trip_o',name:'해외 여행',cost:300,days:5,cd:12,run:()=>{E({mn:15,hp:5});let t=pick(['연차를 붙여 오사카에 다녀왔다.','연차를 붙여 다낭에 다녀왔다.','연차를 붙여 리스본에 다녀왔다. 비행기만 열네 시간이었다.','연차를 붙여 타이베이에 다녀왔다.']);
+    if(chance(0.25)){const e=pick([{t:' 귀국 날 비행기가 결항돼 하루 더 머물렀다.',m:-40},{t:' 현지 식당에서 같은 기관 직원을 우연히 마주쳤다.',m:0},{t:' 휴대폰을 잃어버렸다가 이틀 뒤에 찾았다.',m:0}]);t+=e.t;if(e.m)E({money:e.m});}return t;}},
+  {k:'clinic',name:'병원·종합검진',cost:30,days:1,cd:12,run:()=>{E({hp:8});S.checkupUntil=S.mi+12;return '연차를 내고 종합검진을 받았다.'+(chance(0.15)?' 작은 이상을 일찍 발견해 치료를 시작했다.':' 별다른 소견은 없었다.');}},
+  {k:'treat',name:'팀에 한턱',cost:30,cd:3,run:()=>{E({sc:4,rp:2});return pick(['팀에 커피와 케이크를 돌렸다. 단체 채팅방에 감사 이모티콘이 열 개 올라왔다.','퇴근 후 팀원들에게 고기를 샀다. 막내가 사진을 찍었다.']);}},
+  {k:'parents',name:'부모님 용돈',cost:50,cd:3,run:()=>{E({mn:4});return '부모님께 용돈을 보냈다. 저녁에 전화가 왔다.';}},
+  {k:'cert',name:'학원·자격증',cost:80,cd:6,run:()=>{E({sk:5});S.selfdev+=2;const c=pick(CERTS[S.track]);if(chance(0.3)){S.certPay=(S.certPay||0)+5;return `학원에 등록해 ${c} 시험을 준비했다. 합격했다. 다음 달부터 자격 수당이 나온다.`;}return `학원에 등록해 ${c} 시험을 준비했다. 이번 시험은 떨어졌다.`;}},
+  {k:'car',name:'차 사기',cost:2500,once:true,when:()=>!S.car,why:'이미 차가 있다',run:()=>{S.car=true;return S.home==='near'?'중고 SUV를 샀다. 주말에 갈 수 있는 곳이 늘었다.':'중고 SUV를 샀다. 출퇴근이 한결 수월해졌다.';}},
+  {k:'wedding',name:'결혼 준비',cost:2500,once:true,when:()=>S.dating&&!S.married&&!S.weddingAt,why:'연애 중일 때만 할 수 있다',run:()=>{S.weddingAt=S.mi+randint(3,6);return '결혼 준비를 시작했다. 예식장 계약서에 서명했다.';}},
+  {k:'pet',name:'반려동물 입양',cost:100,once:true,when:()=>!S.pet,why:'이미 함께 사는 동물이 있다',run:()=>{S.pet=pick(['고양이','강아지']);S.petName=pick(['보리','콩이','두부','라떼','호두','모카']);return `${S.pet}를 입양했다. 이름은 ${S.petName}로 지었다. 매달 15만 원이 더 든다.`;}},
+];
+function actState(a){
+  if(a.once&&S.actCd[a.k]!==undefined)return {ok:false,note:'완료'};
+  if(a.when&&!a.when())return {ok:false,note:a.why||'지금은 할 수 없다'};
+  const cd=S.actCd[a.k];if(cd!==undefined&&S.mi-cd<a.cd)return {ok:false,note:`${a.cd-(S.mi-cd)}개월 뒤`};
+  if(S.money<a.cost)return {ok:false,note:'돈이 모자라다'};
+  if(a.days&&S.days<a.days)return {ok:false,note:'연차가 모자라다'};
+  return {ok:true,note:fmtMoney(a.cost)+(a.days?` · 연차 ${a.days}일`:'')};
+}
+function doAction(k){
+  if(!S||S.ended||!$('#modal').hidden)return;
+  const a=ACTIONS.find(x=>x.k===k),st=actState(a);if(!st.ok)return;
+  E({money:-a.cost});if(a.days)S.days-=a.days;S.actCd[k]=S.mi;
+  addLog(a.run(),{kind:'act'});render();
+}
+async function peerMenu(i){
+  const p=cohort[i];
+  if(!S||S.ended||p.ended||busy||!$('#modal').hidden)return;
+  clearTimeout(timer);busy=true;
+  const prev=settings.auto;settings.auto=false;
+  const info=`${rankTitle(p)} · ${deptLabel(p)} · 친밀도 ${Math.round(p.fr)}`;
+  if(p.lastMi!==undefined&&S.mi-p.lastMi<3){
+    await ask(`동기 ${p.name}`,`${info}. 최근에 만났다. ${3-(S.mi-p.lastMi)}개월 뒤에 다시 만날 수 있다.`,[X('닫기',()=>'')]);
+  }else{
+    const ch=[
+      X('밥 먹기',()=>{E({money:-5,sc:1});p.fr=Math.min(100,p.fr+8);if(chance(0.3)){E({rp:1});return `${p.name}${J(p.name,'과','와')} 점심을 먹었다. 다음 인사에서 부서장이 바뀐다는 이야기를 들었다.`;}return `${p.name}${J(p.name,'과','와')} 점심을 먹었다. ${pick(['혁신도시에 새로 생긴 국숫집이었다.','서로의 팀장 이야기를 했다.','입사 첫 주 이야기가 나왔다.'])}`;},'5만원 · 친밀도↑'),
+      X('술 한잔·고민 상담',()=>{E({money:-10,mn:5});p.fr=Math.min(100,p.fr+10);p.mn=clamp(p.mn+12,0,100);return `${p.name}${J(p.name,'과','와')} 퇴근 후 술을 한잔했다. ${pick(['둘 다 회사 이야기만 했다.','이직 고민을 처음 털어놓았다.','오랜만에 많이 웃었다.'])}`;},'10만원 · 나와 동기의 멘탈↑'),
+      X('같이 스터디',()=>{E({sk:2});S.selfdev+=2;p.sk=clamp(p.sk+2,0,100);p.fr=Math.min(100,p.fr+6);return `${p.name}${J(p.name,'과','와')} 주말 스터디를 했다. 기출문제 두 회차를 풀었다.`;},'역량↑ · 이직·공채 준비에 도움'),
+      X('그냥 둔다',()=>null)];
+    const k=await ask(`동기 ${p.name}`,info,ch);
+    if(k<3){p.lastMi=S.mi;addLog(ch[k].f(),{kind:'act'});}
+  }
+  settings.auto=prev;busy=false;render();schedule();
+}
+
 /* ---------- 자동 선택 (스탯 성향) ---------- */
 const STYLE={
 '원인부터 찾는다':'skill','상황 보고부터 올린다':'safe','협력사에 맡기고 지켜본다':'avoid',
@@ -423,7 +519,7 @@ const STYLE={
 '그 자리에서 정정한다':'social','나중에 따로 말한다':'safe','넘어간다':'avoid','자리를 피한다':'avoid',
 '고충 상담 창구에 알린다':'social','따로 위로한다':'safe','모른 척한다':'avoid','맡는다':'social','거절한다':'avoid',
 '매주 점심을 같이 먹는다':'social','질문이 오면 답한다':'avoid','연차를 몰아 쓴다':'safe','주말마다 내려간다':'hard',
-'경위를 소명한다':'skill','처분을 받아들인다':'avoid','주말까지 붙잡는다':'hard','정시에 퇴근한다':'avoid','확인된 숫자만 낸다':'safe',
+'경위를 소명한다':'skill','답변 데이터를 전수 점검한다':'skill','해당 답변만 고친다':'safe','신청 화면을 다시 설계한다':'skill','안내 문구만 보강한다':'safe','증적을 직접 채운다':'hard','컨설팅 업체에 맡긴다':'avoid','학습을 멈추고 비식별 처리부터 한다':'skill','일정대로 진행하고 나중에 처리한다':'avoid','직접 고른다':'social','늘 사던 걸로 한다':'safe','처분을 받아들인다':'avoid','주말까지 붙잡는다':'hard','정시에 퇴근한다':'avoid','확인된 숫자만 낸다':'safe',
 };
 function styleScore(st){
   switch(st){
@@ -448,7 +544,7 @@ const X=(t,f,d)=>({t,f,d});
 const EV=[
 // 고용24 대민포털팀
 {id:'d_outage',dept:['daemin'],title:'접속 지연',text:'월요일 오전, 실업급여 신청이 몰리며 고용24 접속이 느려졌다. 민원 전화가 콜센터를 넘어 팀으로 들어오기 시작했다.',choices:[
-  X('원인부터 찾는다',()=>chance(0.4+S.sk/250)?(E({sk:3,rp:3,hp:-3}),'DB 커넥션 풀 설정이 원인이었다. 오후 2시에 정상화됐다. 팀장이 회의에서 내 이름을 한 번 말했다.'):(E({sk:1,hp:-4,mn:-3}),'원인을 찾지 못한 채 저녁이 됐다. 트래픽이 줄면서 저절로 정상화됐다.')),
+  X('원인부터 찾는다',()=>chance(0.4+S.sk/250)?(E({sk:3,rp:3,hp:-3}),S.awardY=ym(S.mi).y+1,'DB 커넥션 풀 설정이 원인이었다. 오후 2시에 정상화됐다. 팀장이 회의에서 내 이름을 한 번 말했다.'):(E({sk:1,hp:-4,mn:-3}),'원인을 찾지 못한 채 저녁이 됐다. 트래픽이 줄면서 저절로 정상화됐다.')),
   X('상황 보고부터 올린다',()=>(E({rp:1,mn:-2}),'보고서는 세 번 고쳐졌다. 장애는 협력사가 해결했다.')),
   X('협력사에 맡기고 지켜본다',()=>(E({rp:-1,mn:-1}),'해결은 됐다. 경위서는 내 이름으로 나갔다.'))]},
 {id:'d_complaint',dept:['daemin'],title:'반복 민원',text:'같은 민원인이 일주일째 같은 내용으로 민원을 넣고 있다. 이번 건은 국민신문고를 거쳐 왔다.',choices:[
@@ -495,12 +591,12 @@ const EV=[
 {id:'c2_pressure',dept:['chwi2','chwi1'],text:'본부 과장이 주간 회의에 직접 들어오기 시작했다.',auto:()=>E({mn:-3})},
 // 정보보호팀
 {id:'s_alert',dept:['sec'],title:'새벽 알림',text:'새벽 3시 12분, 보안관제 알림이 울렸다. 해외 IP에서 로그인 시도가 반복되고 있다.',choices:[
-  X('바로 원격 접속한다',()=>chance(0.7)?(E({hp:-4,sk:2,rp:2}),'자동화된 대입 공격이었다. 차단 정책을 넣고 다시 잤다. 두 시간 뒤 출근했다.'):(E({hp:-5,sk:3,rp:3}),'실제로 계정 하나가 뚫려 있었다. 아침까지 영향 범위를 확인했다. 개인정보 접근은 없었다.')),
+  X('바로 원격 접속한다',()=>chance(0.7)?(E({hp:-4,sk:2,rp:2}),'자동화된 대입 공격이었다. 차단 정책을 넣고 다시 잤다. 두 시간 뒤 출근했다.'):(E({hp:-5,sk:3,rp:3}),S.awardY=ym(S.mi).y+1,'실제로 계정 하나가 뚫려 있었다. 아침까지 영향 범위를 확인했다. 개인정보 접근은 없었다.')),
   X('아침에 확인한다',()=>chance(0.8)?'오탐이었다.':(E({rp:-5,mn:-5}),'확인했을 때 이미 여섯 시간이 지나 있었다. 경위서를 썼다.'))]},
 {id:'s_phish',dept:['sec'],text:'해킹메일 모의훈련 결과가 나왔다. 열람률 11%. 그중 두 명은 첨부파일까지 열었다. 재교육 공지는 내가 썼다.',auto:()=>E({sk:1})},
 {id:'s_leak',dept:['sec'],title:'유출 의심 신고',text:'개인정보 유출 의심 신고가 들어왔다. 구직자 한 명이 다른 사람의 이력서를 봤다고 한다.',choices:[
   X('로그부터 전수 확인한다',()=>(E({sk:3,hp:-4,rp:3}),'캐시 설정 문제였다. 노출은 3건이었다. 신고 기한 안에 보고를 마쳤다.')),
-  X('개발팀 확인을 기다린다',()=>(E({rp:-2,mn:-3}),'개발팀은 이틀 뒤 답했다. 신고 기한이 하루 남아 있었다.'))]},
+  X('개발팀 확인을 기다린다',()=>(E({rp:-2,mn:-3}),S.reauditY=ym(S.mi).y+1,'개발팀은 이틀 뒤 답했다. 신고 기한이 하루 남아 있었다.'))]},
 {id:'s_audit',dept:['sec'],text:'보안 실태 평가 대비 점검이 시작됐다. 서류철이 책상 높이로 쌓였다.',auto:()=>E({hp:-3,sk:1})},
 // AI서비스팀
 {id:'a_budget',dept:['ai'],text:'신규 AI 일자리 매칭 사업 예산이 확보됐다. 팀 인원은 그대로다.',auto:()=>E({sk:2,mn:-1})},
@@ -525,7 +621,7 @@ const EV=[
 // 경영지원팀
 {id:'m_audit',dept:['mgmt'],title:'감사 지적',text:'감사 지적 사항이 내려왔다. 수당 지급 기준 하나가 규정과 맞지 않았다.',choices:[
   X('규정 개정안을 직접 만든다',()=>(E({sk:3,hp:-3,rp:3}),'개정안은 이사회를 통과했다. 같은 지적은 다시 나오지 않았다.')),
-  X('전임자 시절 일로 정리한다',()=>(E({rp:-2,mn:-1}),"결과 보고서에 '관련자 주의 조치'가 적혔다. 이름은 없었다."))]},
+  X('전임자 시절 일로 정리한다',()=>(E({rp:-2,mn:-1}),S.reauditY=ym(S.mi).y+1,"결과 보고서에 '관련자 주의 조치'가 적혔다. 이름은 없었다."))]},
 {id:'m_reorg',dept:['mgmt'],title:'조직개편안',text:'조직개편안을 맡게 됐다. 팀 두 개가 합쳐지고, 하나가 새로 생긴다.',choices:[
   X('팀장들을 직접 만나 의견을 듣는다',()=>(E({hp:-3,rp:3,mn:-3}),'열네 번의 면담 끝에 안이 확정됐다. 완전히 만족한 사람은 없었다.')),
   X('위에서 정한 안대로 문서화한다',()=>(E({rp:-1}),'개편 첫날, 두 팀장이 서로 인사하지 않았다.'))]},
@@ -591,6 +687,30 @@ const EV=[
 {id:'discipline',w:0.3,cool:120,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=5,title:'징계위원회',text:'보안 서약 위반으로 징계위원회가 열렸다. 승인받지 않은 USB 반출 기록이 문제였다.',choices:[
   X('경위를 소명한다',()=>chance(0.6)?(E({rp:-4,mn:-5}),'견책으로 끝났다.'):(demote('강등 처분을 받았다.'),'')),
   X('처분을 받아들인다',()=>chance(0.5)?(E({rp:-5,mn:-4,money:-200}),'감봉 3개월 처분을 받았다.'):(demote('강등 처분을 받았다.'),''))]},
+// v1.3 추가
+{id:'d_chatbot',dept:['daemin'],title:'챗봇 오안내',text:'대민 챗봇이 실업급여 조건을 잘못 안내했다는 민원이 들어왔다.',choices:[
+  X('답변 데이터를 전수 점검한다',()=>(E({sk:2,hp:-3,rp:2}),'잘못된 답변 37개를 고쳤다.')),
+  X('해당 답변만 고친다',()=>(E({mn:-2}),'같은 유형의 민원이 한 달 뒤 또 들어왔다.'))]},
+{id:'h_center_call',dept:['haeng'],text:'한 고용센터장이 팀장에게 직접 전화를 걸어 화면 개선을 요청했다. 그 건은 다음 주 배포 목록 맨 위로 올라갔다.',auto:()=>E({mn:-1})},
+{id:'c1_fair',dept:['chwi1'],text:'온라인 채용박람회 첫날, 접속자가 예상의 세 배였다. 서버를 두 대 늘렸다.',auto:()=>E({hp:-2,sk:1})},
+{id:'c2_survey',dept:['chwi2'],title:'만족도 조사',text:"청년 사업 만족도 조사에서 '신청 절차가 복잡하다'가 1위였다.",choices:[
+  X('신청 화면을 다시 설계한다',()=>(E({sk:2,rp:2,hp:-2}),'신청 단계가 7단계에서 4단계로 줄었다.')),
+  X('안내 문구만 보강한다',()=>'안내 문구가 두 줄 늘었다.')]},
+{id:'s_isms',dept:['sec'],title:'인증 심사',text:'ISMS 인증 심사가 다가왔다. 증적 자료가 절반쯤 비어 있다.',choices:[
+  X('증적을 직접 채운다',()=>(E({hp:-5,sk:2,rp:3}),'결함 두 건으로 인증을 유지했다.')),
+  X('컨설팅 업체에 맡긴다',()=>(E({rp:-2}),'업체 양식이 우리 시스템과 맞지 않았다. 결함이 다섯 건 나왔다.'))]},
+{id:'a_data',dept:['ai'],title:'학습 데이터',text:'학습 데이터에 주민등록번호 패턴이 섞여 있는 것을 발견했다.',choices:[
+  X('학습을 멈추고 비식별 처리부터 한다',()=>(E({sk:2,rp:3}),'일정이 3주 밀렸다. 대신 점검에서 지적은 없었다.')),
+  X('일정대로 진행하고 나중에 처리한다',()=>chance(0.5)?(E({rp:-5,mn:-4}),'반년 뒤 점검에서 그대로 지적됐다.'):(E({mn:-2}),'아무 일도 없었다. 불안은 남았다.'))]},
+{id:'r_cut',dept:['research'],text:'다음 해 연구과제 예산이 20% 삭감됐다. 설문 표본을 줄이기로 했다.',auto:()=>E({mn:-2})},
+{id:'m_interview',dept:['mgmt'],text:'신규 직원 채용 면접 진행을 맡았다. 이틀 동안 지원자 마흔 명을 만났다.',auto:()=>E({hp:-2,rp:1})},
+{id:'com_snow',text:'폭설로 통근버스가 결행됐다. 재택근무 공지가 오전 7시 40분에 올라왔다.',auto:()=>E({mn:1})},
+{id:'com_pc',text:'PC 교체 날, 백업하지 않은 폴더 하나가 사라졌다.',auto:()=>E({mn:-2})},
+{id:'com_snack',title:'간식 당번',text:'팀 간식 당번이 돌아왔다.',choices:[
+  X('직접 고른다',()=>(E({sc:2,money:-5}),'반응이 좋았다. 다음 당번이 부담스러워했다.')),
+  X('늘 사던 걸로 한다',()=>'아무도 의견이 없었다.')]},
+{id:'pet_sick',cool:24,when:()=>!!S.pet,text:()=>`${S.petName}가 장염으로 동물병원에 다녀왔다.`,auto:()=>E({money:-60,mn:-2})},
+{id:'pet_day',cool:12,when:()=>!!S.pet,text:()=>`퇴근하자 ${S.petName}가 현관에서 기다리고 있었다.`,auto:()=>E({mn:3})},
 // 고위직
 {id:'x_assembly',when:()=>S.type==='reg'&&S.rank>=5,text:'국정감사에 배석했다. 질의는 받지 않았다. 대기 시간은 아홉 시간이었다.',auto:()=>E({hp:-3})},
 {id:'x_eval',when:()=>S.type==='reg'&&S.rank>=5,text:'경영평가 결과를 두고 책임 이야기가 나왔다. 회의록에 내 이름이 두 번 있었다.',auto:()=>E({mn:-4,rp:-2})},
@@ -614,6 +734,7 @@ function changeDept(k){
 }
 async function personnel(){
   const {y}=ym(S.mi);
+  if(S.awardY===y){S.awardY=null;E({rp:4,mn:3,money:30});addLog('작년 장애 대응으로 원장 표창을 받았다. 포상금이 나왔다.',{kind:'key'});}
   if(S.faction&&S.factionY<=y){
     const win=chance(0.5)?'A':'B';
     if(win===S.faction){E({rp:5,sc:2,mn:2});addLog(`실장 인사가 났다. ${win}팀장이었다. 점심 자리가 조금 넓어졌다.`);}
@@ -629,9 +750,18 @@ async function personnel(){
   if(S.rank<5){
     const yrs=(S.mi-S.rankSince)/12;
     if(yrs>=MIN_Y[S.rank]){
-      const p=P_BASE[S.rank]*clamp((S.sk+S.rp)/110,0.3,1.5)+S.promoFails*0.08;
-      if(chance(p)){S.rank++;S.rankSince=S.mi;S.promoFails=0;E({mn:5,rp:2});addLog(promoText(),{kind:'key'});}
-      else{S.promoFails++;E({mn:-3});addLog('승진 명단에 이름이 없었다.');}
+      const rival=S.rank>=1?cohort.find(p=>!p.ended&&p.type==='reg'&&p.rank===S.rank&&(S.mi-p.rankSince)/12>=MIN_Y[p.rank]):null;
+      if(rival&&chance(0.6)){
+        rival.contestY=y;
+        const me=S.sk+S.rp+R()*40,them=rival.sk+rival.rp+R()*40,close=rival.fr>=60;
+        const head=`동기 ${rival.name}${J(rival.name,'과','와')} 같은 자리를 두고 심사를 받았다. `;
+        if(me>=them){S.rank++;S.rankSince=S.mi;S.promoFails=0;rival.promoFails++;E({mn:close?2:5,rp:2});addLog(head+promoText()+(close?` ${rival.name}에게서 축하 문자가 먼저 왔다.`:''),{kind:'key'});}
+        else{rival.rank++;rival.rankSince=S.mi;rival.promoFails=0;S.promoFails++;E({mn:-(3+Math.round(rival.fr/15))});addLog(head+`${rival.name}${J(rival.name,'이','가')} ${rankTitle(rival)}(으)로 승진했다.`+(close?' 축하한다는 말이 생각보다 늦게 나왔다.':''),{kind:'key'});}
+      }else{
+        const p=P_BASE[S.rank]*clamp((S.sk+S.rp)/110,0.3,1.5)+S.promoFails*0.08;
+        if(chance(p)){S.rank++;S.rankSince=S.mi;S.promoFails=0;E({mn:5,rp:2});addLog(promoText(),{kind:'key'});}
+        else{S.promoFails++;E({mn:-3});addLog('승진 명단에 이름이 없었다.');}
+      }
     }
   }
   if(S.rank<=4&&S.mi-S.deptSince>=48)await rotation();
@@ -661,25 +791,26 @@ function monthlyStats(){
   let hp=d.hp+0.65+f.hp,mn=d.mn+0.75+f.mn,sk=d.sk*0.6+f.sk,rp=d.rp*0.6+f.rp;
   if(S.type==='reg'&&S.rank>=4){mn-=0.4;rp+=0.1;}
   if(age()>=45)hp-=0.25;
-  if(!S.moved)hp-=S.home==='far'?0.5:S.home==='metro'?0.3:S.home==='mid'?0.1:0;
-  hp+=(70-S.hp)*0.03;mn+=(65-S.mn)*0.03+(S.sc-50)*0.004;
+  if(!S.moved)hp-=(S.home==='far'?0.5:S.home==='metro'?0.3:S.home==='mid'?0.1:0)*(S.car?0.5:1);
+  hp+=(70-S.hp)*0.03;mn+=(65-S.mn)*0.03+(S.sc-50)*0.004+(S.pet?0.5:0);
   let sc=f.sc-(S.sc-50)*0.015-(!S.moved&&(S.home==='far'||S.home==='metro')?0.15:0);
   S.sc=clamp(S.sc+sc+randn()*0.4,0,100);
   rp-=(S.rp-50)*0.015;sk=sk*(1-S.sk/110);
   S.hp=clamp(S.hp+hp+randn()*0.8,0,100);S.mn=clamp(S.mn+mn+randn()*1.0,0,100);
   S.sk=clamp(S.sk+sk+randn()*0.2,0,100);S.rp=clamp(S.rp+rp+randn()*0.5,0,100);
   if(S.focus==='self')S.selfdev++;
+  S.mnSum+=S.mn;S.mnN++;S.maxSk=Math.max(S.maxSk||0,S.sk);
 }
 function monthlyMoney(){
   const sal=salary(S,S.mi);
-  let inc=S.leave>0&&S.leaveType==='parental'?150:sal/12*0.8;
+  const inc=(S.leave>0&&S.leaveType==='parental'?150:sal/12*0.8)+(S.certPay||0);
   const infl=Math.pow(1.025,S.mi/12);
-  let exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?110:0);
+  const exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?110:0);
   S.money+=inc-exp;S.yr.inc+=inc;S.yr.exp+=exp;
   if(S.mortgage>0)S.mortgage--;
   const base=Math.max(S.money,0);
-  if(S.focus==='money'){const r=0.005+randn()*0.04;S.money+=base*0.5*r;S.yr.inv+=base*0.5*r;}
-  else{S.money+=base*0.0015;S.yr.int+=base*0.0015;}
+  if(S.inv>0){const g=base*S.inv*(0.005+randn()*0.035);S.money+=g;S.yr.inv+=g;}
+  const it=base*(1-S.inv)*0.0015;S.money+=it;S.yr.int+=it;
   S.maxSal=Math.max(S.maxSal||0,sal);
 }
 function pool(){
@@ -688,8 +819,9 @@ function pool(){
   for(const ev of EV){
     if(ev.dept&&(dEvents||!ev.dept.includes(S.dept)))continue;
     if(ev.when&&!ev.when())continue;
-    const cd=S.cd[ev.id];if(cd!==undefined&&S.mi-cd<(ev.cool||30))continue;
-    out.push({w:(ev.w||1)*(ev.dept?2.2:1),ev});
+    const cd=S.cd[ev.id];if(cd!==undefined&&S.mi-cd<(ev.cool||48))continue;
+    const gw=(GOALS[S.goal].w[ev.id]||1)*(S.goal==='expert'&&ev.dept?1.3:1);
+    out.push({w:(ev.w||1)*(ev.dept?2.2:1)*gw,ev});
   }
   return out;
 }
@@ -705,7 +837,7 @@ function endGame(kind,text){
 }
 
 async function calendar(m){
-  if(m===1)await personnel();
+  if(m===1){S.days=15;await personnel();}
   if(m===2||m===9){
     if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`);}
   }
@@ -730,6 +862,7 @@ async function calendar(m){
       await resolve('경영평가',t,ch,false);
     }else if(chance(0.4))addLog('경영평가 실적 자료 요청이 왔다. 작년 자료를 열어 숫자를 바꿨다.',{kind:'sys'});
   }
+  if(m===5&&S.reauditY===ym(S.mi).y){S.reauditY=null;E({mn:-4,rp:-2});addLog('작년 지적 사항의 이행 여부를 다시 감사받았다. 같은 자료를 한 번 더 냈다.');}
   if(m===5&&S.leave===0&&chance(0.6)){
     const t='올해 체육대회가 열린다.';
     const ch=[X('계주에 나간다',()=>chance(0.2+(S.hp+S.sc)/500)?(E({rp:2,sc:3,mn:3,hp:-2}),'팀이 1등을 했다. 상품은 온누리상품권이었다.'):(E({sc:1,mn:-1,hp:-2}),'바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.')),
@@ -762,6 +895,7 @@ async function calendar(m){
 async function monthTick(){
   S.mi++;
   const {y,m}=ym(S.mi);
+  S.maxRank=Math.max(S.maxRank||0,S.type==='reg'?S.rank:0);
   yearHeader();
   if(resignReq){resignReq=false;await resignFlow();if(S.ended)return;}
   // 휴직 처리
@@ -769,10 +903,9 @@ async function monthTick(){
     S.leave--;E({hp:1,mn:1.2});monthlyMoney();
     if(S.leave===0)addLog(S.leaveType==='parental'?'육아휴직이 끝나고 복직했다. 자리 배치가 바뀌어 있었다.':'병가를 마치고 복직했다.');
   }else{monthlyStats();monthlyMoney();}
-  cohort.forEach(p=>peerTick(p,S.mi,false));
   // 강제 종료 조건
   const a=age();
-  if(chance(deathQ(a)/12)){
+  if(chance(deathQ(a)/12*(S.checkupUntil>S.mi?0.6:1))){
     const cause=a<45?pick(['교통사고','심근경색','뇌출혈']):pick(['암','심근경색','뇌졸중']);
     endGame('사망',`${y}년 ${m}월, ${cause}로 세상을 떠났다. ${a}세였다. 원내 게시판에 부고가 올라왔다.`);return;
   }
@@ -782,7 +915,7 @@ async function monthTick(){
     if(S.contractTotal<24&&chance(0.6)){const ext=pick([4,6,12]);S.contractEnd+=ext;S.contractTotal+=ext;addLog(`계약이 ${ext}개월 연장됐다.`,{kind:'key'});}
     else{endGame('계약 만료',`계약 기간이 끝났다. 근무 ${tenureStr(S.mi)}. 사원증을 반납했다.`);return;}
   }
-  if(S.leave===0&&S.hp<10){S.leave=1;S.leaveType='sick';S.hp=40;addLog('출근길에 쓰러져 응급실에 실려 갔다. 과로였다. 한 달 병가를 냈다.',{kind:'key'});}
+  if(S.leave===0&&S.hp<(S.checkupUntil>S.mi?7:10)){S.leave=1;S.leaveType='sick';S.hp=40;addLog('출근길에 쓰러져 응급실에 실려 갔다. 과로였다. 한 달 병가를 냈다.',{kind:'key'});}
   if(S.leave===0&&S.mn<15){
     const t='아침에 출근 버스를 타지 못했다. 몸은 멀쩡했다.';
     const ch=[X('병가를 낸다(3개월)',()=>{S.leave=3;S.leaveType='sick';S.mn=45;E({rp:-2});return '석 달 동안 휴대폰 알림을 껐다.';}),
@@ -794,7 +927,19 @@ async function monthTick(){
   }
   // 가족
   if(!S.married&&!S.dating&&a<40&&chance(0.002+S.sc/25000)){S.dating=true;addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
-  if(S.dating&&!S.married&&chance(0.03)){S.married=true;S.dating=false;E({mn:8,money:-2500});addLog('결혼했다. 팀에서 버스 한 대를 대절해 내려왔다. 축의금 정산은 두 달 뒤에 끝났다.',{kind:'key'});}
+  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&chance(0.012)))){
+    const best=cohort.filter(p=>!p.ended&&p.fr>=60).sort((x,z)=>z.fr-x.fr)[0];
+    S.married=true;S.dating=false;
+    E(S.weddingAt?{mn:8}:{mn:8,money:best?-2200:-2500});S.weddingAt=null;
+    addLog('결혼했다. 팀에서 버스 한 대를 대절해 내려왔다.'+(best?` 사회는 동기 ${best.name}${J(best.name,'이','가')} 봤다.`:' 축의금 정산은 두 달 뒤에 끝났다.'),{kind:'key'});
+  }
+  if(S.referral&&S.mi>=S.referral.at&&S.leave===0){
+    const rf=S.referral;S.referral=null;
+    await resolve('동기 추천',`먼저 나간 동기 ${rf.name}에게서 연락이 왔다. 지금 다니는 ${rf.place}에 자리가 났다며 추천하겠다고 한다.`,[
+      X('지원한다',()=>{if(chance(0.45+S.sk/400)){endGame('동기 추천 이직',`${rf.name}의 추천으로 ${rf.place}(으)로 옮겼다. 첫 출근 날 점심은 ${rf.name}${J(rf.name,'이','가')} 샀다.`);return '최종 합격이었다.';}E({mn:-3});return '면접까지 갔다. 이번엔 인연이 아니었다.';}),
+      X('고맙지만 거절한다',()=>'다음에 밥 한번 먹자고 답했다.')],true,'key');
+    if(S.ended)return;
+  }
   if(S.married&&S.kids<3&&a<43&&S.leave===0&&chance(S.kids===0?0.025:0.012)){
     S.kids++;
     const t=S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`;
@@ -818,6 +963,7 @@ async function monthTick(){
     const ch=[X('지원한다',()=>{if(chance(0.06+S.rp/600)){S.rank=6;S.rankSince=S.mi;S.chiefUntil=S.mi+36;E({mn:6});return '임명장을 받았다. 임기는 3년이다.';}E({mn:-3});return '최종 3배수에 들었다. 임명되지 않았다.';}),X('지원하지 않는다',()=>'공고 마감일이 지나갔다.')];
     const i=await ask('원장 공모',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f(),kind:'key'});
   }
+  cohort.forEach(p=>peerTick(p,S.mi,false));
   if(settings.auto&&(m===1||m===4||m===7||m===10))autoFocus();
   if(m===12){
     const Y=S.yr,r=v=>Math.round(v);
@@ -834,7 +980,7 @@ async function monthTick(){
 }
 function autoFocus(){
   let f;
-  if(S.hp<35||S.mn<30)f='health';else f=pick(['work','work','self','rel','money']);
+  if(S.hp<35||S.mn<30)f='health';else f=pick(['work','work','self','rel']);
   setFocus(f,true);
 }
 
@@ -844,6 +990,7 @@ function peerEnd(p,mi,kind,text){p.ended={kind,text,mi,age:ageOf(p,mi),title:ran
 function peerTick(p,mi,silent){
   if(p.ended)return;
   const a=ageOf(p,mi),{y,m}=ym(mi);
+  p.fr=Math.max(0,p.fr-0.15);
   p.sk=clamp(p.sk+0.35*(1-p.sk/110)+randn()*0.5,0,100);
   p.rp=clamp(p.rp+randn()*1.2-(p.rp-55)*0.02,0,100);
   p.mn=clamp(p.mn+randn()*2.5+(62-p.mn)*0.03,0,100);
@@ -856,9 +1003,9 @@ function peerTick(p,mi,silent){
   }
   if((m===3||m===9)&&p.type!=='reg'&&chance(0.08+p.sk/700)){p.type='reg';p.rank=1;p.rankSince=mi;p.joinMi=mi;peerNote(p,'정규직 공채에 합격했다.',silent);}
   const q=0.0022+(p.mn<25?0.006:0)+(a<35?0.002:0);
-  if(chance(q)){const r=pick(['다른 공기업으로 이직','민간 기업으로 이직','고향 근처 기관으로 이직','창업','대학원 진학']);peerEnd(p,mi,'퇴사',r+'했다.');peerNote(p,`${r}을 이유로 퇴사했다.`,silent);return;}
+  if(chance(q)){const r=pick(['다른 공기업으로 이직','민간 기업으로 이직','고향 근처 기관으로 이직','창업','대학원 진학']);peerEnd(p,mi,'퇴사',r+'했다.');if(!silent&&p.fr>=60&&r.includes('이직')&&!S.referral)S.referral={name:p.name,at:mi+randint(6,18),place:r.includes('민간')?'민간 기업':r.includes('고향')?'고향 근처 기관':'다른 공기업'};peerNote(p,`${r}을 이유로 퇴사했다.`,silent);return;}
   if(!p.married&&a<40&&chance(0.006)){p.married=true;peerNote(p,'결혼했다. 청첩장이 책상 위에 놓여 있었다.',silent);}
-  if(m===1&&p.type==='reg'){
+  if(m===1&&p.type==='reg'&&p.contestY!==y){
     if((p.rank===4||p.rank===5)&&chance(0.04)){p.rank--;p.rankSince=mi;peerNote(p,'보직에서 해임됐다.',silent);}
     else if(p.rank<5&&(mi-p.rankSince)/12>=MIN_Y[p.rank]){
       if(chance(P_BASE[p.rank]*clamp((p.sk+p.rp)/110,0.3,1.5)+p.promoFails*0.08)){p.rank++;p.rankSince=mi;p.promoFails=0;peerNote(p,`${rankTitle(p)}(으)로 승진했다.`,silent);}
@@ -879,10 +1026,13 @@ function renderCard(){
     ['나이',age()+'세'],['직렬',S.trackName],['고용',S.type==='reg'?'정규직':S.type==='perm'?'무기계약직':'기간제 계약직'],
     ['직급',rankTitle(S)],['부서',deptLabel(S)+(S.track==='admin'&&S.task?` · ${S.task}`:'')],
     ['근속',tenureStr(S.mi)],['거주',S.moved&&S.home!=='near'?'혁신도시 (연고 '+S.homeName+')':S.homeName],
+    ['연차',`${S.days}일 남음`],['투자',`통장의 ${Math.round(S.inv*100)}%`],
     ['가족',S.married?('기혼'+(S.kids?` · 자녀 ${S.kids}`:'')):S.dating?'연애 중':'미혼'],
   ];
   if(S.type==='temp')kv.splice(3,0,['계약',`${tenureStr(Math.max(0,S.contractEnd-S.mi))} 남음`]);
   if(S.club)kv.push(['동호회',S.club]);
+  if(S.pet)kv.push(['반려',`${S.pet} ${S.petName}`]);
+  if(S.car)kv.push(['차','있음']);
   if(S.leave>0)kv.push(['상태',(S.leaveType==='parental'?'육아휴직':'병가')+` · ${S.leave}개월 남음`]);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
@@ -892,12 +1042,21 @@ function renderCard(){
   $('#barDate').textContent=`${y}.${String(m).padStart(2,'0')} · 근속 ${tenureStr(S.mi)}`;
 }
 function renderCohort(){
-  $('#cohortList').innerHTML=cohort.map(p=>{
+  $('#cohortList').innerHTML=cohort.map((p,i)=>{
     const st=p.ended?`${p.ended.kind} · ${ym(p.ended.mi).y}`:'재직 중';
-    return `<div class="peer-card${p.ended?' out':''}"><b>${p.name}</b> <span class="meta">${ageOf(p,p.ended?p.ended.mi:S.mi)}세</span><div class="meta">${p.ended?p.ended.title:rankTitle(p)} · ${p.ended?'':deptLabel(p)}</div><div class="st">${st}</div></div>`;
+    const fr=Math.round(p.fr);
+    return `<button type="button" class="peer-card${p.ended?' out':''}" data-i="${i}" ${p.ended?'disabled':''}><b>${p.name}</b> <span class="meta">${ageOf(p,p.ended?p.ended.mi:S.mi)}세</span><div class="meta">${p.ended?p.ended.title:rankTitle(p)+' · '+deptLabel(p)}</div><div class="st">${st}</div><div class="fr"><span>친밀 ${fr}</span><div class="track"><div class="fill" style="width:${fr}%"></div></div></div></button>`;
   }).join('');
 }
-function render(){renderCard();renderCohort();}
+function renderActions(){
+  $('#actMeta').textContent=`연차 ${S.days}일 · 통장 ${fmtMoney(S.money)}원`;
+  $('#actList').innerHTML=ACTIONS.map(a=>{const st=actState(a);return `<button type="button" data-a="${a.k}" ${st.ok?'':'disabled'}><span>${a.name}</span><span class="c">${st.note}</span></button>`;}).join('');
+  [...$('#invSeg').children].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===Math.round(S.inv*100)?'true':'false'));
+  const gs=$('#goalSel');if(gs.value!==S.goal)gs.value=S.goal;
+  const yNow=ym(S.mi).y;gs.disabled=S.goalY===yNow;
+  $('#goalHint').textContent=GOALS[S.goal].hint+(S.goalY===yNow?' 올해는 이미 바꿨다.':'');
+}
+function render(){renderCard();renderCohort();renderActions();}
 function setFocus(k,silent){
   S.focus=k;
   [...$('#focusSeg').children].forEach(b=>b.setAttribute('aria-pressed',b.dataset.f===k?'true':'false'));
@@ -942,6 +1101,7 @@ function showEnding(){
     ['최고 연봉',fmtMoney(S.maxSal||salary(S,S.mi))+'원'],
     ['남은 통장',fmtMoney(S.money)+'원'],
     ['가족',fam],
+    ['목표',`${GOALS[S.goal].name} · ${goalResult()}`],
   ];
   const peers=cohort.map(p=>`<div class="row"><span class="k">${p.name}</span><span>${p.ended.title} · ${p.ended.kind} · ${p.ended.age}세 (${ym(p.ended.mi).y})</span></div>`).join('');
   const w=$('#endingWrap');
@@ -978,7 +1138,8 @@ segBind('#durSeg','dur',v=>settings.dur=+v);
 segBind('#autoSeg','auto',v=>settings.auto=v==='1');
 
 $('#btnJoin').addEventListener('click',()=>{
-  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0}});pendingMoney=0;
+  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0},days:15,inv:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;
+  $('#goalSeg').innerHTML=Object.entries(GOALS).map(([k,g])=>`<button type="button" data-g="${k}" aria-pressed="${k==='wlb'}">${g.name}</button>`).join('');
   cohort=[0,1,2,3].map(()=>makePerson());
   const sal=salary(S,0);
   const rows=[
@@ -998,6 +1159,8 @@ $('#btnFirstDay').addEventListener('click',()=>{
   $('#log').innerHTML='';lastYearHeader=null;
   $('#focusSeg').innerHTML=Object.entries(FOCUS).map(([k,f])=>`<button type="button" data-f="${k}" aria-pressed="false">${f.name}</button>`).join('');
   setFocus('work',true);
+  $('#invSeg').innerHTML=[0,20,40,60,80].map(v=>`<button type="button" data-v="${v}">${v}%</button>`).join('');
+  $('#goalSel').innerHTML=Object.entries(GOALS).map(([k,g])=>`<option value="${k}">${g.name}</option>`).join('');
   $('#autoPick').checked=settings.auto;
   const months=Math.max(60,(60-ageOf(S,0))*12);
   baseMs=settings.dur*60000/months;
@@ -1006,6 +1169,11 @@ $('#btnFirstDay').addEventListener('click',()=>{
   addLog(`같은 날 입사한 동기는 ${cohort.map(p=>p.name).join(', ')}이다.`,{kind:'sys'});
   render();schedule();
 });
+segBind('#goalSeg','g',v=>{S.goal=v;});
+$('#actList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-a]');if(b)doAction(b.dataset.a);});
+$('#invSeg').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b||!S||S.ended)return;const v=+b.dataset.v;if(Math.round(S.inv*100)===v)return;S.inv=v/100;addLog(v?`통장의 ${v}%를 주식에 두기로 했다.`:'주식을 모두 정리했다.',{kind:'act'});render();});
+$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});
+$('#goalSel').addEventListener('change',e=>{if(!S||S.ended)return;const y=ym(S.mi).y;if(S.goalY===y){e.target.value=S.goal;return;}S.goal=e.target.value;S.goalY=y;addLog(`커리어 목표를 '${GOALS[S.goal].name}'(으)로 바꿨다.`,{kind:'act'});render();});
 $('#focusSeg').addEventListener('click',ev=>{const b=ev.target.closest('button');if(b&&S&&!S.ended)setFocus(b.dataset.f);});
 $('#gameCtrl').addEventListener('click',ev=>{
   const b=ev.target.closest('button[data-speed]');if(!b)return;

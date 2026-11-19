@@ -81,7 +81,9 @@ button{font:inherit;color:inherit}
 .seal{position:absolute;right:28px;bottom:84px;width:74px;height:74px;border:2.5px solid var(--stamp);border-radius:50%;color:var(--stamp);display:grid;place-items:center;font-size:12px;font-weight:700;text-align:center;line-height:1.25;transform:rotate(-12deg);opacity:.85}
 
 /* 게임 */
-.game{display:grid;grid-template-columns:290px minmax(0,1fr) 260px;gap:20px;align-items:start}
+.game{display:grid;grid-template-columns:280px minmax(0,1fr) 290px;gap:20px;align-items:start}
+.rightcol{display:grid;gap:16px}
+.actions-panel h3{margin:0 0 4px;font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0.05em}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
 .card h3,.cohort h3{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0.05em}
 .pname{font-size:22px;font-weight:700;margin-bottom:2px}
@@ -119,11 +121,11 @@ button{font:inherit;color:inherit}
 .entry.love .tag{color:var(--stamp);border-color:var(--stamp)}
 .actions{margin-top:14px}
 .act-meta{font-size:12px;color:var(--muted);margin:-4px 0 8px}
-.act-list{display:grid;gap:6px}
-.act-list button{display:flex;justify-content:space-between;gap:8px;text-align:left;border:1px solid var(--line);background:var(--paper);padding:7px 10px;border-radius:4px;cursor:pointer;font-size:13px}
+.act-list{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.act-list button{display:flex;flex-direction:column;align-items:flex-start;gap:1px;text-align:left;line-height:1.35;border:1px solid var(--line);background:var(--paper);padding:7px 10px;border-radius:4px;cursor:pointer;font-size:13px}
 .act-list button:hover:not(:disabled){border-color:var(--accent)}
 .act-list button:disabled{opacity:.45;cursor:not-allowed}
-.act-list .c{font-family:var(--font-mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.act-list .c{font-family:var(--font-mono);font-size:11px;color:var(--muted)}
 select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:4px;padding:5px 8px;width:100%}
 .goal-pick{margin-top:18px}
 .cohort button.peer-card{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);cursor:pointer;padding:10px 4px;border-radius:0}
@@ -198,7 +200,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.6 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.7 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -276,19 +278,21 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
       <select id="goalSel" aria-label="커리어 목표"></select>
       <div class="hint" id="goalHint"></div>
     </div>
-    <div class="actions">
-      <h3>행동</h3>
-      <div class="act-meta" id="actMeta"></div>
-      <div class="act-list" id="actList"></div>
-      <button type="button" class="btn" id="btnAsset" style="width:100%;margin-top:10px">자산 관리</button>
-    </div>
     <button type="button" class="btn danger resign" id="btnResign">사직서 내기</button>
   </aside>
   <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
-  <aside class="panel cohort">
-    <h3>같은 날 입사한 동기 · 눌러서 만나기</h3>
-    <div id="cohortList"></div>
-  </aside>
+  <div class="rightcol">
+    <aside class="panel actions-panel">
+      <h3>행동</h3>
+      <div class="act-meta" id="actMeta"></div>
+      <div class="act-list" id="actList"></div>
+      <button type="button" class="btn" id="btnAsset" style="width:100%;margin-top:8px">자산 관리</button>
+    </aside>
+    <aside class="panel cohort">
+      <h3>같은 날 입사한 동기 · 눌러서 만나기</h3>
+      <div id="cohortList"></div>
+    </aside>
+  </div>
 </main>
 
 <div id="help" class="modal" hidden>
@@ -489,6 +493,25 @@ const HINTS={
   '번아웃|버틴다':{d:'멘탈 조금↑'},
   '번아웃|사직서를 낸다':{d:'게임 종료'},
   '사직서|제출한다':{d:'게임 종료'},
+  '돈 부탁|빌려준다':{d:'−1,000만원 · 1~2년 뒤 돌려받을 수도 있음',p:()=>0.6,label:'돌려받을 가능성'},
+  '돈 부탁|거절한다':{d:'사교 조금↓'},
+  '동기의 부탁|빌려준다':{d:'−500만원 친밀도↑',p:()=>0.85,label:'돌려받을 가능성'},
+  '동기의 부탁|거절한다':{d:'친밀도↓'},
+  '부모님 집|전부 보낸다':{d:'−500만원 멘탈↑'},
+  '부모님 집|절반만 보낸다':{d:'−250만원 멘탈 조금↑'},
+  '부모님 집|형편이 안 된다고 한다':{d:'멘탈↓'},
+  '형제의 사업|투자한다':{d:'−3,000만원 · 잘되면 6,000만원으로 돌려받음',p:()=>0.3},
+  '형제의 사업|거절한다':{d:'멘탈 조금↓'},
+  '학원|보낸다':{d:'매달 −30만원 · 대학 결과에 도움'},
+  '학원|안 보낸다':{d:'멘탈 조금↓'},
+  '과외|과외를 시킨다':{d:'매달 −90만원 · 대학 결과에 크게 도움'},
+  '과외|학원만 보낸다':{d:'매달 −30만원 · 대학 결과에 도움'},
+  '과외|안 시킨다':{d:'멘탈↓'},
+  '자녀 결혼|1억을 보태준다':{d:'−1억원 멘탈↑'},
+  '자녀 결혼|5,000만 원을 보태준다':{d:'−5,000만원 멘탈↑'},
+  '자녀 결혼|마음만 전한다':{d:'멘탈 조금↓'},
+  '차 교체|새 차로 바꾼다':{d:'−2,500만원 멘탈 조금↑'},
+  '차 교체|고쳐서 더 탄다':{d:'−150만원 · 이후 수리비가 자주 나감'},
 };
 function hintFor(title,c){
   if(c.d)return {d:c.d};
@@ -598,6 +621,24 @@ const TEAM=[
   ()=>{E({rp:-1,mn:-1});return '내가 올린 공문에 오타가 있었다. 정정 공문을 다시 냈다.';},
 ];
 
+/* ---------- 지출 ---------- */
+const ORD=['첫째','둘째','셋째'];
+const kidAge=k=>Math.floor((S.mi-k.born)/12);
+function netPay(g){return Math.min(g,6000)*0.8+clamp(g-6000,0,4000)*0.76+Math.max(g-10000,0)*0.72;}
+function kidCost(m){
+  let c=0;
+  (S.kidsList||[]).forEach(k=>{
+    const a=kidAge(k);
+    if(a<=6)c+=80;else if(a<=12)c+=100;else if(a<=18)c+=150;else if(a<=22){c+=100;if(m===1||m===7)c+=400;}
+    if(k.academy&&a>=7&&a<=18)c+=30;
+    if(k.tutor&&a>=15&&a<=18)c+=60;
+    if(k.seoul&&a>=19&&a<=22)c+=60;
+    if(k.retakeUntil&&S.mi<k.retakeUntil)c+=120;
+  });
+  return c;
+}
+function ageCosts(){const a=age();return {cere:a>=50?12.5:a>=40?8.3:a>=30?4.2:0,med:a>=55?20:a>=45?10:0,parent:a>=50?30:0};}
+
 /* ---------- 자산 ---------- */
 const netWorth=()=>S.money+S.savBal+S.stock+S.reit+(S.house?S.houseVal-S.houseLoan:0)+(S.ofs?S.ofs.value-S.ofs.loan:0);
 const houseRate=()=>S.houseLoc==='hq'?0.02:S.homeZone==='수도권'?0.035:0.015;
@@ -656,23 +697,23 @@ const ACTIONS=[
   {k:'treat',name:'팀에 한턱',cost:30,cd:3,run:()=>{E({sc:4,rp:2});return pick(['팀에 커피와 케이크를 돌렸다. 단체 채팅방에 감사 이모티콘이 열 개 올라왔다.','퇴근 후 팀원들에게 고기를 샀다. 막내가 사진을 찍었다.']);}},
   {k:'parents',name:'부모님 용돈',cost:50,cd:3,run:()=>{E({mn:4});return '부모님께 용돈을 보냈다. 저녁에 전화가 왔다.';}},
   {k:'cert',name:'학원·자격증',cost:80,cd:6,run:()=>{E({sk:5});S.selfdev+=2;const c=pick(CERTS[S.track]);if(chance(0.3)){S.certPay=(S.certPay||0)+5;return `학원에 등록해 ${c} 시험을 준비했다. 합격했다. 다음 달부터 자격 수당이 나온다.`;}return `학원에 등록해 ${c} 시험을 준비했다. 이번 시험은 떨어졌다.`;}},
-  {k:'car',name:'차 사기',cost:2500,once:true,when:()=>!S.car,why:'이미 차가 있다',run:()=>{S.car=true;return S.home==='near'?'중고 SUV를 샀다. 주말에 갈 수 있는 곳이 늘었다.':'중고 SUV를 샀다. 출퇴근이 한결 수월해졌다.';}},
-  {k:'wedding',name:'결혼 준비',cost:2500,once:true,when:()=>S.dating&&!S.married&&!S.weddingAt,why:'연애 중일 때만 할 수 있다',run:()=>{S.weddingAt=S.mi+randint(3,6);return '결혼 준비를 시작했다. 예식장 계약서에 서명했다.';}},
-  {k:'intro',name:'소개 받기',cost:10,cd:3,when:()=>!S.married&&!S.dating,why:'연애 중이거나 기혼이다',run:()=>{
+  {k:'car',name:'차 사기',cost:2500,once:true,when:()=>!S.car,why:'이미 차가 있다',run:()=>{S.car=true;S.carMi=S.mi;return S.home==='near'?'중고 SUV를 샀다. 주말에 갈 수 있는 곳이 늘었다.':'중고 SUV를 샀다. 출퇴근이 한결 수월해졌다.';}},
+  {k:'wedding',name:'결혼 준비',cost:2500,once:true,when:()=>S.dating&&!S.married&&!S.weddingAt,why:'연애 중일 때만',run:()=>{S.weddingAt=S.mi+randint(3,6);return '결혼 준비를 시작했다. 예식장 계약서에 서명했다.';}},
+  {k:'intro',name:'소개 받기',cost:10,cd:3,when:()=>!S.married&&!S.dating,why:'솔로일 때만',run:()=>{
     const fr=cohort.filter(p=>!p.ended&&p.fr>=60).sort((x,z)=>z.fr-x.fr)[0];
     const who=fr?`동기 ${fr.name}${J(fr.name,'이','가')}`:pick(['고향 친구가','대학 선배가','팀 선배가']);
     if(chance(0.25+(S.sc-50)/400+(fr?0.1:0))){startDating();E({mn:5});return `${who} 소개해 준 사람과 만났다. 두 번째 약속을 바로 잡았다.`;}
     return `${who} 소개해 준 사람과 만났다. ${pick(['대화는 즐거웠다. 연락은 이어지지 않았다.','서로 바쁜 시기였다.'])}`;}},
-  {k:'app',name:'소개팅 앱',cost:5,cd:2,when:()=>!S.married&&!S.dating,why:'연애 중이거나 기혼이다',run:()=>{
+  {k:'app',name:'소개팅 앱',cost:5,cd:2,when:()=>!S.married&&!S.dating,why:'솔로일 때만',run:()=>{
     if(chance(0.15+(S.sc-50)/500)){startDating();E({mn:5});return '소개팅 앱에서 대화가 잘 통하는 사람을 만났다. 세 번째 만남부터 주말이 기다려졌다.';}
     return pick(['소개팅 앱을 깔았다. 약속 당일 상대가 나오지 않았다.','소개팅 앱으로 한 번 만났다. 사진과 분위기가 많이 달랐다.','소개팅 앱을 한 달 썼다. 대화는 많았고 만남은 없었다.']);}},
-  {k:'date',name:'데이트',cost:10,cd:2,when:()=>S.dating,why:'연애 중일 때만 할 수 있다',run:()=>{E({mn:5});S.lastDate=S.mi;return pick([`${pw()}와 영화를 보고 저녁을 먹었다.`,`${pw()}와 청주에 새로 생긴 카페에 갔다.`,`${pw()}와 하루 종일 걸었다. 만 보를 넘겼다.`]);}},
+  {k:'date',name:'데이트',cost:10,cd:2,when:()=>S.dating,why:'연애 중일 때만',run:()=>{E({mn:5});S.lastDate=S.mi;return pick([`${pw()}와 영화를 보고 저녁을 먹었다.`,`${pw()}와 청주에 새로 생긴 카페에 갔다.`,`${pw()}와 하루 종일 걸었다. 만 보를 넘겼다.`]);}},
   {k:'house_s',name:'작은 집 사기',cost:8000,when:()=>!S.house,why:'이미 집이 있다',pickLoc:true,run:loc=>{buyHouse('small',loc);return `${loc==='hq'?'혁신도시':S.homeName}에 2억짜리 작은 집을 샀다. 대출은 20년이다. 월세를 더 내지 않아도 된다.`;}},
-  {k:'house_b',name:'큰 집 사기',cost:20000,costFn:()=>S.house==='small'?Math.round(20000-(S.houseVal-S.houseLoan)):20000,when:()=>S.house!=='big',why:'이미 큰 집에 산다',pickLoc:true,run:loc=>{
+  {k:'house_b',name:'큰 집 사기',cost:20000,costFn:()=>S.house==='small'?Math.round(20000-(S.houseVal-S.houseLoan)):20000,when:()=>S.house!=='big',why:'이미 큰 집',pickLoc:true,run:loc=>{
     let t='';
     if(S.house==='small'){const d=Math.round(S.houseVal-20000);t=`살던 작은 집을 ${fmtMoney(S.houseVal)}원에 팔았다. 산 값보다 ${d>=0?fmtMoney(d)+'원 올랐다':fmtMoney(-d)+'원 내렸다'}. `;}
     buyHouse('big',loc);return t+`${loc==='hq'?'혁신도시':S.homeName}에 5억짜리 큰 집을 샀다. 대출은 20년이다.`+(S.married||S.kids?' 아이 방이 생겼다.':'');}},
-  {k:'pet',name:'반려동물 입양',cost:100,once:true,when:()=>!S.pet,why:'이미 함께 사는 동물이 있다',run:()=>{S.pet=pick(['고양이','강아지']);S.petName=pick(['보리','콩이','두부','라떼','호두','모카']);return `${S.pet}를 입양했다. 이름은 ${S.petName}로 지었다. 매달 15만 원이 더 든다.`;}},
+  {k:'pet',name:'반려동물 입양',cost:100,once:true,when:()=>!S.pet,why:'이미 키우는 중',run:()=>{S.pet=pick(['고양이','강아지']);S.petName=pick(['보리','콩이','두부','라떼','호두','모카']);return `${S.pet}를 입양했다. 이름은 ${S.petName}로 지었다. 매달 15만 원이 더 든다.`;}},
 ];
 function buyHouse(size,loc){
   S.house=size;S.houseLoc=loc;S.houseMi=S.mi;S.mortgage=240;S.mortgagePay=size==='big'?150:60;
@@ -935,6 +976,27 @@ const EV=[
   X('늘 사던 걸로 한다',()=>'아무도 의견이 없었다.')]},
 {id:'pet_sick',cool:24,when:()=>!!S.pet,text:()=>`${S.petName}가 장염으로 동물병원에 다녀왔다.`,auto:()=>E({money:-60,mn:-2})},
 {id:'pet_day',cool:12,when:()=>!!S.pet,text:()=>`퇴근하자 ${S.petName}가 현관에서 기다리고 있었다.`,auto:()=>E({mn:3})},
+// v1.7 돈 선택
+{id:'friend_loan',manual:true,w:0.5,cool:60,title:'돈 부탁',text:'고향 친구가 1,000만 원만 빌려달라고 한다. 가게 사정이 어렵다고 한다.',choices:[
+  X('빌려준다',()=>{E({money:-1000});const ok=chance(0.6);S.loans.push({at:S.mi+randint(12,24),amt:ok?1000:0,who:'고향 친구'});return '계좌로 보냈다. 차용증은 쓰지 않았다.';}),
+  X('거절한다',()=>(E({sc:-1}),'미안하다고 했다. 한동안 연락이 뜸했다.'))]},
+{id:'peer_loan',manual:true,w:0.6,cool:60,when:()=>cohort.some(p=>!p.ended&&p.fr>=60),title:'동기의 부탁',text:()=>{const p=cohort.filter(p=>!p.ended&&p.fr>=60)[0];S.loanPeer=p;return `동기 ${p.name}${J(p.name,'이','가')} 500만 원만 빌려달라고 한다. 전세 보증금이 모자라다고 한다.`;},choices:[
+  X('빌려준다',()=>{E({money:-500});S.loanPeer.fr=Math.min(100,S.loanPeer.fr+10);S.loans.push({at:S.mi+randint(6,15),amt:chance(0.85)?500:0,who:'동기 '+S.loanPeer.name});return '바로 보냈다. 고맙다는 문자가 길게 왔다.';}),
+  X('거절한다',()=>{S.loanPeer.fr=Math.max(0,S.loanPeer.fr-15);return '사정을 설명했다. 다음 점심 자리는 조금 어색했다.';})]},
+{id:'parents_repair',manual:true,w:0.6,cool:120,when:()=>age()>=45,title:'부모님 집',text:'부모님 집 지붕에서 비가 샌다고 한다. 수리비가 500만 원 든다고 한다.',choices:[
+  X('전부 보낸다',()=>(E({money:-500,mn:3}),'수리가 끝났다는 사진이 왔다.')),
+  X('절반만 보낸다',()=>(E({money:-250,mn:1}),'나머지는 형제들이 나눠 냈다.')),
+  X('형편이 안 된다고 한다',()=>(E({mn:-3}),'어머니는 괜찮다고 했다.'))]},
+{id:'sibling_biz',manual:true,w:0.5,cool:999,when:()=>age()>=40,title:'형제의 사업',text:'동생이 카페를 차린다며 3,000만 원을 투자해 달라고 한다. 잘되면 두 배로 돌려주겠다고 한다.',choices:[
+  X('투자한다',()=>{E({money:-3000});S.loans.push({at:S.mi+randint(24,36),amt:chance(0.3)?6000:0,who:'동생',biz:true});return '사업자등록증 사본을 받았다.';}),
+  X('거절한다',()=>(E({mn:-1}),'명절에 그 이야기는 꺼내지 않았다.'))]},
+{id:'kid_academy',manual:true,w:3,cool:12,when:()=>(S.kidsList||[]).some(k=>{const a=kidAge(k);return a>=7&&a<=14&&!k.acAsk;}),title:'학원',text:()=>{const i=S.kidsList.findIndex(k=>{const a=kidAge(k);return a>=7&&a<=14&&!k.acAsk;});S.kidPick=i;S.kidsList[i].acAsk=true;return `${S.kids>1?ORD[i]:'아이'}가 친구들이 다니는 ${pick(['영어','수학','코딩'])} 학원에 다니고 싶어한다.`;},choices:[
+  X('보낸다',()=>{S.kidsList[S.kidPick].academy=true;E({mn:1});return '등록했다. 차량 운행 시간이 퇴근 시간과 겹쳤다.';}),
+  X('안 보낸다',()=>(E({mn:-1}),'집에서 같이 문제집을 풀기로 했다.'))]},
+{id:'kid_tutor',manual:true,w:3,cool:12,when:()=>(S.kidsList||[]).some(k=>{const a=kidAge(k);return a>=15&&a<=18&&!k.tuAsk;}),title:'과외',text:()=>{const i=S.kidsList.findIndex(k=>{const a=kidAge(k);return a>=15&&a<=18&&!k.tuAsk;});S.kidPick=i;S.kidsList[i].tuAsk=true;return `고등학생이 된 ${S.kids>1?ORD[i]:'아이'}가 수학 과외를 받고 싶다고 한다.`;},choices:[
+  X('과외를 시킨다',()=>{const k=S.kidsList[S.kidPick];k.tutor=true;k.academy=true;return '대학생 과외 선생님이 일주일에 두 번 온다.';}),
+  X('학원만 보낸다',()=>{S.kidsList[S.kidPick].academy=true;return '학원 수업을 하나 더 늘렸다.';}),
+  X('안 시킨다',()=>(E({mn:-2}),'인강 이용권을 끊어줬다.'))]},
 // 고위직
 {id:'x_assembly',when:()=>S.type==='reg'&&S.rank>=5,text:'국정감사에 배석했다. 질의는 받지 않았다. 대기 시간은 아홉 시간이었다.',auto:()=>E({hp:-3})},
 {id:'x_eval',when:()=>S.type==='reg'&&S.rank>=5,text:'경영평가 결과를 두고 책임 이야기가 나왔다. 회의록에 내 이름이 두 번 있었다.',auto:()=>E({mn:-4,rp:-2})},
@@ -984,7 +1046,7 @@ async function personnel(){
       }else{
         const p=P_BASE[S.rank]*clamp((S.sk+S.rp)/110,0.3,1.5)+S.promoFails*0.08;
         if(chance(p)){S.rank++;S.rankSince=S.mi;S.promoFails=0;E({mn:5,rp:2});addLog(promoText(),{kind:'key'});}
-        else{S.promoFails++;E({mn:-3});addLog('승진 명단에 이름이 없었다.');}
+        else{S.promoFails++;E({mn:-3});addLog(pick(['승진 명단에 이름이 없었다.','승진 명단을 두 번 읽었다. 이름은 없었다.','올해도 승진은 다음으로 미뤄졌다.']));}
       }
     }
   }
@@ -1027,10 +1089,17 @@ function monthlyStats(){
 }
 function monthlyMoney(){
   const sal=salary(S,S.mi);
-  const inc=(S.leave>0&&S.leaveType==='parental'?150:sal/12*0.8)+(S.certPay||0);
-  const infl=Math.pow(1.025,S.mi/12);
-  const exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?(S.mortgagePay||110):0);
-  S.money+=inc-exp;S.yr.inc+=inc;S.yr.exp+=exp;
+  const m=ym(S.mi).m;
+  const gross=S.leave>0&&S.leaveType==='parental'?150:sal/12;
+  const net=S.leave>0&&S.leaveType==='parental'?150:netPay(sal)/12;
+  const inc=net+(S.certPay||0);
+  const infl=Math.pow(1.02,S.mi/12);
+  const tight=S.money<0?0.8:1;
+  const life=((140+(S.married?90:0)+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.money<0?0:Math.max(0,sal-(S.sal0||sal)*infl)*0.35/12))*tight+(S.mortgage>0?(S.mortgagePay||110):0);
+  const kid=kidCost(m)*infl,ac=ageCosts(),cm=(ac.cere+ac.med)*infl,par=ac.parent*infl,car=S.car?30*infl:0;
+  S.money+=inc-life-kid-cm-par-car;
+  S.yr.inc+=gross+(S.certPay||0);S.yr.tax+=gross-net;S.yr.exp+=life;S.yr.kid+=kid;S.yr.cm+=cm;S.yr.par+=par;S.yr.car+=car;
+  if(m===7){const t=(S.house==='big'?120:S.house==='small'?30:0)+(S.ofs?50:0);if(t){S.money-=t;S.yr.prop+=t;}}
   if(S.mortgage>0){S.mortgage--;S.houseLoan=Math.max(0,S.houseLoan-(S.houseLoanInit||0)/240);}
   // 적금
   if(S.savMonthly>0&&S.money>=S.savMonthly){S.money-=S.savMonthly;S.savBal+=S.savMonthly;S.savPrin+=S.savMonthly;}
@@ -1043,6 +1112,8 @@ function monthlyMoney(){
   if(S.stock>0){const g=S.stock*(0.0055+randn()*0.055);S.stock+=g;S.yr.inv+=g;}
   // 예금 이자
   if(S.money>0){const it=S.money*(0.025+S.rateAdj)/12;S.money+=it;S.yr.int+=it;}
+  else if(S.money<0){const it=S.money*0.06/12;S.money+=it;S.yr.int+=it;if(!S.minusWarned){S.minusWarned=true;addLog('통장이 마이너스가 됐다. 마이너스 통장 이자가 붙기 시작했다.',{kind:'key'});}}
+  if(S.money>0)S.minusWarned=false;
   // 리츠
   if(S.reit>0){const dv=S.reit*0.05/12,ch=S.reit*randn()*0.029;S.money+=dv;S.reit=Math.max(0,S.reit+ch);S.yr.reit+=dv+ch;}
   // 오피스텔
@@ -1075,7 +1146,7 @@ function endGame(kind,text){
 async function calendar(m){
   if(m===1){S.days=15;await personnel();}
   if(m===2||m===9){
-    if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`);}
+    if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(pick([`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`,`${m===2?'설':'추석'} 연휴, 휴게소마다 줄이 길었다.`,`${m===2?'설':'추석'} 연휴, 새벽 네 시에 출발해 차를 피했다.`,`${m===2?'설':'추석'} 연휴, KTX 표를 겨우 구했다.`]));}
   }
   if(m===3&&!S.club&&chance(0.35)){
     const ch=['등산','풋살','보드게임','독서'].map(c=>X(c+' 동호회에 든다',()=>{S.club=c;E(CLUBS[c].join);return '첫 모임에 나갔다. 회비는 월 2만 원이었다.';}));
@@ -1093,16 +1164,16 @@ async function calendar(m){
   }
   if(m===4&&S.leave===0){
     if(S.dept==='mgmt'&&S.rank<5){
-      const t='경영평가 실적보고서 작성 기간이다. 같은 표를 열네 번째 고치고 있다.';
-      const ch=[X('주말까지 붙잡는다',()=>{S.evalBoost=0.15;E({hp:-4,sk:2,rp:2});return '보고서는 마감 30분 전에 제출됐다.';}),X('정시에 퇴근한다',()=>{S.evalBoost=0;E({mn:1});return '보고서는 제때 제출됐다. 표 하나는 열세 번째 버전으로 나갔다.';})];
+      const t=pick(['경영평가 실적보고서 작성 기간이다. 같은 표를 열네 번째 고치고 있다.','경영평가 보고서 초안이 120쪽을 넘었다. 분량을 80쪽으로 줄이라는 지시가 왔다.','경영평가 위원 현장 실사 일정이 잡혔다. 증빙 자료 목록이 300줄이다.','작년 경영평가 지적 사항에 대한 개선 실적을 정리하고 있다.']);
+      const ch=[X('주말까지 붙잡는다',()=>{S.evalBoost=0.15;E({hp:-4,sk:2,rp:2});return pick(['보고서는 마감 30분 전에 제출됐다.','토요일 밤 11시에 최종본이 나왔다.','증빙 자료를 세 번 다시 묶었다. 제출은 제때 됐다.']);}),X('정시에 퇴근한다',()=>{S.evalBoost=0;E({mn:1});return pick(['보고서는 제때 제출됐다. 표 하나는 열세 번째 버전으로 나갔다.','제출은 됐다. 오탈자 두 개가 나중에 발견됐다.','팀원들과 나눠서 끝냈다. 퇴근길이 밝았다.']);})];
       await resolve('경영평가',t,ch,false);
-    }else if(chance(0.4))addLog('경영평가 실적 자료 요청이 왔다. 작년 자료를 열어 숫자를 바꿨다.',{kind:'sys'});
+    }else if(chance(0.4))addLog(pick(['경영평가 실적 자료 요청이 왔다. 작년 자료를 열어 숫자를 바꿨다.','경영평가용 성과 사례를 한 장으로 정리해 달라는 메일이 왔다.','경영평가 지표 담당자가 바뀌었다. 같은 질문을 처음부터 다시 받았다.']),{kind:'sys'});
   }
   if(m===5&&S.reauditY===ym(S.mi).y){S.reauditY=null;E({mn:-4,rp:-2});addLog('작년 지적 사항의 이행 여부를 다시 감사받았다. 같은 자료를 한 번 더 냈다.');}
   if(m===5&&S.leave===0&&ym(S.mi).y%2===0){
-    const t='올해 체육대회가 열린다.';
-    const ch=[X('계주에 나간다',()=>chance(0.2+(S.hp+S.sc)/500)?(E({rp:2,sc:3,mn:3,hp:-2}),'팀이 1등을 했다. 상품은 온누리상품권이었다.'):(E({sc:1,mn:-1,hp:-2}),'바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.')),
-      X('응원석에 앉는다',()=>(E({sc:1}),'햇볕이 따가웠다. 도시락은 김밥이었다.')),
+    const t=pick(['올해 체육대회가 열린다.','2년 만에 체육대회가 열린다. 종목은 족구와 계주다.','혁신도시 운동장에서 체육대회가 열린다. 팀별 단체복이 나왔다.']);
+    const ch=[X('계주에 나간다',()=>chance(0.2+(S.hp+S.sc)/500)?(E({rp:2,sc:3,mn:3,hp:-2}),pick(['팀이 1등을 했다. 상품은 온누리상품권이었다.','마지막 주자를 제쳤다. 팀장이 사진을 열 장 찍었다.'])):(E({sc:1,mn:-1,hp:-2}),pick(['바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.','코너에서 넘어질 뻔했다. 팀은 3등이었다.']))),
+      X('응원석에 앉는다',()=>(E({sc:1}),pick(['햇볕이 따가웠다. 도시락은 김밥이었다.','응원 구호를 세 번 바꿨다. 목이 쉬었다.','그늘 자리를 맡았다. 다른 팀 사람들과 이야기를 나눴다.']))),
       X('연차를 쓴다',()=>(E({mn:2,sc:-2}),'단체 사진에 내가 없었다.'))];
     const i=await ask('체육대회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
   }
@@ -1110,19 +1181,19 @@ async function calendar(m){
     const g=wpick([{w:2,v:'S',r:1.5},{w:20+(S.evalBoost||0)*60,v:'A',r:1.2},{w:45,v:'B',r:0.9},{w:25,v:'C',r:0.6},{w:8,v:'D',r:0}]);
     S.evalBoost=0;
     if(S.type==='temp')addLog(`경영평가 결과 ${g.v}등급이 나왔다. 계약직은 성과급 대상이 아니었다.`,{kind:'sys'});
-    else{const b=salary(S,S.mi)/12*g.r*0.8;S.money+=b;S.yr.bonus+=b;E({mn:g.v==='D'?-3:g.v==='S'||g.v==='A'?2:0});addLog(`경영평가 결과 ${g.v}등급이 나왔다. 성과급 ${fmtMoney(b)}원이 들어왔다.`,{kind:'sys'});}
+    else{const sl=salary(S,S.mi),b=sl/12*g.r*(netPay(sl)/sl);S.money+=b;S.yr.bonus+=b;E({mn:g.v==='D'?-3:g.v==='S'||g.v==='A'?2:0});addLog(`경영평가 결과 ${g.v}등급이 나왔다. 성과급 ${fmtMoney(b)}원이 들어왔다.`,{kind:'sys'});}
   }
   if(m===10&&S.leave===0){
     if(['chwi1','chwi2','research','mgmt'].includes(S.dept)&&S.rank<5){
-      const t='국정감사 요구자료가 내려왔다. 마감은 48시간 뒤다.';
-      const ch=[X('밤새 정리한다',()=>(E({hp:-4,rp:3}),'자료는 마감 두 시간 전에 나갔다.')),X('확인된 숫자만 낸다',()=>(E({rp:1,mn:-1}),'의원실에서 보완 요청이 한 번 왔다.'))];
+      const t=pick(['국정감사 요구자료가 내려왔다. 마감은 48시간 뒤다.','국정감사 요구자료가 열두 건 내려왔다. 그중 세 건이 우리 팀 몫이다.','의원실에서 최근 5년 치 통계를 달라고 한다. 마감은 내일 오전이다.','국정감사 대비 예상 질의 답변서를 쓰라는 지시가 왔다.']);
+      const ch=[X('밤새 정리한다',()=>(E({hp:-4,rp:3}),pick(['자료는 마감 두 시간 전에 나갔다.','새벽 세 시에 숫자 하나가 안 맞는 걸 찾았다. 고쳐서 냈다.','자료는 제때 나갔다. 다음 날 질의서에 그 표가 그대로 실렸다.']))),X('확인된 숫자만 낸다',()=>(E({rp:1,mn:-1}),pick(['의원실에서 보완 요청이 한 번 왔다.','짧게 냈다. 추가 질의는 없었다.','의원실에서 같은 자료를 연도별로 다시 달라고 했다.'])))];
       await resolve('국정감사',t,ch,false);
-    }else if(chance(0.4)){E({hp:-1});addLog('국정감사 기간이다. 의원실 자료 요청이 한 건 내려왔다.',{kind:'sys'});}
+    }else if(chance(0.4)){E({hp:-1});addLog(pick(['국정감사 기간이다. 의원실 자료 요청이 한 건 내려왔다.','국정감사 기간이다. 원장 일정이 모두 비었다.','국정감사 기간이다. 팀장이 하루 종일 국회 중계를 틀어놨다.']),{kind:'sys'});}
   }
   if(m===12){
     if(S.leave===0&&ym(S.mi).y%2===1){
-      const t='송년회가 잡혔다.';
-      const ch=[X('2차까지 간다',()=>(E({rp:1,sc:4,hp:-3,money:-10}),'노래방에서 팀장이 같은 노래를 두 번 불렀다.')),X('1차만 있다가 나온다',()=>(E({sc:1}),'고기는 맛있었다.')),X('불참한다',()=>(E({mn:1,sc:-2}),'다음 날 단체 사진에 내가 없었다.'))];
+      const t=pick(['송년회가 잡혔다.','팀 송년회 장소가 고깃집으로 정해졌다.','부서 합동 송년회가 잡혔다. 장기자랑 이야기가 나왔다.']);
+      const ch=[X('2차까지 간다',()=>(E({rp:1,sc:4,hp:-3,money:-10}),pick(['노래방에서 팀장이 같은 노래를 두 번 불렀다.','2차는 포장마차였다. 막차를 놓쳤다.','3차 이야기가 나올 때 몰래 빠져나왔다.']))),X('1차만 있다가 나온다',()=>(E({sc:1}),pick(['고기는 맛있었다.','건배사를 피하려고 화장실에 두 번 갔다.','옆자리 선배와 오래 이야기했다.']))),X('불참한다',()=>(E({mn:1,sc:-2}),'다음 날 단체 사진에 내가 없었다.'))];
       const i=await ask('송년회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
     }
   }
@@ -1183,6 +1254,35 @@ async function monthTick(){
   }
   if((S.dating||S.married)&&chance(0.28))loveLog();
   if(S.leave===0&&chance(0.2)){S.teamCd=S.teamCd||{};const ok=TEAM.map((f,i)=>i).filter(i=>S.teamCd[i]===undefined||S.mi-S.teamCd[i]>=36);if(ok.length){const i=pick(ok);S.teamCd[i]=S.mi;addLog(TEAM[i](),{kind:'team',tag:'팀'});}}
+  for(const [i,k] of (S.kidsList||[]).entries()){
+    const ka=kidAge(k),nm=S.kids>1?ORD[i]:'아이';
+    if(ka>=19&&!k.univ&&m===2){
+      const sc=(k.academy?1:0)+(k.tutor?1.2:0)+R()*2;
+      if(sc>=2.4){k.univ='seoul';k.seoul=true;addLog(`${nm}${J(nm,'이','가')} 서울에 있는 대학에 합격했다. 자취방을 구했다. 매달 60만 원이 더 든다.`,{kind:'love',tag:'가족'});}
+      else if(sc>=1.1){k.univ='local';addLog(`${nm}${J(nm,'이','가')} 지역 국립대에 합격했다. 집에서 통학한다.`,{kind:'love',tag:'가족'});}
+      else{k.univ='retake';k.retakeUntil=S.mi+12;addLog(`${nm}${J(nm,'이','가')} 원하던 대학에 떨어져 재수를 하기로 했다. 1년 동안 재수학원비가 든다.`,{kind:'love',tag:'가족'});}
+    }
+    if(ka>=26&&ka<=33&&!k.wedAsk&&chance(0.08)){
+      k.wedAsk=true;
+      await resolve('자녀 결혼',`${nm}${J(nm,'이','가')} 결혼하겠다고 한다. 신혼집 이야기가 나왔다.`,[
+        X('1억을 보태준다',()=>(E({money:-10000,mn:6}),'식장에서 오래 박수를 쳤다.')),
+        X('5,000만 원을 보태준다',()=>(E({money:-5000,mn:4}),'나머지는 둘이 마련하기로 했다.')),
+        X('마음만 전한다',()=>(E({mn:-2}),'축사를 길게 준비했다.'))],true,'key');
+    }
+  }
+  for(const ln of (S.loans||[]).filter(l=>S.mi>=l.at)){
+    S.loans.splice(S.loans.indexOf(ln),1);
+    if(ln.amt>0){E({money:ln.amt,mn:2});addLog(ln.biz?`동생의 카페가 자리를 잡았다. 투자한 돈을 두 배로 돌려받았다.`:`${ln.who}에게서 빌려준 돈이 들어왔다. 밥도 한 번 샀다.`,{kind:'key'});}
+    else{E({mn:-4});addLog(ln.biz?'동생의 카페가 문을 닫았다. 투자한 돈은 돌아오지 않았다.':`${ln.who}와 연락이 끊겼다. 빌려준 돈은 돌아오지 않았다.`,{kind:'key'});}
+  }
+  if(S.car&&S.mi-(S.carMi??S.mi)>=120&&S.leave===0){
+    S.carMi=S.mi-84;
+    await resolve('차 교체','차를 산 지 10년이 지났다. 정비소에서 큰 수리를 권한다.',[
+      X('새 차로 바꾼다',()=>{E({money:-2500,mn:3});S.carMi=S.mi;S.carOld=false;return '새 차 냄새가 한 달 갔다.';}),
+      X('고쳐서 더 탄다',()=>{S.carOld=true;E({money:-150});return '수리비 150만 원이 나왔다. 몇 년은 더 탈 수 있다고 한다.';})],true);
+  }
+  if(S.carOld&&chance(0.03)){E({money:-pick([80,120,200])});addLog(pick(['오래된 차가 고속도로에서 경고등을 띄웠다.','차 에어컨이 고장 났다.','타이어 네 개를 한꺼번에 갈았다.']));}
+  if(a>=30&&chance(0.06))addLog(pick(['대학 동기 결혼식에 다녀왔다.','먼 친척 장례식에 조문을 다녀왔다.','고향 친구 아이 돌잔치에 다녀왔다.','팀 선배의 부친상에 조문을 다녀왔다.']),{kind:'sys'});
   if(S.referral&&S.mi>=S.referral.at&&S.leave===0){
     const rf=S.referral;S.referral=null;
     await resolve('동기 추천',`먼저 나간 동기 ${rf.name}에게서 연락이 왔다. 지금 다니는 ${rf.place}에 자리가 났다며 추천하겠다고 한다.`,[
@@ -1191,7 +1291,7 @@ async function monthTick(){
     if(S.ended)return;
   }
   if(S.married&&S.kids<3&&a<43&&S.leave===0&&chance(S.kids===0?0.025:0.012)){
-    S.kids++;
+    S.kids++;S.kidsList=S.kidsList||[];S.kidsList.push({born:S.mi});
     const t=S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`;
     const ch=[X('육아휴직 1년',()=>{S.leave=12;S.leaveType='parental';E({mn:6,rp:-2});return '휴직 신청서는 하루 만에 결재됐다.';}),
       X('육아휴직 3개월',()=>{S.leave=3;S.leaveType='parental';E({mn:3});return '석 달 뒤 복귀하기로 했다.';}),
@@ -1226,16 +1326,22 @@ async function monthTick(){
     const Y=S.yr,r=v=>Math.round(v);
     const parts=[`급여 ${fmtSigned(r(Y.inc))}`];
     if(Y.bonus)parts.push(`성과급 ${fmtSigned(r(Y.bonus))}`);
+    if(Y.tax>=1)parts.push(`세금 ${fmtSigned(-r(Y.tax))}`);
     parts.push(`생활비 ${fmtSigned(-r(Y.exp))}`);
+    if(Y.kid>=1)parts.push(`양육비 ${fmtSigned(-r(Y.kid))}`);
+    if(Y.cm>=1)parts.push(`경조사·의료 ${fmtSigned(-r(Y.cm))}`);
+    if(Y.par>=1)parts.push(`부양 ${fmtSigned(-r(Y.par))}`);
+    if(Y.car>=1)parts.push(`차 유지비 ${fmtSigned(-r(Y.car))}`);
+    if(Y.prop>=1)parts.push(`보유세 ${fmtSigned(-r(Y.prop))}`);
     if(Math.abs(Y.ev)>=1)parts.push(`이벤트 ${fmtSigned(r(Y.ev))}`);
-    if(Y.int>=1)parts.push(`예금 이자 ${fmtSigned(r(Y.int))}`);
+    if(Math.abs(Y.int)>=1)parts.push(`${Y.int>=0?'예금':'마이너스 통장'} 이자 ${fmtSigned(r(Y.int))}`);
     if(Y.sav>=1)parts.push(`적금 이자 ${fmtSigned(r(Y.sav))}`);
     if(Math.abs(Y.inv)>=1)parts.push(`주식 ${fmtSigned(r(Y.inv))}`);
     if(Math.abs(Y.reit)>=1)parts.push(`리츠 ${fmtSigned(r(Y.reit))}`);
     if(Math.abs(Y.rent)>=1)parts.push(`월세 ${fmtSigned(r(Y.rent))}`);
     if(Math.abs(Y.house)>=1)parts.push(`부동산 시세 ${fmtSigned(r(Y.house))}`);
     addLog(`올해 연봉 ${fmtMoney(salary(S,S.mi))}원. ${parts.join(' · ')}. 통장 ${fmtMoney(S.money)}원, 순자산 ${fmtMoney(netWorth())}원.`,{kind:'sys'});
-    S.yr={inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0};
+    S.yr={inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0,tax:0,kid:0,cm:0,par:0,car:0,prop:0};
   }
 }
 function autoFocus(){
@@ -1400,7 +1506,7 @@ segBind('#durSeg','dur',v=>settings.dur=+v);
 segBind('#autoSeg','auto',v=>settings.auto=v==='1');
 
 $('#btnJoin').addEventListener('click',()=>{
-  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0},days:15,inv:0,savMonthly:0,savBal:0,savPrin:0,savStart:0,stock:0,reit:0,ofs:null,rateAdj:0,rateUntil:null,houseVal:0,houseLoan:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;
+  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0,tax:0,kid:0,cm:0,par:0,car:0,prop:0},kidsList:[],loans:[],days:15,inv:0,savMonthly:0,savBal:0,savPrin:0,savStart:0,stock:0,reit:0,ofs:null,rateAdj:0,rateUntil:null,houseVal:0,houseLoan:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;S.sal0=salary(S,0);
   $('#goalSeg').innerHTML=Object.entries(GOALS).map(([k,g])=>`<button type="button" data-g="${k}" aria-pressed="${k==='wlb'}">${g.name}</button>`).join('');
   cohort=[0,1,2,3].map(()=>makePerson());
   const sal=salary(S,0);

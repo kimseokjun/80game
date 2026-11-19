@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>직장생활 N분의 1 v2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="brand">직장생활 N분의 1<small>v2.0 개발 중 · 1단계 · 비공식 팬메이드</small></div>
+  <div class="date" id="barDate"></div>
+  <div class="spacer"></div>
+  <div class="ctrl" id="gameCtrl" hidden>
+    <button type="button" data-speed="0" aria-pressed="false">일시정지</button>
+    <button type="button" data-speed="1" aria-pressed="true">1×</button>
+    <button type="button" data-speed="3" aria-pressed="false">3×</button>
+    <button type="button" data-speed="8" aria-pressed="false">8×</button>
+    <label for="autoPick"><input type="checkbox" id="autoPick"> 자동 선택</label>
+  </div>
+</header>
+
+<main id="start" class="screen">
+  <div class="start">
+    <div class="eyebrow">회사생활 성공기 · 0살부터</div>
+    <h1>어디서 태어날지는 고를 수 없다</h1>
+    <p>태어난 집, 지역, 성별은 정해져서 온다. 그다음부터는 한 해씩 시간을 어디에 쓸지 고른다. 쌓인 관심 분야가 고등학교, 전공, 첫 직장을 바꾼다.</p>
+    <div class="paths">
+      <div class="path"><b>정보보안</b>해킹 대회, 보안 동아리</div>
+      <div class="path"><b>개발</b>코딩 교실, 해커톤</div>
+      <div class="path"><b>연구</b>과학 탐구, 소논문</div>
+      <div class="path"><b>경영</b>학생회, 경제 동아리</div>
+      <div class="path"><b>창업</b>벼룩시장, 창업 대회</div>
+    </div>
+    <div class="opts">
+      <div>
+        <div class="opt-label">한 해가 지나가는 속도</div>
+        <div class="seg" id="paceSeg">
+          <button type="button" data-pace="0.6" aria-pressed="false">빠르게</button>
+          <button type="button" data-pace="1" aria-pressed="true">보통</button>
+          <button type="button" data-pace="1.6" aria-pressed="false">천천히</button>
+        </div>
+      </div>
+      <div>
+        <div class="opt-label">선택지</div>
+        <div class="seg" id="autoSeg">
+          <button type="button" data-auto="0" aria-pressed="true">직접 고른다</button>
+          <button type="button" data-auto="1" aria-pressed="false">자동으로 지켜본다</button>
+        </div>
+      </div>
+    </div>
+    <button type="button" class="btn primary" id="btnBorn">태어나기</button>
+  </div>
+</main>
+
+<main id="notice" class="screen" hidden>
+  <div class="notice">
+    <h2>출생 신고서</h2>
+    <div class="no mono" id="noticeNo"></div>
+    <div class="nhead"><div id="nAvatar"></div><div class="mono" style="font-size:12px;color:var(--muted)">아래 항목은 확률로 정해졌다</div></div>
+    <div id="noticeRows"></div>
+    <p class="foot" id="noticeFoot"></p>
+    <button type="button" class="btn primary" id="btnStart">자라기 시작</button>
+  </div>
+</main>
+
+<div id="endingWrap" class="screen" hidden style="padding-bottom:0"></div>
+
+<main id="game" class="screen game" hidden>
+  <aside class="panel">
+    <h3>생활기록부</h3>
+    <div class="who"><div id="pAvatar"></div><div><div class="nm" id="pName"></div><div class="sub" id="pSub"></div></div></div>
+    <dl class="kv" id="pKv"></dl>
+    <div class="sec-h">성장 스탯</div>
+    <div class="stats" id="pStats"></div>
+    <div class="sec-h">관심 분야</div>
+    <div class="stats" id="pInts"></div>
+  </aside>
+  <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
+  <aside class="panel">
+    <h3>친구 · 눌러서 같이 시간 보내기</h3>
+    <div id="friendList"></div>
+  </aside>
+</main>
+
+<div id="modal" class="modal" hidden>
+  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+    <div class="d-when" id="mWhen"></div>
+    <h4 id="mTitle"></h4>
+    <p id="mText"></p>
+    <div class="choices" id="mChoices"></div>
+  </div>
+</div>
+
+<footer>비공식 팬메이드 시뮬레이션입니다. 실존 인물·기관과 관계없습니다. 확률과 이벤트는 추정입니다. '80억 분의 1'에서 영감을 받았습니다.</footer>
+
+<script src="js/util.js"></script>
+<script src="js/config.js"></script>
+<script src="js/avatar.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/life.js"></script>
+<script src="js/ui.js"></script>
+</body>
+</html>

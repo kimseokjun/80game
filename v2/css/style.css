@@ -1,0 +1,129 @@
+/* v2 · 회사생활 성공기
+   톤은 v1(공문서·인사기록카드)을 이어받고, 성장기에는 생활기록부 느낌을 더한다.
+   레이아웃: 왼쪽 생활기록부 카드 / 가운데 연대기 로그 / 오른쪽 친구 */
+:root{
+  --paper:#ECEEEA;--surface:#F8F9F6;--ink:#1C2127;--muted:#5D6670;--line:#CDD2CC;
+  --accent:#1F4E79;--accent-soft:#DCE5EE;--stamp:#B23A2E;--warm:#B7791F;
+  --font-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--paper:#14181C;--surface:#1C2126;--ink:#E3E6E2;--muted:#9AA3AB;--line:#2F363D;--accent:#86AFD9;--accent-soft:#22303D;--stamp:#E0796C;--warm:#E0B062;color-scheme:dark}
+}
+:root[data-theme="dark"]{--paper:#14181C;--surface:#1C2126;--ink:#E3E6E2;--muted:#9AA3AB;--line:#2F363D;--accent:#86AFD9;--accent-soft:#22303D;--stamp:#E0796C;--warm:#E0B062;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.65}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+.mono{font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+
+.bar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:12px 20px;border-bottom:1px solid var(--line);background:var(--surface);position:sticky;top:0;z-index:5}
+.brand{font-weight:700}
+.brand small{font-weight:400;color:var(--muted);margin-left:8px;font-size:12px}
+.bar .date{font-family:var(--font-mono);color:var(--muted);font-size:13px}
+.bar .spacer{flex:1}
+.ctrl{display:flex;gap:4px;align-items:center;flex-wrap:wrap}
+.ctrl button,.btn{border:1px solid var(--line);background:var(--surface);padding:5px 11px;border-radius:4px;cursor:pointer;font-size:13px}
+.ctrl button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.ctrl label{font-size:13px;display:flex;gap:6px;align-items:center;margin-left:8px;cursor:pointer}
+.btn.primary{background:var(--accent);color:var(--surface);border-color:var(--accent);padding:10px 22px;font-size:15px;font-weight:600}
+.screen{max-width:1240px;margin:0 auto;padding:28px 20px}
+
+/* 시작 */
+.start{max-width:640px}
+.eyebrow{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.start h1{font-size:38px;line-height:1.2;margin:8px 0 16px;letter-spacing:-0.02em;text-wrap:balance}
+.start p{max-width:62ch}
+.opts{display:grid;gap:18px;margin:28px 0;padding:20px;border:1px solid var(--line);background:var(--surface);border-radius:6px}
+.opt-label{font-size:13px;color:var(--muted);margin-bottom:6px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:1px solid var(--line);background:var(--paper);padding:7px 14px;border-radius:4px;cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent);font-weight:600}
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:18px 0}
+.path{border-top:2px solid var(--ink);padding-top:6px;font-size:13px}
+.path b{display:block;font-size:14px}
+
+/* 출생 신고서 */
+.notice{max-width:560px;background:var(--surface);border:1px solid var(--line);padding:28px;border-radius:6px;position:relative}
+.notice h2{margin:0 0 4px;font-size:22px;letter-spacing:0.2em;text-align:center}
+.notice .no{text-align:center;font-family:var(--font-mono);font-size:12px;color:var(--muted);margin-bottom:18px}
+.nhead{display:flex;gap:16px;align-items:center;margin-bottom:10px}
+.row{display:grid;grid-template-columns:96px 1fr auto;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);align-items:baseline;animation:rise .35s ease both}
+.row .k{color:var(--muted);font-size:13px}
+.row .p{font-family:var(--font-mono);font-size:12px;color:var(--accent)}
+@keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.notice .foot{margin:18px 0;font-size:14px;color:var(--muted)}
+
+/* 게임 */
+.game{display:grid;grid-template-columns:280px minmax(0,1fr) 270px;gap:20px;align-items:start}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:16px}
+.panel h3{margin:0 0 10px;font-size:13px;color:var(--muted);font-weight:500;letter-spacing:0.05em}
+.who{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.who .nm{font-size:21px;font-weight:700;line-height:1.2}
+.who .sub{font-size:13px;color:var(--muted)}
+.avatar{width:64px;height:64px;flex:none;border-radius:50%;background:var(--paper);border:1px solid var(--line)}
+.kv{display:grid;grid-template-columns:64px 1fr;gap:4px 10px;font-size:13px;margin:12px 0}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0}
+.stats{display:grid;gap:8px;margin:8px 0 14px}
+.stat{display:grid;grid-template-columns:52px 1fr 28px;gap:8px;align-items:center;font-size:13px}
+.track{height:6px;background:var(--paper);border-radius:3px;overflow:hidden;border:1px solid var(--line)}
+.fill{height:100%;background:var(--accent);transition:width .3s}
+.fill.low{background:var(--stamp)}
+.fill.int{background:var(--warm)}
+.stat .v{font-family:var(--font-mono);font-size:12px;text-align:right}
+.sec-h{font-size:12px;color:var(--muted);margin:12px 0 6px;font-weight:600;letter-spacing:0.04em}
+
+.logwrap{background:var(--surface);border:1px solid var(--line);border-radius:6px;height:calc(100vh - 120px);min-height:420px;overflow-y:auto;padding:4px 20px 40px}
+.year{position:sticky;top:0;background:var(--surface);display:flex;gap:12px;align-items:baseline;padding:14px 0 8px;border-bottom:1px solid var(--ink);margin-top:10px;z-index:1}
+.year b{font-family:var(--font-mono);font-size:18px;font-weight:500}
+.year span{font-size:13px;color:var(--muted)}
+.entry{display:grid;grid-template-columns:44px 1fr;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.entry .when{font-family:var(--font-mono);font-size:12px;color:var(--muted);padding-top:2px}
+.entry p{margin:0;max-width:66ch}
+.entry .pick{color:var(--accent);font-size:14px;margin-top:4px}
+.entry .res{margin-top:2px}
+.entry.sys p{color:var(--muted);font-size:14px}
+.entry.key p{font-weight:600}
+.tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted);font-weight:400}
+.tag.fr{color:var(--warm);border-color:var(--warm)}
+.gain{font-family:var(--font-mono);font-size:12px;color:var(--warm);margin-left:8px;white-space:nowrap}
+
+.friend{display:block;width:100%;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 4px;cursor:pointer;font-size:13px}
+.friend:last-child{border-bottom:0}
+.friend:hover{background:var(--paper)}
+.friend b{font-size:14px}
+.friend .meta{color:var(--muted)}
+.fr-bar{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);margin-top:4px}
+.fr-bar .track{flex:1;height:4px}
+.empty{font-size:13px;color:var(--muted)}
+
+/* 모달 */
+.modal{position:fixed;inset:0;background:rgba(10,14,18,.45);display:grid;place-items:center;padding:16px;z-index:20}
+.dialog{background:var(--surface);border:1px solid var(--line);border-radius:6px;max-width:540px;width:100%;padding:24px;max-height:90vh;overflow-y:auto}
+.dialog .d-when{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
+.dialog h4{margin:4px 0 10px;font-size:18px}
+.dialog p{margin:0 0 16px}
+.choices{display:grid;gap:8px}
+.choices button{text-align:left;border:1px solid var(--line);background:var(--paper);padding:10px 14px;border-radius:4px;cursor:pointer}
+.choices button:hover{border-color:var(--accent)}
+.choices button.auto{border-color:var(--accent);background:var(--accent-soft)}
+.choices small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.choices small .up{color:var(--accent)}
+.choices small .dn{color:var(--stamp)}
+.choices small .in{color:var(--warm)}
+
+/* 결산 */
+.ending{max-width:760px;margin:0 auto 24px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:28px}
+.ending h2{margin:0 0 4px;font-size:24px}
+.ending .lead{margin:8px 0 18px;max-width:60ch}
+.ending .row{grid-template-columns:110px 1fr}
+.ending h3{font-size:14px;margin:22px 0 6px;color:var(--muted);font-weight:500}
+.acts{display:flex;gap:8px;margin-top:22px;flex-wrap:wrap}
+
+footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;color:var(--muted)}
+@media (max-width:980px){.game{grid-template-columns:1fr}.logwrap{height:62vh}.start h1{font-size:30px}}
+@media (prefers-reduced-motion: reduce){.row{animation:none}.fill{transition:none}}

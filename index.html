@@ -161,7 +161,9 @@ select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);bord
 .choices button{text-align:left;border:1px solid var(--line);background:var(--paper);padding:11px 14px;border-radius:4px;cursor:pointer}
 .choices button:hover{border-color:var(--accent)}
 .choices button.auto{border-color:var(--accent);background:var(--accent-soft)}
-.choices small{display:block;color:var(--muted);font-size:12px}
+.choices small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.choices small .up{color:var(--accent)}
+.choices small .dn{color:var(--stamp)}
 
 /* 엔딩 */
 .ending{max-width:760px;margin:0 auto 24px;background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:28px;position:relative}
@@ -188,7 +190,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.4.2 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.5 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -436,6 +438,54 @@ function addLog(text,opt={}){
   if(stick)wrap.scrollTop=wrap.scrollHeight;
 }
 
+/* ---------- 선택지 힌트 ---------- */
+const LEAVE_ENDING='게임 종료 (이직 엔딩)';
+const HINTS={
+  '채용 공고|지원한다':{d:'합격하면 정규직 전환 · 떨어지면 멘탈↓',p:()=>0.1+S.sk/350+Math.min(S.selfdev,12)*0.012},
+  '체육대회|계주에 나간다':{d:'사교↑ 평판↑ 멘탈↑ 체력↓',p:()=>0.2+(S.hp+S.sc)/500},
+  '체육대회|응원석에 앉는다':{d:'사교 조금↑'},
+  '체육대회|연차를 쓴다':{d:'멘탈↑ 사교↓'},
+  '송년회|2차까지 간다':{d:'사교↑ 평판 조금↑ 체력↓ −10만원'},
+  '송년회|1차만 있다가 나온다':{d:'사교 조금↑'},
+  '송년회|불참한다':{d:'멘탈 조금↑ 사교↓'},
+  '두 라인|A팀장 쪽 점심에 간다':{d:'평판 조금↑ 사교 조금↑ · 다음 해 인사에 따라 평판↑ 또는 평판↓'},
+  '두 라인|B팀장 쪽 점심에 간다':{d:'평판 조금↑ 사교 조금↑ · 다음 해 인사에 따라 평판↑ 또는 평판↓'},
+  '두 라인|혼자 먹는다':{d:'멘탈 조금↑ 사교 조금↓'},
+  '소개팅|나간다':{d:'잘되면 연애 시작 멘탈↑',p:()=>0.2+S.sc/350},
+  '소개 제안|나간다':{d:'잘되면 연애 시작 멘탈↑',p:()=>0.4+(S.sc-50)/300},
+  '거처|혁신도시로 완전히 이사한다':{d:'체력↑ 출퇴근 소모 사라짐 멘탈 조금↓ −300만원'},
+  '거처|지금처럼 다닌다':{d:'체력 조금↓'},
+  '이직 제안|옮긴다':{d:'게임 종료 (민간 이직 엔딩)'},
+  '이직 제안|거절한다':{d:'멘탈 조금↑'},
+  '필기 합격|면접을 본다':{d:'합격하면 게임 종료 (이직 엔딩) · 떨어지면 멘탈↓',p:()=>0.35+S.sk/300},
+  '동기 추천|지원한다':{d:'합격하면 게임 종료 (이직 엔딩) · 떨어지면 멘탈↓',p:()=>0.45+S.sk/400},
+  '원장 공모|지원한다':{d:'임명되면 원장(임기 3년) · 떨어지면 멘탈↓',p:()=>0.06+S.rp/600},
+  '출산|육아휴직 1년':{d:'멘탈↑ 평판 조금↓ · 1년간 월 150만원'},
+  '출산|육아휴직 3개월':{d:'멘탈↑ · 3개월간 월 150만원'},
+  '출산|휴직하지 않는다':{d:'멘탈↓ 평판 조금↑'},
+  '번아웃|병가를 낸다(3개월)':{d:'멘탈 회복 평판 조금↓ · 3개월 쉼'},
+  '번아웃|상담 프로그램을 신청한다':{d:'멘탈↑'},
+  '번아웃|버틴다':{d:'멘탈 조금↑'},
+  '번아웃|사직서를 낸다':{d:'게임 종료'},
+  '사직서|제출한다':{d:'게임 종료'},
+};
+function hintFor(title,c){
+  if(c.d)return {d:c.d};
+  const h=HINTS[title+'|'+c.t];if(h)return h;
+  if(title==='동호회'&&c.t.endsWith('동호회에 든다'))return {d:'사교↑ 멘탈↑'};
+  if(title==='순환보직')return {d:c.t.includes('유지')?'':'',p:()=>0.35+S.rp/200,label:'희망 반영 가능성'};
+  return null;
+}
+function renderHint(el,h){
+  (h.d||'').split(' ').filter(Boolean).forEach((tk,i)=>{
+    if(i)el.appendChild(document.createTextNode(' '));
+    const sp=document.createElement('span');sp.textContent=tk;
+    if(tk.includes('↑'))sp.className='up';else if(tk.includes('↓')||/^−.*원$/.test(tk))sp.className='dn';
+    el.appendChild(sp);
+  });
+  if(h.p){const v=clamp(h.p(),0,1),t=v>=0.6?'높음':v>=0.35?'보통':'낮음';el.appendChild(document.createTextNode((h.d?' · ':'')+(h.label||'성공 가능성')+' '+t));}
+}
+
 /* ---------- 모달 ---------- */
 function ask(title,text,choices){
   return new Promise(res=>{
@@ -448,7 +498,8 @@ function ask(title,text,choices){
     choices.forEach((c,i)=>{
       const b=document.createElement('button');b.type='button';
       b.textContent=c.t;
-      if(c.d){const s=document.createElement('small');s.textContent=c.d;b.appendChild(s);}
+      const h=hintFor(title,c);
+      if(h&&(h.d||h.p)){const s=document.createElement('small');renderHint(s,h);b.appendChild(s);}
       b.addEventListener('click',()=>finish(i));box.appendChild(b);
     });
     $('#modal').hidden=false;

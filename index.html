@@ -153,7 +153,24 @@ select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);bord
 .stat-head h3{margin:0}
 .qbtn{width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-size:12px;line-height:1;cursor:pointer;padding:0;color:var(--muted)}
 .qbtn:hover{border-color:var(--accent);color:var(--accent)}
-#help,#asset{z-index:30}
+#help,#asset,#people{z-index:30}
+.dialog.wide{max-width:600px}
+.pnote{font-size:12px;color:var(--muted);margin:-4px 0 8px}
+.prow{border-top:1px solid var(--line);padding:10px 0}
+.ptop{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.prole{font-size:12px;color:var(--muted);min-width:120px}
+.ptop b{font-size:14px}
+.ptag{font-size:11px;border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:0 5px}
+.pmeet{margin-left:auto;padding:3px 10px!important;font-size:12px!important}
+.pbar{position:relative;height:6px;background:var(--paper);border:1px solid var(--line);border-radius:3px;margin:6px 0 4px}
+.pbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.pfill{position:absolute;top:0;bottom:0;background:var(--accent)}
+.pfill.neg{background:var(--stamp)}
+.pimp{font-size:13px}
+.pimp .n{font-family:var(--font-mono);margin-right:6px}
+.pwhy{font-size:12px;color:var(--muted)}
+.prow details{font-size:12px;color:var(--muted);margin-top:2px}
+.prow summary{cursor:pointer}
 .asec{border-top:1px solid var(--line);padding:12px 0}
 .asec h5{margin:0 0 6px;font-size:14px}
 .asec .note{font-size:12px;color:var(--muted);margin-bottom:8px}
@@ -205,7 +222,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.7.1 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.8 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -270,6 +287,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
     <dl class="kv" id="pKv"></dl>
     <div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div>
     <div class="stats" id="pStats"></div>
+    <button type="button" class="btn" id="btnPeople" style="width:100%;margin:2px 0 12px">사내 관계</button>
     <div class="assets" id="pAssets"></div>
     <div class="money" style="border-top:0"><span>연봉</span><b id="pSalary"></b></div>
     <div class="focus">
@@ -318,6 +336,14 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
     <h4 id="aTitle">자산 관리</h4>
     <div id="aBody"></div>
     <button type="button" class="btn primary" id="btnAssetClose">닫기</button>
+  </div>
+</div>
+<div id="people" class="modal" hidden>
+  <div class="dialog help wide" role="dialog" aria-modal="true" aria-labelledby="pTitle">
+    <h4 id="pTitle">사내 관계</h4>
+    <p class="pnote">회사 주요 인물들이 나를 어떻게 보는지. 만나기를 누르면 점심, 조언, 선물, 아부를 할 수 있다.</p>
+    <div id="pBody"></div>
+    <button type="button" class="btn primary" id="btnPeopleClose">닫기</button>
   </div>
 </div>
 <div id="modal" class="modal" hidden>
@@ -518,7 +544,7 @@ const HINTS={
   '차 교체|고쳐서 더 탄다':{d:'−150만원 · 이후 수리비가 자주 나감'},
 };
 function hintFor(title,c){
-  if(c.d)return {d:c.d};
+  if(c.d||c.p)return {d:c.d,p:c.p,label:c.pl};
   const h=HINTS[title+'|'+c.t];if(h)return h;
   if(title==='동호회'&&c.t.endsWith('동호회에 든다'))return {d:CLUBS[c.t.split(' ')[0]].hint};
   if(title==='순환보직')return {d:c.t.includes('유지')?'':'',p:()=>0.35+S.rp/200,label:'희망 반영 가능성'};
@@ -615,7 +641,7 @@ const TEAM=[
        return '팀에 신입이 들어왔다. 인사만 하고 자리로 돌아왔다.';},
   ()=>{if(lead()){E({mn:-1});return '팀원이 육아휴직을 신청했다. 대체 인력을 요청했다.';}E({hp:-1});return '옆자리 선배가 육아휴직에 들어갔다. 업무 일부가 내게 넘어왔다.';},
   ()=>'1년 동안 휴직했던 팀원이 복직했다. 시스템이 많이 바뀌었다며 웃었다.',
-  ()=>{if(lead())return '옆 팀 팀장이 바뀌었다. 협조 요청 메일의 말투가 달라졌다.';E({mn:-1});return '팀장이 바뀌었다. 첫 회의에서 주간보고 양식이 바뀌었다.';},
+  ()=>{E({mn:-1});return pick(['주간회의가 월요일 오전 9시로 옮겨졌다.','주간보고 양식이 또 바뀌었다.']);},
   ()=>{if(chance(0.5)){E({mn:1});return '자리 배치가 바뀌었다. 창가 자리가 됐다.';}E({mn:-1});return '자리 배치가 바뀌었다. 팀장 바로 앞자리가 됐다.';},
   ()=>{E({sc:1});return '다른 기관으로 옮기는 팀원의 송별회가 있었다. 롤링페이퍼에 한 줄을 적었다.';},
   ()=>'회의실 에어컨이 고장 났다. 일주일 동안 회의가 짧아졌다.',
@@ -626,6 +652,80 @@ const TEAM=[
   ()=>'점심 메뉴를 두고 국밥파와 샐러드파가 갈렸다. 결국 둘 다 갔다.',
   ()=>{E({rp:-1,mn:-1});return '내가 올린 공문에 오타가 있었다. 정정 공문을 다시 냈다.';},
 ];
+
+/* ---------- 사내 인물 ---------- */
+const SEATS=['ceo','d:it','d:ms',...Object.keys(DEPTS).map(k=>'t:'+k)];
+const seatRole=k=>k==='ceo'?'원장':k.startsWith('d:')?'실장':'팀장';
+function seatLabel(k){if(k==='ceo')return '원장';if(k==='d:it')return '실장 · 정보화';if(k==='d:ms')return '실장 · 경영·연구';return '팀장 · '+DEPTS[k.slice(2)].name;}
+const ROLE_M={팀장:1,실장:1.3,원장:1.6};
+function newPerson(seat){let n,t=0;do{n=pick(SUR)+pick(GIVEN);t++;}while(t<50&&((S.people||[]).some(p=>p.name===n)||cohort.some(p=>p.name===n)||n===S.name));return {seat,name:n,rel:randint(-5,5),hist:[],flat:0};}
+function mySeat(){if(S.type!=='reg')return null;if(S.rank>=6)return 'ceo';if(S.rank===5)return dirSeat();if(S.rank===4)return 't:'+S.dept;return null;}
+const dirSeat=()=>S.track==='it'?'d:it':'d:ms';
+const seatOf=k=>(S.people||[]).find(p=>p.seat===k);
+function syncSeats(){
+  const my=mySeat(),out=[];
+  S.people.forEach(p=>{if(p.seat===my){out.push(p);p.seat=null;}});
+  S.people=S.people.filter(p=>p.seat);
+  for(const k of SEATS){if(k===my||seatOf(k))continue;const d=out.shift();if(d){d.seat=k;S.people.push(d);}else S.people.push(newPerson(k));}
+}
+function bossSeat(){if(S.type==='reg'&&S.rank>=6)return null;if(S.type==='reg'&&S.rank===5)return 'ceo';if(S.type==='reg'&&S.rank===4)return dirSeat();return 't:'+S.dept;}
+const boss=()=>{const k=bossSeat();return k?seatOf(k):null;};
+const bossTitle=()=>{const k=bossSeat();return k?seatRole(k):'';};
+function rel(p,d,why){if(!p)return;p.rel=clamp(p.rel+d,-100,100);p.hist.unshift({mi:S.mi,d:Math.round(d),why});p.hist=p.hist.slice(0,4);}
+function impression(r){return r>=60?'아끼는 사람으로 생각한다':r>=25?'일 잘한다고 보고 있다':r>-25?'특별한 인상이 없다':r>-60?'조금 불편해한다':'대놓고 싫어한다';}
+function otherLeader(){const l=(S.people||[]).filter(p=>p.seat.startsWith('t:')&&p.seat!==bossSeat());return l.length?pick(l):null;}
+function reshuffle(){
+  let n=0;const my=mySeat();
+  for(const k of SEATS.slice().sort(()=>R()-0.5)){
+    if(k===my||n>=1)continue;
+    const pr=k==='ceo'?(S.mi-(S.ceoMi??0)>=36?1:0):k.startsWith('d:')?0.08:0.1;
+    if(!chance(pr))continue;
+    const old=seatOf(k);S.people=S.people.filter(p=>p!==old);const np=newPerson(k);S.people.push(np);n++;
+    if(k==='ceo')S.ceoMi=S.mi;
+    const b=k===bossSeat();
+    addLog(b?`${seatRole(k)}이 바뀌었다. ${old?old.name+' '+seatRole(k)+'은 다른 자리로 갔고, ':''}새로 ${np.name}${J(np.name,'이','가')} 왔다.`:`인사이동으로 ${seatLabel(k).replace(' · ',' (')}${k==='ceo'?'':')'} 자리에 ${np.name}${J(np.name,'이','가')} 왔다.`,{kind:'sys',tag:'인사'});
+  }
+}
+function renderPeople(){
+  const my=mySeat(),bs=bossSeat();
+  const order=SEATS.filter(k=>!k.startsWith('t:')).concat(SEATS.filter(k=>k===bs),SEATS.filter(k=>k.startsWith('t:')&&k!==bs));
+  $('#pBody').innerHTML=order.map(k=>{
+    if(k===my)return `<div class="prow"><div class="ptop"><span class="prole">${seatLabel(k)}</span><b>${S.name}</b><span class="ptag">나</span></div></div>`;
+    const p=seatOf(k);if(!p)return '';
+    const r=Math.round(p.rel),w=Math.abs(r)/2,left=r>=0?50:50-w;
+    const tag=k===bs?`<span class="ptag">내 ${seatRole(k)}</span>`:k===dirSeat()&&S.rank<4?'<span class="ptag">담당 실장</span>':'';
+    const h=p.hist[0];
+    const cd=seatRole(k)==='원장'?6:3,wait=p.lastMi!==undefined&&S.mi-p.lastMi<cd;
+    return `<div class="prow"><div class="ptop"><span class="prole">${seatLabel(k)}</span><b>${p.name}</b>${tag}<button type="button" class="btn pmeet" data-seat="${k}">${wait?`${cd-(S.mi-p.lastMi)}개월 뒤`:'만나기'}</button></div>
+      <div class="pbar"><div class="pfill${r<0?' neg':''}" style="left:${left}%;width:${w}%"></div></div>
+      <div class="pimp"><span class="n">${r>0?'+':''}${r}</span>${impression(r)}</div>
+      ${h?`<div class="pwhy">└ 최근: ${h.why}</div>`:''}
+      ${p.hist.length>1?`<details><summary>기록 더 보기</summary>${p.hist.slice(1).map(x=>{const t=ym(x.mi);return `<div>${t.y}.${String(t.m).padStart(2,'0')} · ${x.d>0?'+':''}${x.d} · ${x.why}</div>`;}).join('')}</details>`:''}
+    </div>`;
+  }).join('');
+}
+async function personMenu(k){
+  const p=seatOf(k);if(!p)return;
+  const role=seatRole(k),mult=ROLE_M[role],cd=role==='원장'?6:3,ro=role==='원장'?'원장님':role==='실장'?'실장님':'팀장님';
+  const info=`${seatLabel(k)} · 관계 ${Math.round(p.rel)} · ${impression(p.rel)}`;
+  if(p.lastMi!==undefined&&S.mi-p.lastMi<cd){await ask(p.name,`${info}. 최근에 만났다. ${cd-(S.mi-p.lastMi)}개월 뒤에 다시 만날 수 있다.`,[X('닫기',()=>'')]);return;}
+  const refuse=clamp((role==='팀장'?0.1:role==='실장'?0.25:0.4)+(p.rel<0?-p.rel/250:0),0,0.85);
+  const bf=Math.min(0.8,0.25+p.flat*0.05);
+  const m=ym(S.mi).m;
+  const ch=[
+    X('점심 같이 하자고 하기',()=>{E({money:-5});if(chance(refuse)){rel(p,-1,'점심 제안을 미뤘다');return `${p.name} ${ro}께 점심을 청했다. 바쁘다며 다음에 보자고 했다.`;}rel(p,6*mult,'같이 점심을 먹었다');return `${p.name} ${ro}과 점심을 먹었다. ${pick(['처음으로 업무 밖 이야기를 했다.','자녀 이야기를 오래 들었다.','계산은 '+ro.replace('님','')+'이 했다.','입사 때 이야기를 물어봤다.'])}`;},'−5만원 관계↑',()=>1-refuse,'함께할 가능성'),
+    X('업무 조언 구하기',()=>{rel(p,4*mult,'업무 조언을 구하러 왔다');E({sk:1});return `${p.name} ${ro}께 업무 조언을 구했다. ${pick(['메모가 한 쪽이 넘었다.','예전 비슷한 사례를 알려줬다.','생각보다 길게 이야기해줬다.'])}`;},'관계 조금↑ 역량 조금↑'),
+  ];
+  if(m===2||m===9)ch.push(X('명절 선물 챙기기',()=>{E({money:-10});rel(p,5*mult,'명절 선물을 챙겼다');return `${p.name} ${ro}께 명절 선물을 보냈다. 고맙다는 문자가 왔다.`;},'−10만원 관계↑'));
+  ch.push(X('아부 떨기',()=>{p.flat++;if(chance(bf)){rel(p,-4,'속 보이는 칭찬을 했다');return `${p.name} ${ro}의 지난 보고를 칭찬했다. 속이 보인다는 표정이었다.`;}rel(p,Math.max(1,8-(p.flat-1)*2)*mult*(0.6+R()*0.4),'칭찬을 듣고 기분이 좋아졌다');return `${p.name} ${ro}의 ${pick(['넥타이','지난 발표','새로 바꾼 안경','결단력'])}을 칭찬했다. 표정이 밝아졌다.`;},'관계↑ · 반복할수록 효과↓',()=>1-bf,'통할 가능성'));
+  ch.push(X('그만둔다',()=>null));
+  const i=await ask(p.name,info,ch);
+  if(ch[i].t==='그만둔다'||ch[i].t==='닫기')return;
+  p.lastMi=S.mi;
+  addLog(ch[i].f(),{kind:'act'});
+  S.upCnt=(S.upCnt||[]).filter(x=>S.mi-x<12);S.upCnt.push(S.mi);
+  if(S.upCnt.length>4){S.upCnt=[];E({sc:-3});addLog('윗사람만 챙긴다는 말이 팀에 돌았다.',{kind:'team',tag:'팀'});}
+}
 
 /* ---------- 지출 ---------- */
 const ORD=['첫째','둘째','셋째'];
@@ -700,7 +800,7 @@ const ACTIONS=[
   {k:'trip_o',name:'해외 여행',cost:300,days:5,cd:12,run:()=>{E({mn:15,hp:5});let t=pick(['연차를 붙여 오사카에 다녀왔다.','연차를 붙여 다낭에 다녀왔다.','연차를 붙여 리스본에 다녀왔다. 비행기만 열네 시간이었다.','연차를 붙여 타이베이에 다녀왔다.']);
     if(chance(0.25)){const e=pick([{t:' 귀국 날 비행기가 결항돼 하루 더 머물렀다.',m:-40},{t:' 현지 식당에서 같은 기관 직원을 우연히 마주쳤다.',m:0},{t:' 휴대폰을 잃어버렸다가 이틀 뒤에 찾았다.',m:0}]);t+=e.t;if(e.m)E({money:e.m});}return t;}},
   {k:'clinic',name:'병원·종합검진',cost:30,days:1,cd:12,run:()=>{E({hp:8});S.checkupUntil=S.mi+12;return '연차를 내고 종합검진을 받았다.'+(chance(0.15)?' 작은 이상을 일찍 발견해 치료를 시작했다.':' 별다른 소견은 없었다.');}},
-  {k:'treat',name:'팀에 한턱',cost:30,cd:3,run:()=>{E({sc:4,rp:2});return pick(['팀에 커피와 케이크를 돌렸다. 단체 채팅방에 감사 이모티콘이 열 개 올라왔다.','퇴근 후 팀원들에게 고기를 샀다. 막내가 사진을 찍었다.']);}},
+  {k:'treat',name:'팀에 한턱',cost:30,cd:3,run:()=>{E({sc:4,rp:2});rel(boss(),3,'팀에 한턱 낸 걸 기억한다');return pick(['팀에 커피와 케이크를 돌렸다. 단체 채팅방에 감사 이모티콘이 열 개 올라왔다.','퇴근 후 팀원들에게 고기를 샀다. 막내가 사진을 찍었다.']);}},
   {k:'parents',name:'부모님 용돈',cost:50,cd:3,run:()=>{E({mn:4});return '부모님께 용돈을 보냈다. 저녁에 전화가 왔다.';}},
   {k:'cert',name:'학원·자격증',cost:80,cd:6,run:()=>{E({sk:5});S.selfdev+=2;const c=pick(CERTS[S.track]);if(chance(0.3)){S.certPay=(S.certPay||0)+5;return `학원에 등록해 ${c} 시험을 준비했다. 합격했다. 다음 달부터 자격 수당이 나온다.`;}return `학원에 등록해 ${c} 시험을 준비했다. 이번 시험은 떨어졌다.`;}},
   {k:'car',name:'차 사기',cost:2500,once:true,when:()=>!S.car,why:'이미 차가 있다',run:()=>{S.car=true;S.carMi=S.mi;return S.home==='near'?'중고 SUV를 샀다. 주말에 갈 수 있는 곳이 늘었다.':'중고 SUV를 샀다. 출퇴근이 한결 수월해졌다.';}},
@@ -811,10 +911,11 @@ async function resolve(title,text,choices,manual,kind){
   const i=manual?await ask(title,text,choices):autoChoose(choices);
   const res=choices[i].f();
   addLog(text,{pick:choices[i].t,res:res||'',kind:kind||''});
+  return i;
 }
 
 /* ---------- 이벤트 ---------- */
-const X=(t,f,d)=>({t,f,d});
+const X=(t,f,d,p,pl)=>({t,f,d,p,pl});
 const EV=[
 // 고용24 대민포털팀
 {id:'d_outage',dept:['daemin'],title:'접속 지연',text:'월요일 오전, 실업급여 신청이 몰리며 고용24 접속이 느려졌다. 민원 전화가 콜센터를 넘어 팀으로 들어오기 시작했다.',choices:[
@@ -860,8 +961,8 @@ const EV=[
   X('PL을 자원한다',()=>(E({hp:-5,sk:4,rp:4,mn:-3}),'넉 달 동안 쉰 주말은 다섯 번이었다. 사업은 예정일에 열렸다. 보도자료에 시스템 이야기는 한 줄 있었다.')),
   X('맡은 모듈만 한다',()=>(E({sk:1}),'내 모듈은 일정대로 끝났다.'))]},
 {id:'c2_minister',dept:['chwi2'],title:'장관 시연',text:'장관 현장 방문에서 청년성장 프로젝트 시연을 한다. 시연 PC를 맡게 됐다.',choices:[
-  X('시연 환경을 따로 만들어 둔다',()=>chance(0.85)?(E({rp:4,hp:-2}),'시연은 3분 만에 끝났다. 장관이 고개를 두 번 끄덕였다.'):(E({mn:-3}),'시연 중 로딩이 길었다. 사진에는 화면이 찍히지 않았다.')),
-  X('운영 환경 그대로 보여준다',()=>chance(0.55)?(E({rp:3}),'문제없이 끝났다.'):(E({rp:-3,mn:-4}),'세션이 만료됐다. 다시 로그인하는 사이 장관은 다음 장소로 이동했다.'))]},
+  X('시연 환경을 따로 만들어 둔다',()=>chance(0.85)?(E({rp:4,hp:-2}),rel(seatOf('ceo'),6,'장관 시연을 깔끔하게 끝냈다'),'시연은 3분 만에 끝났다. 장관이 고개를 두 번 끄덕였다.'):(E({mn:-3}),rel(seatOf('ceo'),-3,'장관 시연에서 진땀을 뺐다'),'시연 중 로딩이 길었다. 사진에는 화면이 찍히지 않았다.')),
+  X('운영 환경 그대로 보여준다',()=>chance(0.55)?(E({rp:3}),'문제없이 끝났다.'):(E({rp:-3,mn:-4}),rel(seatOf('ceo'),-5,'장관 앞에서 시연이 멈췄다'),'세션이 만료됐다. 다시 로그인하는 사이 장관은 다음 장소로 이동했다.'))]},
 {id:'c2_pressure',dept:['chwi2','chwi1'],text:'본부 과장이 주간 회의에 직접 들어오기 시작했다.',auto:()=>E({mn:-3})},
 // 정보보호팀
 {id:'s_alert',dept:['sec'],title:'새벽 알림',text:'새벽 3시 12분, 보안관제 알림이 울렸다. 해외 IP에서 로그인 시도가 반복되고 있다.',choices:[
@@ -905,16 +1006,16 @@ const EV=[
 {id:'it_vendor',when:()=>S.track==='it',text:'협력사 PM이 바뀌었다. 인수인계 문서는 열두 쪽이었다.',auto:()=>E({hp:-2,mn:-2})},
 {id:'it_phish',when:()=>S.dept!=='sec',text:'해킹메일 모의훈련 메일이 왔다.',auto:()=>chance(0.12+(100-S.sk)/600)?(E({rp:-2,mn:-1}),'첨부파일을 열었다. 다음 주 재교육 명단에 이름이 올라갔다.'):'열지 않았다.'},
 // 사내 정치·관계
-{id:'pol_line',manual:true,w:1.2,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=4&&!S.faction,title:'두 라인',text:'다음 실장 자리를 두고 두 팀장 사이 기류가 묘하다. 누가 누구 점심 자리에 앉는지가 이야기된다.',choices:[
-  X('A팀장 쪽 점심에 간다',()=>{S.faction='A';S.factionY=ym(S.mi).y+1;E({rp:1,sc:1});return '같은 메뉴를 시켰다. 이야기는 대부분 내년 인사에 관한 것이었다.';}),
-  X('B팀장 쪽 점심에 간다',()=>{S.faction='B';S.factionY=ym(S.mi).y+1;E({rp:1,sc:1});return '식사는 빨리 끝났다. 커피는 B팀장이 샀다.';}),
+{id:'pol_line',manual:true,w:1.2,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=3&&!S.faction&&(S.people||[]).filter(p=>p.seat.startsWith('t:')&&p.seat!==bossSeat()).length>=2,title:'두 라인',text:()=>{const l=S.people.filter(p=>p.seat.startsWith('t:')&&p.seat!==bossSeat()).sort(()=>R()-0.5);S.fA=l[0];S.fB=l[1];return `다음 실장 자리를 두고 A팀장 ${S.fA.name}${J(S.fA.name,'과','와')} B팀장 ${S.fB.name} 사이 기류가 묘하다. 누가 누구 점심 자리에 앉는지가 이야기된다.`;},choices:[
+  X('A팀장 쪽 점심에 간다',()=>{S.faction='A';rel(S.fA,8,'점심 자리에 꾸준히 나왔다');rel(S.fB,-4,'상대 팀장 쪽 사람으로 본다');S.factionY=ym(S.mi).y+1;E({rp:1,sc:1});return '같은 메뉴를 시켰다. 이야기는 대부분 내년 인사에 관한 것이었다.';}),
+  X('B팀장 쪽 점심에 간다',()=>{S.faction='B';rel(S.fB,8,'점심 자리에 꾸준히 나왔다');rel(S.fA,-4,'상대 팀장 쪽 사람으로 본다');S.factionY=ym(S.mi).y+1;E({rp:1,sc:1});return '식사는 빨리 끝났다. 커피는 B팀장이 샀다.';}),
   X('혼자 먹는다',()=>(E({mn:1,sc:-1}),'편했다. 대신 들리는 이야기도 없었다.'))]},
 {id:'pol_credit',title:'성과 가로채기',text:'주간 회의에서 내가 만든 자료를 옆 팀 차장이 자기 성과처럼 보고했다.',choices:[
-  X('그 자리에서 정정한다',()=>chance(0.25+S.sc/200)?(E({rp:3,sc:1}),'회의실이 잠깐 조용해졌다. 팀장은 나중에 잘했다고 했다.'):(E({rp:-1,mn:-2}),'정정은 됐다. 그 차장은 그 뒤로 내 협조 요청을 늦게 처리했다.')),
+  X('그 자리에서 정정한다',()=>chance(0.25+S.sc/200)?(E({rp:3,sc:1}),rel(boss(),3,'회의에서 할 말은 하는 걸 봤다'),'회의실이 잠깐 조용해졌다. 팀장은 나중에 잘했다고 했다.'):(E({rp:-1,mn:-2}),rel(otherLeader(),-6,'자기 팀 차장을 회의에서 정정한 걸 기억한다'),'정정은 됐다. 그 차장은 그 뒤로 내 협조 요청을 늦게 처리했다.')),
   X('나중에 따로 말한다',()=>(E({mn:-2}),'차장은 오해였다고 했다. 다음 회의에서도 같은 일이 있었다.')),
   X('넘어간다',()=>(E({mn:-4}),'아무도 그 이야기를 하지 않았다.'))]},
 {id:'pol_gossip',title:'퇴근 후 술자리',text:'퇴근 후 몇몇이 모이는 술자리가 있다. 주로 윗사람 이야기가 오간다.',choices:[
-  X('간다',()=>chance(0.27-S.sc/500)?(E({rp:-5,sc:-3,mn:-4,money:-8}),'내가 한 말이 돌고 돌아 당사자 귀에 들어갔다.'):(E({rp:2,sc:3,mn:1,money:-8}),'들은 이야기가 두 달 뒤 인사에서 맞았다.')),
+  X('간다',()=>chance(0.27-S.sc/500)?(E({rp:-5,sc:-3,mn:-4,money:-8}),rel(otherLeader(),-12,'술자리에서 한 말이 귀에 들어간 것 같다'),'내가 한 말이 돌고 돌아 당사자 귀에 들어갔다.'):(E({rp:2,sc:3,mn:1,money:-8}),'들은 이야기가 두 달 뒤 인사에서 맞았다.')),
   X('자리를 피한다',()=>'다음 날 아침 대화에 끼지 못했다.')]},
 {id:'pol_gapjil',title:'목격',text:'옆자리 직원이 회의 중 상사에게 공개적으로 모욕당하는 걸 봤다.',choices:[
   X('고충 상담 창구에 알린다',()=>chance(0.6)?(E({mn:2,rp:1}),'조사가 시작됐다. 그 상사는 다음 인사 때 다른 부서로 갔다.'):(E({mn:-3}),"조사는 '확인 불가'로 끝났다. 분위기는 그대로였다.")),
@@ -933,7 +1034,7 @@ const EV=[
 {id:'soc_bus',when:()=>S.home==='metro'&&!S.moved,text:'통근버스가 고속도로에서 40분 멈춰 있었다. 지각 처리는 되지 않았다.',auto:()=>E({hp:-2,mn:-1})},
 {id:'club_act',w:1.5,cool:10,when:()=>!!S.club,text:()=>'',auto:()=>{
   let t;
-  if(S.club==='등산'){E({hp:3,mn:2,sc:1});t=pick(['동호회에서 속리산에 갔다. 정상에서 단체 사진을 찍었다.','동호회에서 월악산에 갔다. 하산길이 더 힘들었다.']);if(chance(0.2)){E({rp:2});t+=' 같이 오른 실장님과 처음으로 길게 이야기했다.';}}
+  if(S.club==='등산'){E({hp:3,mn:2,sc:1});t=pick(['동호회에서 속리산에 갔다. 정상에서 단체 사진을 찍었다.','동호회에서 월악산에 갔다. 하산길이 더 힘들었다.']);if(chance(0.2)){E({rp:2});rel(seatOf(dirSeat()),5,'등산 동호회에서 자주 마주쳤다');t+=' 같이 오른 실장님과 처음으로 길게 이야기했다.';}}
   else if(S.club==='풋살'){if(chance(0.1)){E({hp:-6,money:-30});t='풋살을 하다 발목을 접질렸다. 한 달 동안 한의원을 다녔다.';}else{E({hp:4,sc:2});t=pick(['풋살 동호회가 지역 대회 8강에 올랐다. 다음 날 출근길 계단이 힘들었다.','퇴근 후 풋살장에서 두 시간을 뛰었다. 땀이 많이 났다.']);}}
   else if(S.club==='보드게임'){E({sc:4,mn:2});t=pick(['보드게임 동호회 정기 모임. 다른 부서 차장과 처음 말을 텄다.','보드게임 동호회에서 새벽 한 시까지 한 판을 끝냈다.']);}
   else{E({mn:3,sk:1});t=pick(['독서 모임에서 같은 책을 읽은 다른 팀 사람과 오래 이야기했다.','독서 모임 발제를 맡았다. 밑줄을 마흔 군데 그었다.']);}
@@ -957,8 +1058,8 @@ const EV=[
   X('면접을 본다',()=>{if(chance(0.35+S.sk/300)){endGame('공기업 이직','최종 합격 문자를 받았다. 사직서를 썼다.');return '최종 합격이었다.';}S.selfdev=0;E({mn:-4});return '최종에서 떨어졌다. 다음 날 평소처럼 출근했다.';}),
   X('지금 자리에 남는다',()=>{S.selfdev=0;return '면접 날, 평소처럼 출근했다.';})]},
 {id:'discipline',w:0.3,cool:120,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=5,title:'징계위원회',text:'보안 서약 위반으로 징계위원회가 열렸다. 승인받지 않은 USB 반출 기록이 문제였다.',choices:[
-  X('경위를 소명한다',()=>chance(0.6)?(E({rp:-4,mn:-5}),'견책으로 끝났다.'):(demote('강등 처분을 받았다.'),'')),
-  X('처분을 받아들인다',()=>chance(0.5)?(E({rp:-5,mn:-4,money:-200}),'감봉 3개월 처분을 받았다.'):(demote('강등 처분을 받았다.'),''))]},
+  X('경위를 소명한다',()=>(rel(seatOf('ceo'),-8,'징계위원회 건을 알고 있다'),rel(boss(),-5,'징계 건으로 곤란해졌다'),chance(0.6)?(E({rp:-4,mn:-5}),'견책으로 끝났다.'):(demote('강등 처분을 받았다.'),''))),
+  X('처분을 받아들인다',()=>(rel(seatOf('ceo'),-8,'징계위원회 건을 알고 있다'),rel(boss(),-5,'징계 건으로 곤란해졌다'),chance(0.5)?(E({rp:-5,mn:-4,money:-200}),'감봉 3개월 처분을 받았다.'):(demote('강등 처분을 받았다.'),'')))]},
 // v1.3 추가
 {id:'d_chatbot',dept:['daemin'],title:'챗봇 오안내',text:'대민 챗봇이 실업급여 조건을 잘못 안내했다는 민원이 들어왔다.',choices:[
   X('답변 데이터를 전수 점검한다',()=>(E({sk:2,hp:-3,rp:2}),'잘못된 답변 37개를 고쳤다.')),
@@ -1031,15 +1132,19 @@ function changeDept(k){
 }
 async function personnel(){
   const {y}=ym(S.mi);
-  if(S.awardY===y){S.awardY=null;E({rp:4,mn:3,money:30});addLog('작년 장애 대응으로 원장 표창을 받았다. 포상금이 나왔다.',{kind:'key'});}
+  if(S.awardY===y){S.awardY=null;E({rp:4,mn:3,money:30});rel(seatOf('ceo'),5,'장애 대응으로 표창을 줬다');rel(boss(),3,'팀이 표창을 받게 했다');addLog('작년 장애 대응으로 원장 표창을 받았다. 포상금이 나왔다.',{kind:'key'});}
   if(S.faction&&S.factionY<=y){
-    const win=chance(0.5)?'A':'B';
-    if(win===S.faction){E({rp:5,sc:2,mn:2});addLog(`실장 인사가 났다. ${win}팀장이었다. 점심 자리가 조금 넓어졌다.`);}
-    else{E({rp:-4,mn:-3});addLog(`실장 인사가 났다. ${win}팀장이었다. 다음 날 점심은 혼자 먹었다.`);}
+    const win=chance(0.5)?'A':'B',wp=win==='A'?S.fA:S.fB;
+    let nm=`${win}팀장`;
+    if(wp&&S.people.includes(wp)&&mySeat()!==dirSeat()){const old=seatOf(dirSeat());const os=wp.seat;S.people=S.people.filter(p=>p!==old);wp.seat=dirSeat();S.people.push(newPerson(os));nm=`${win}팀장 ${wp.name}`;rel(wp,win===S.faction?6:-4,win===S.faction?'실장이 되기 전부터 내 편이었다':'상대 쪽에 섰던 걸 기억한다');}
+    if(win===S.faction){E({rp:5,sc:2,mn:2});addLog(`실장 인사가 났다. ${nm}${J(nm,'이었다','였다')}. 점심 자리가 조금 넓어졌다.`);}
+    else{E({rp:-4,mn:-3});addLog(`실장 인사가 났다. ${nm}${J(nm,'이었다','였다')}. 다음 날 점심은 혼자 먹었다.`);}
+    S.fA=S.fB=null;
     S.faction=null;
   }
   if(S.type!=='reg'||S.leave>0)return;
-  if((S.rank===4||S.rank===5)&&((S.rp<35&&chance(0.5))||chance(0.03))){
+  S.evalBonusUsed=S.evalBonus;S.evalBonus=0;
+  if((S.rank===4||S.rank===5)&&((S.rp<35&&chance(0.5))||chance(0.03)||((boss()?.rel??0)<-30&&chance(0.2)))){
     S.rank--;S.rankSince=S.mi;E({mn:-8});
     addLog(`보직에서 해임됐다. ${rankTitle(S)}(으)로 돌아갔다.`,{kind:'key'});
     return;
@@ -1055,7 +1160,7 @@ async function personnel(){
         if(me>=them){S.rank++;S.rankSince=S.mi;S.promoFails=0;rival.promoFails++;E({mn:close?2:5,rp:2});addLog(head+promoText()+(close?` ${rival.name}에게서 축하 문자가 먼저 왔다.`:''),{kind:'key'});}
         else{rival.rank++;rival.rankSince=S.mi;rival.promoFails=0;S.promoFails++;E({mn:-(3+Math.round(rival.fr/15))});addLog(head+`${rival.name}${J(rival.name,'이','가')} ${rankTitle(rival)}(으)로 승진했다.`+(close?' 축하한다는 말이 생각보다 늦게 나왔다.':''),{kind:'key'});}
       }else{
-        const p=P_BASE[S.rank]*clamp((S.sk+S.rp)/110,0.3,1.5)+S.promoFails*0.08;
+        const p=P_BASE[S.rank]*clamp((S.sk+S.rp)/110,0.3,1.5)+S.promoFails*0.08+((boss()?.rel||0)+(seatOf(dirSeat())?.rel||0))/400+(S.evalBonus||0);
         if(chance(p)){S.rank++;S.rankSince=S.mi;S.promoFails=0;E({mn:5,rp:2});addLog(promoText(),{kind:'key'});}
         else{S.promoFails++;E({mn:-3});addLog(pick(['승진 명단에 이름이 없었다.','승진 명단을 두 번 읽었다. 이름은 없었다.','올해도 승진은 다음으로 미뤄졌다.']));}
       }
@@ -1072,12 +1177,16 @@ async function rotation(){
     S.deptSince=S.mi;addLog(`연구 주제가 바뀌었다. 이번엔 ${pick(['청년 고용','디지털 일자리','고령자 재취업','직업 전망','고용보험 데이터'])}이다.`);return;
   }
   const others=IT_DEPTS.map(d=>d.k).filter(k=>k!==S.dept).sort(()=>R()-0.5).slice(0,3);
-  const choices=others.map(k=>X(DEPTS[k].name+' 희망',()=>k)).concat([X('지금 부서 유지 희망',()=>S.dept)]);
+  const lead=k=>seatOf('t:'+k);
+  const acc=k=>{const L=lead(k),r=L?L.rel:0;if(r<-30)return 0;return clamp(0.35+S.rp/200+r/200,0,0.95);};
+  const choices=others.map(k=>{const L=lead(k);return X(DEPTS[k].name+' 희망',()=>k,L?`팀장 ${L.name} · ${impression(L.rel)}`:'',()=>acc(k),'희망 반영 가능성');}).concat([X('지금 부서 유지 희망',()=>S.dept,'',()=>clamp(0.35+S.rp/200,0,0.95),'희망 반영 가능성')]);
   const i=await ask('순환보직','같은 부서에서 4년이 지났다. 희망 부서를 적어 내라는 공문이 왔다.',choices);
   const want=choices[i].f();
-  let got=want;
-  if(!chance(0.35+S.rp/200)){got=pick(IT_DEPTS.map(d=>d.k).filter(k=>k!==want));}
-  const res=got===S.dept?'발령 명단에 이름이 없었다. 같은 자리에 남았다.':got===want?`희망대로 ${DEPTS[got].name}(으)로 발령 났다.`:`${DEPTS[got].name}(으)로 발령 났다. 희망과는 달랐다.`;
+  let got=want,note='';
+  const L=lead(want);
+  if(want!==S.dept&&L&&L.rel<-30){got=null;note=` ${L.name} 팀장이 난색을 표했다는 이야기를 들었다.`;}
+  if(got===null||!chance(want===S.dept?0.35+S.rp/200:acc(want))){const pl=IT_DEPTS.map(d=>d.k).filter(k=>k!==want);got=wpick(pl.map(k=>({w:Math.max(5,(lead(k)?.rel||0)+60),k}))).k;}
+  const res=(got===S.dept?'발령 명단에 이름이 없었다. 같은 자리에 남았다.':got===want?`희망대로 ${DEPTS[got].name}(으)로 발령 났다.`:`${DEPTS[got].name}(으)로 발령 났다. 희망과는 달랐다.`)+note;
   if(got!==S.dept)changeDept(got);else S.deptSince=S.mi;
   addLog('같은 부서에서 4년이 지났다. 희망 부서를 적어 냈다.',{pick:choices[i].t,res});
 }
@@ -1147,7 +1256,8 @@ async function runEvent(ev){
   S.cd[ev.id]=S.mi;
   const text=typeof ev.text==='function'?ev.text():ev.text;
   if(ev.auto){const r=ev.auto();addLog(text&&r?text+' '+r:(text||r));return;}
-  await resolve(ev.title||'선택',text,ev.choices,!!ev.manual);
+  const i=await resolve(ev.title||'선택',text,ev.choices,!!ev.manual);
+  if(ev.dept&&!ev.manual&&i!==undefined){const d={skill:4,hard:4,social:3,safe:1,avoid:-4}[STYLE[ev.choices[i].t]||'safe'];rel(boss(),d,`'${ev.title||'업무'}' 때 ${d>0?'일 처리를 좋게 봤다':'한발 물러선 걸 기억한다'}`);}
 }
 function endGame(kind,text){
   if(S.ended)return;
@@ -1155,7 +1265,7 @@ function endGame(kind,text){
 }
 
 async function calendar(m){
-  if(m===1){S.days=15;await personnel();}
+  if(m===1){S.days=15;reshuffle();await personnel();}
   if(m===2||m===9){
     if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(pick([`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`,`${m===2?'설':'추석'} 연휴, 휴게소마다 줄이 길었다.`,`${m===2?'설':'추석'} 연휴, 새벽 네 시에 출발해 차를 피했다.`,`${m===2?'설':'추석'} 연휴, KTX 표를 겨우 구했다.`]));}
   }
@@ -1177,13 +1287,13 @@ async function calendar(m){
     if(S.dept==='mgmt'&&S.rank<5){
       const t=pick(['경영평가 실적보고서 작성 기간이다. 같은 표를 열네 번째 고치고 있다.','경영평가 보고서 초안이 120쪽을 넘었다. 분량을 80쪽으로 줄이라는 지시가 왔다.','경영평가 위원 현장 실사 일정이 잡혔다. 증빙 자료 목록이 300줄이다.','작년 경영평가 지적 사항에 대한 개선 실적을 정리하고 있다.']);
       const ch=[X('주말까지 붙잡는다',()=>{S.evalBoost=0.15;E({hp:-4,sk:2,rp:2});return pick(['보고서는 마감 30분 전에 제출됐다.','토요일 밤 11시에 최종본이 나왔다.','증빙 자료를 세 번 다시 묶었다. 제출은 제때 됐다.']);}),X('정시에 퇴근한다',()=>{S.evalBoost=0;E({mn:1});return pick(['보고서는 제때 제출됐다. 표 하나는 열세 번째 버전으로 나갔다.','제출은 됐다. 오탈자 두 개가 나중에 발견됐다.','팀원들과 나눠서 끝냈다. 퇴근길이 밝았다.']);})];
-      await resolve('경영평가',t,ch,false);
+      const ei=await resolve('경영평가',t,ch,false);rel(boss(),ei===0?3:-1,ei===0?'경영평가 보고서를 끝까지 붙잡았다':'경영평가 기간에 정시 퇴근했다');if(ei===0)rel(seatOf(dirSeat()),2,'경영평가 보고서를 꼼꼼히 챙겼다');
     }else if(chance(0.4))addLog(pick(['경영평가 실적 자료 요청이 왔다. 작년 자료를 열어 숫자를 바꿨다.','경영평가용 성과 사례를 한 장으로 정리해 달라는 메일이 왔다.','경영평가 지표 담당자가 바뀌었다. 같은 질문을 처음부터 다시 받았다.']),{kind:'sys'});
   }
   if(m===5&&S.reauditY===ym(S.mi).y){S.reauditY=null;E({mn:-4,rp:-2});addLog('작년 지적 사항의 이행 여부를 다시 감사받았다. 같은 자료를 한 번 더 냈다.');}
   if(m===5&&S.leave===0&&ym(S.mi).y%2===0){
     const t=pick(['올해 체육대회가 열린다.','2년 만에 체육대회가 열린다. 종목은 족구와 계주다.','혁신도시 운동장에서 체육대회가 열린다. 팀별 단체복이 나왔다.']);
-    const ch=[X('계주에 나간다',()=>chance(0.2+(S.hp+S.sc)/500)?(E({rp:2,sc:3,mn:3,hp:-2}),pick(['팀이 1등을 했다. 상품은 온누리상품권이었다.','마지막 주자를 제쳤다. 팀장이 사진을 열 장 찍었다.'])):(E({sc:1,mn:-1,hp:-2}),pick(['바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.','코너에서 넘어질 뻔했다. 팀은 3등이었다.']))),
+    const ch=[X('계주에 나간다',()=>chance(0.2+(S.hp+S.sc)/500)?(E({rp:2,sc:3,mn:3,hp:-2}),rel(boss(),2,'체육대회 계주에서 활약했다'),pick(['팀이 1등을 했다. 상품은 온누리상품권이었다.','마지막 주자를 제쳤다. 팀장이 사진을 열 장 찍었다.'])):(E({sc:1,mn:-1,hp:-2}),pick(['바통을 떨어뜨렸다. 그날 저녁까지 그 이야기를 들었다.','코너에서 넘어질 뻔했다. 팀은 3등이었다.']))),
       X('응원석에 앉는다',()=>(E({sc:1}),pick(['햇볕이 따가웠다. 도시락은 김밥이었다.','응원 구호를 세 번 바꿨다. 목이 쉬었다.','그늘 자리를 맡았다. 다른 팀 사람들과 이야기를 나눴다.']))),
       X('연차를 쓴다',()=>(E({mn:2,sc:-2}),'단체 사진에 내가 없었다.'))];
     const i=await ask('체육대회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
@@ -1198,13 +1308,18 @@ async function calendar(m){
     if(['chwi1','chwi2','research','mgmt'].includes(S.dept)&&S.rank<5){
       const t=pick(['국정감사 요구자료가 내려왔다. 마감은 48시간 뒤다.','국정감사 요구자료가 열두 건 내려왔다. 그중 세 건이 우리 팀 몫이다.','의원실에서 최근 5년 치 통계를 달라고 한다. 마감은 내일 오전이다.','국정감사 대비 예상 질의 답변서를 쓰라는 지시가 왔다.']);
       const ch=[X('밤새 정리한다',()=>(E({hp:-4,rp:3}),pick(['자료는 마감 두 시간 전에 나갔다.','새벽 세 시에 숫자 하나가 안 맞는 걸 찾았다. 고쳐서 냈다.','자료는 제때 나갔다. 다음 날 질의서에 그 표가 그대로 실렸다.']))),X('확인된 숫자만 낸다',()=>(E({rp:1,mn:-1}),pick(['의원실에서 보완 요청이 한 번 왔다.','짧게 냈다. 추가 질의는 없었다.','의원실에서 같은 자료를 연도별로 다시 달라고 했다.'])))];
-      await resolve('국정감사',t,ch,false);
+      const gi=await resolve('국정감사',t,ch,false);rel(boss(),gi===0?3:0,gi===0?'국감 자료를 밤새 정리했다':'국감 자료를 무난히 냈다');
     }else if(chance(0.4)){E({hp:-1});addLog(pick(['국정감사 기간이다. 의원실 자료 요청이 한 건 내려왔다.','국정감사 기간이다. 원장 일정이 모두 비었다.','국정감사 기간이다. 팀장이 하루 종일 국회 중계를 틀어놨다.']),{kind:'sys'});}
+  }
+  if(m===12&&S.leave===0&&boss()){
+    const B=boss(),sc=B.rel/2+(S.sk-50)*0.6+randn()*12,g=sc>=40?'S':sc>=15?'A':sc>=-12?'B':'C';
+    if(g==='S'){E({rp:2,mn:2});S.evalBonus=0.1;S.renewBonus=0.2;}else if(g==='A'){E({rp:1});S.evalBonus=0.05;S.renewBonus=0.1;}else if(g==='C'){E({rp:-2,mn:-2});S.evalBonus=-0.05;S.renewBonus=-0.2;}else{S.evalBonus=0;S.renewBonus=0;}
+    addLog(`올해 인사평가 ${g}등급. 평가자는 ${bossTitle()} ${B.name}${J(B.name,'이다','다')}.`+(g==='S'?' 내년 승진 심사에 가점이 붙는다.':g==='C'?' 면담이 잡혔다.':''),{kind:'sys',tag:'인사'});
   }
   if(m===12){
     if(S.leave===0&&ym(S.mi).y%2===1){
       const t=pick(['송년회가 잡혔다.','팀 송년회 장소가 고깃집으로 정해졌다.','부서 합동 송년회가 잡혔다. 장기자랑 이야기가 나왔다.']);
-      const ch=[X('2차까지 간다',()=>(E({rp:1,sc:4,hp:-3,money:-10}),pick(['노래방에서 팀장이 같은 노래를 두 번 불렀다.','2차는 포장마차였다. 막차를 놓쳤다.','3차 이야기가 나올 때 몰래 빠져나왔다.']))),X('1차만 있다가 나온다',()=>(E({sc:1}),pick(['고기는 맛있었다.','건배사를 피하려고 화장실에 두 번 갔다.','옆자리 선배와 오래 이야기했다.']))),X('불참한다',()=>(E({mn:1,sc:-2}),'다음 날 단체 사진에 내가 없었다.'))];
+      const ch=[X('2차까지 간다',()=>(E({rp:1,sc:4,hp:-3,money:-10}),rel(boss(),3,'송년회 2차까지 함께했다'),pick(['노래방에서 팀장이 같은 노래를 두 번 불렀다.','2차는 포장마차였다. 막차를 놓쳤다.','3차 이야기가 나올 때 몰래 빠져나왔다.']))),X('1차만 있다가 나온다',()=>(E({sc:1}),pick(['고기는 맛있었다.','건배사를 피하려고 화장실에 두 번 갔다.','옆자리 선배와 오래 이야기했다.']))),X('불참한다',()=>(E({mn:1,sc:-2}),rel(boss(),-2,'송년회에 오지 않았다'),'다음 날 단체 사진에 내가 없었다.'))];
       const i=await ask('송년회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
     }
   }
@@ -1214,6 +1329,7 @@ async function monthTick(){
   S.mi++;
   const {y,m}=ym(S.mi);
   S.maxRank=Math.max(S.maxRank||0,S.type==='reg'?S.rank:0);
+  syncSeats();
   yearHeader();
   if(resignReq){resignReq=false;await resignFlow();if(S.ended)return;}
   // 휴직 처리
@@ -1230,7 +1346,7 @@ async function monthTick(){
   if(m===12&&a>=60){endGame('정년퇴직',`${y}년 12월, 정년퇴직했다. 근속 ${tenureStr(S.mi)}. 마지막 날 팀에서 꽃다발을 받았다.`);return;}
   if(S.type==='reg'&&S.rank===6&&S.mi>=S.chiefUntil){endGame('원장 임기 만료','원장 임기 3년을 마쳤다. 이임식은 강당에서 30분 동안 열렸다.');return;}
   if(S.type==='temp'&&S.mi>=S.contractEnd){
-    if(S.contractTotal<24&&chance(0.6)){const ext=pick([4,6,12]);S.contractEnd+=ext;S.contractTotal+=ext;addLog(`계약이 ${ext}개월 연장됐다.`,{kind:'key'});}
+    if(S.contractTotal<24&&chance(0.6+(S.renewBonus||0))){const ext=pick([4,6,12]);S.contractEnd+=ext;S.contractTotal+=ext;addLog(`계약이 ${ext}개월 연장됐다.`,{kind:'key'});}
     else{endGame('계약 만료',`계약 기간이 끝났다. 근무 ${tenureStr(S.mi)}. 사원증을 반납했다.`);return;}
   }
   if(S.leave===0&&S.hp<(S.checkupUntil>S.mi?7:10)){S.leave=1;S.leaveType='sick';S.hp=40;addLog('출근길에 쓰러져 응급실에 실려 갔다. 과로였다. 한 달 병가를 냈다.',{kind:'key'});}
@@ -1452,6 +1568,7 @@ function renderCard(){
     ['직급',rankTitle(S)],['부서',deptLabel(S)+(S.track==='admin'&&S.task?` · ${S.task}`:'')],
     ['근속',tenureStr(S.mi)],['거주',S.moved&&S.home!=='near'?'혁신도시 (연고 '+S.homeName+')':S.homeName],
     ['연차',`${S.days}일 남음`],
+    ...(boss()?[['상사',`${bossTitle()} ${boss().name} · ${impression(boss().rel)}`]]:[]),
     ['가족',S.married?`기혼 (${pw()} · 친밀도 ${Math.round(S.pfr??50)})`:S.dating?`연애 중 (${pw()} · 친밀도 ${Math.round(S.pfr??50)})`:S.divorced?'이혼':'미혼'],
   ];
   if(S.type==='temp')kv.splice(3,0,['계약',`${tenureStr(Math.max(0,S.contractEnd-S.mi))} 남음`]);
@@ -1534,6 +1651,7 @@ function showEnding(){
     ['순자산',`${fmtMoney(netWorth())}원 (통장 ${fmtMoney(S.money)}원)`],
     ['가족',fam],
     ['목표',`${GOALS[S.goal].name} · ${goalResult()}`],
+    ...(()=>{const ps=(S.people||[]).slice().sort((a,b)=>b.rel-a.rel);if(!ps.length)return [];const t=ps[0],w=ps[ps.length-1];return [['사내 관계',`가장 가까운 사람 ${t.name} ${seatRole(t.seat)} (${Math.round(t.rel)})`+(w.rel<-25?` · 가장 불편한 사람 ${w.name} ${seatRole(w.seat)} (${Math.round(w.rel)})`:'')]];})(),
   ];
   const peers=cohort.map(p=>`<div class="row"><span class="k">${p.name}</span><span>${p.ended.title} · ${p.ended.kind} · ${p.ended.age}세 (${ym(p.ended.mi).y})</span></div>`).join('');
   const w=$('#endingWrap');
@@ -1573,6 +1691,7 @@ $('#btnJoin').addEventListener('click',()=>{
   S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0,tax:0,kid:0,cm:0,par:0,car:0,prop:0},kidsList:[],loans:[],days:15,inv:0,savMonthly:0,savBal:0,savPrin:0,savStart:0,stock:0,reit:0,ofs:null,rateAdj:0,rateUntil:null,houseVal:0,houseLoan:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;S.sal0=salary(S,0);
   $('#goalSeg').innerHTML=Object.entries(GOALS).map(([k,g])=>`<button type="button" data-g="${k}" aria-pressed="${k==='wlb'}">${g.name}</button>`).join('');
   cohort=[0,1,2,3].map(()=>makePerson());
+  S.people=[];syncSeats();rel(boss(),randint(5,12),'첫 출근 날 인사를 잘했다');
   const sal=salary(S,0);
   const rows=[
     ['성명',S.name,''],['나이',ageOf(S,0)+'세',''],['성별',S.gender,'50%'],
@@ -1602,6 +1721,15 @@ $('#btnFirstDay').addEventListener('click',()=>{
 });
 segBind('#goalSeg','g',v=>{S.goal=v;});
 $('#actList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-a]');if(b)doAction(b.dataset.a);});
+let peoplePaused=false;
+$('#btnPeople').addEventListener('click',()=>{if(!S||S.ended||busy||!$('#modal').hidden)return;clearTimeout(timer);peoplePaused=true;renderPeople();$('#people').hidden=false;$('#people .dialog').scrollTop=0;});
+$('#btnPeopleClose').addEventListener('click',()=>{$('#people').hidden=true;if(peoplePaused){peoplePaused=false;schedule();}});
+$('#pBody').addEventListener('click',async ev=>{
+  const b=ev.target.closest('button[data-seat]');if(!b||busy)return;
+  $('#people').hidden=true;busy=true;const prev=settings.auto;settings.auto=false;
+  await personMenu(b.dataset.seat);
+  settings.auto=prev;busy=false;render();renderPeople();if(!S.ended)$('#people').hidden=false;
+});
 let assetPaused=false;
 $('#btnAsset').addEventListener('click',()=>{if(!S||S.ended||busy||!$('#modal').hidden)return;clearTimeout(timer);assetPaused=true;renderAsset();$('#asset').hidden=false;$('#btnAssetClose').focus();});
 $('#btnAssetClose').addEventListener('click',()=>{$('#asset').hidden=true;if(assetPaused){assetPaused=false;schedule();}});

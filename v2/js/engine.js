@@ -18,7 +18,7 @@ function header(){
   if(lastHeader===key)return;
   lastHeader=key;
   const d=document.createElement('div');d.className='year';
-  d.innerHTML=`<b>${S.birthY+S.age}</b><span>${S.age}살 · ${gradeLabel(S.age)} · ${stageOf(S.age).name}</span>`;
+  d.innerHTML=`<b>${S.birthY+S.age}</b><span>${S.age}살${S.age>7?' · '+gradeLabel(S.age):''} · ${stageOf(S.age).name}</span>`;
   $('#log').appendChild(d);
 }
 function addLog(text,opt={}){
@@ -48,17 +48,20 @@ function renderHint(el,h){
   });
   if(h.p){const v=clamp(h.p(),0,1),t=v>=0.6?'높음':v>=0.35?'보통':'낮음';el.appendChild(document.createTextNode((h.d?' · ':'')+(h.pl||'성공 가능성')+' '+t));}
 }
-function ask(title,text,choices){
+function ask(title,text,choices,note){
   return new Promise(res=>{
-    $('#mWhen').textContent=`${S.birthY+S.age}년 · ${S.age}살 · ${gradeLabel(S.age)}`;
+    $('#mWhen').textContent=`${S.birthY+S.age}년 · ${S.age}살`+(S.age>7?` · ${gradeLabel(S.age)}`:'');
     $('#mTitle').textContent=title;$('#mText').textContent=text;
+    $('#mNote').hidden=!note;$('#mNote').textContent=note||'';
     const box=$('#mChoices');box.innerHTML='';
     let done=false;const finish=i=>{if(done)return;done=true;$('#modal').hidden=true;res(i);};
     choices.forEach((c,i)=>{
-      const b=document.createElement('button');b.type='button';b.textContent=c.t;
-      if(c.d||c.p){const s=document.createElement('small');renderHint(s,{d:c.d,p:c.p,pl:c.pl});b.appendChild(s);}
+      const b=document.createElement('button');b.type='button';
+      b.innerHTML=`<span class="num">${i+1}</span><span class="ct"></span>`;b.querySelector('.ct').textContent=c.t;
       b.addEventListener('click',()=>finish(i));box.appendChild(b);
     });
+    $('#mAuto').hidden=settings.auto||choices.length<2;
+    $('#mAuto').onclick=()=>{settings.auto=true;$('#autoPick').checked=true;$('#mAuto').hidden=true;const i=choices.wAuto?wpick(choices.map((c,j)=>({w:choices.wAuto(c),j}))).j:Math.floor(R()*choices.length);box.children[i].classList.add('auto');setTimeout(()=>finish(i),500);};
     $('#modal').hidden=false;
     if(settings.auto){
       const i=choices.wAuto?wpick(choices.map((c,j)=>({w:choices.wAuto(c),j}))).j:Math.floor(R()*choices.length);
@@ -67,8 +70,8 @@ function ask(title,text,choices){
     }else box.firstChild.focus();
   });
 }
-async function resolve(title,text,choices,kind){
-  const i=await ask(title,text,choices);
+async function resolve(title,text,choices,kind,note){
+  const i=await ask(title,text,choices,note);
   const res=choices[i].f();
   addLog(text,{pick:choices[i].t,res:res||'',kind:kind||''});
   return i;

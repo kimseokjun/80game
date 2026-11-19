@@ -76,8 +76,7 @@
     <dl class="kv" id="pKv"></dl>
     <div class="sec-h">성장 스탯</div>
     <div class="stats" id="pStats"></div>
-    <div class="sec-h">경험 기록</div>
-    <div id="pExp"></div>
+    <p class="hidden-note">어떤 경험을 했는지는 따로 기록되지 않는다. 대신 나중에 조용히 영향을 준다.</p>
   </aside>
   <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
   <aside class="panel">
@@ -91,7 +90,9 @@
     <div class="d-when" id="mWhen"></div>
     <h4 id="mTitle"></h4>
     <p id="mText"></p>
+    <div class="note" id="mNote" hidden></div>
     <div class="choices" id="mChoices"></div>
+    <button type="button" class="btn auto-btn" id="mAuto">이제부터 결정을 자동으로 맡기기</button>
   </div>
 </div>
 

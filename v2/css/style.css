@@ -113,7 +113,12 @@ button{font:inherit;color:inherit}
 .dialog .d-when{font-family:var(--font-mono);font-size:12px;color:var(--muted)}
 .dialog h4{margin:4px 0 10px;font-size:18px}
 .dialog p{margin:0 0 16px}
+.note{border-left:3px solid var(--warm);background:var(--paper);padding:10px 12px;font-size:13px;color:var(--muted);margin:0 0 14px;font-family:var(--font-mono);line-height:1.6}
 .choices{display:grid;gap:8px}
+.choices button{display:flex;gap:14px;align-items:center;font-weight:600}
+.choices .num{font-family:var(--font-mono);font-size:12px;color:var(--muted);font-weight:400;min-width:12px}
+.auto-btn{display:block;margin:14px auto 0}
+.hidden-note{font-size:12px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;margin:12px 0 0}
 .choices button{text-align:left;border:1px solid var(--line);background:var(--paper);padding:10px 14px;border-radius:4px;cursor:pointer}
 .choices button:hover{border-color:var(--accent)}
 .choices button.auto{border-color:var(--accent);background:var(--accent-soft)}

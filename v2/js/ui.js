@@ -5,17 +5,14 @@ function bar(label,v,cls){v=Math.round(v);return `<div class="stat"><span>${labe
 function render(){
   $('#pAvatar').innerHTML=avatarSVG(S.gender,S.age);
   $('#pName').textContent=S.name;
-  $('#pSub').textContent=`${S.age}살 · ${gradeLabel(S.age)} · ${S.genderName}`;
+  $('#pSub').textContent=`${S.age}살${S.age>7?' · '+gradeLabel(S.age):''} · ${S.genderName}`;
   const school=S.school?HIGH_SCHOOLS.find(h=>h.k===S.school).name:'-';
   const kv=[['집',S.famName],['지역',S.regionName],['형제',S.sibName],['고등학교',S.age>=17||S.school?school:'-'],['용돈 통장',fmtMoney(S.money)+'원']];
-  if(S.cert)kv.push(['자격증',S.cert+'개']);
-  if(S.awards.length)kv.push(['수상',S.awards.join(', ')]);
   if(S.sat)kv.push(['수능',`평균 ${S.sat}등급`]);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=Object.entries(STATS).map(([k,n])=>bar(n,S[k])).join('');
-  const ex=S.exp.slice().reverse(),line=e=>`<li><span class="mono">${gradeLabel(e.age)}</span> ${e.text}${e.f?` <span class="ef">${FIELDS[e.f]}</span>`:''}</li>`;
-  $('#pExp').innerHTML=ex.length?`<ul class="exp">${ex.slice(0,5).map(line).join('')}</ul>`+(ex.length>5?`<details class="exp-more"><summary>전체 보기 (${ex.length})</summary><ul class="exp">${ex.slice(5).map(line).join('')}</ul></details>`:''):'<p class="empty">아직 기록된 경험이 없다.</p>';
-  $('#friendList').innerHTML=S.friends.length?S.friends.map((f,i)=>`<button type="button" class="friend" data-i="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">관심: ${FIELDS[f.int]}${f.last===S.age?' · 올해 만남':''}</div><div class="fr-bar"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill int" style="width:${Math.round(f.fr)}%"></div></div></div></button>`).join(''):'<p class="empty">초등학교에 들어가면 친구가 생긴다.</p>';
+
+  $('#friendList').innerHTML=S.friends.length?S.friends.map((f,i)=>`<button type="button" class="friend" data-i="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">요즘 ${FIELDS[f.int]}에 관심${f.last===S.age?' · 올해 만남':''}</div><div class="fr-bar"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill int" style="width:${Math.round(f.fr)}%"></div></div></div></button>`).join(''):'<p class="empty">초등학교에 들어가면 친구가 생긴다.</p>';
   $('#barDate').textContent=`${S.birthY+S.age}년 · ${S.age}살`;
 }
 
@@ -27,9 +24,10 @@ function showEnding(){
     ['출생',`${S.birthY}년 · ${S.famName} · ${S.regionName} · ${S.sibName}`],
     ['고등학교',HIGH_SCHOOLS.find(h=>h.k===S.school)?.name||'-'],
     [S.school==='gen'?'수능':'자격증',S.school==='gen'?`평균 ${S.sat}등급 (${univHint(S.sat)})`:`${S.cert}개`],
-    ['분야별 경험',ints],
-    ['경험 기록',S.exp.map(e=>`${gradeLabel(e.age)} ${e.text}`).join(' / ')||'-'],
+    ['행동특성 및 종합의견',teacherComment()],
     ['성장 스탯',Object.entries(STATS).map(([k,n])=>`${n} ${Math.round(S[k])}`).join(' · ')],
+    ['창의적 체험활동',S.exp.map(e=>`${gradeLabel(e.age)} ${e.text}`).join(' / ')||'-'],
+    ['분야별 경험',ints],
     ['가장 친한 친구',best?`${best.name} (${best.from}, 친밀도 ${Math.round(best.fr)})`:'-'],
   ];
   if(S.awards.length)rows.push(['수상',S.awards.join(', ')]);

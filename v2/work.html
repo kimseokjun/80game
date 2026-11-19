@@ -229,6 +229,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 @media (prefers-reduced-motion: reduce){
   .row{animation:none}.fill{transition:none}
 }
+.entry .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}.who{display:flex;gap:12px;align-items:center;margin-bottom:6px}.who .pname{margin:0}.avatar{width:56px;height:56px;flex:none;border-radius:50%;background:var(--paper);border:1px solid var(--line)}
 </style>
 </head>
 <body>
@@ -290,7 +291,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 <main id="game" class="screen game" hidden>
   <aside class="panel card">
     <h3>인사기록카드</h3>
-    <div class="pname" id="pName"></div>
+    <div class="who"><div id="pAvatar"></div><div class="pname" id="pName"></div></div>
     <dl class="kv" id="pKv"></dl>
     <div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div>
     <div class="stats" id="pStats"></div>
@@ -366,6 +367,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 
 <footer>비공식 팬메이드 시뮬레이션입니다. 실제 기관의 공식 자료가 아니며 실존 인물과 관계없습니다. 인원·초봉·채용 구조는 공개된 채용 공고와 공공기관 공시 정보를 참고했고, 승진 연수·확률·이벤트는 추정입니다. '80억 분의 1'에서 영감을 받았습니다.</footer>
 
+<script src="js/avatar.js"></script>
 <script src="js/company.js"></script>
 <script>
 "use strict";
@@ -446,18 +448,20 @@ function makePerson(){
 function rankTitle(p){
   if(p.type==='temp')return p.track==='research'?'기간제 연구원':'계약직';
   if(p.type==='perm')return '전문원';
-  return (p.track==='research'?RRANKS:RANKS)[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');
+  return (p.coRanks||(p.track==='research'?RRANKS:RANKS))[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');
 }
 function deptLabel(p){
   if(p.rank>=6&&p.type==='reg')return '원장실';
   if(p.rank===5&&p.type==='reg')return PRIV()?({it:'기술',admin:'경영'})[p.track]+' 부문':({it:'정보화',admin:'경영',research:'연구'})[p.track]+' 부문 실';
+  if(p.coDepts)return `${p.coName} ${p.coDepts[p.dept]||''}`;
   return DEPTS[p.dept].name;
 }
 function salary(p,mi){
   const yrs=Math.max(0,(mi-p.joinMi)/12);
   if(p.type==='temp')return p.track==='research'?3600:3200;
   if(p.type==='perm')return Math.round(3800*Math.pow(1.015,yrs));
-  return Math.round(SAL[p.rank]*Math.pow(1.02,yrs));
+  if(p===S&&S.founder)return Math.round(S.founderPay);
+  return Math.round(SAL[p.rank]*Math.pow(1.02,yrs)*(p===S&&S.salMul?S.salMul:1));
 }
 
 /* ---------- 상태 ---------- */
@@ -608,7 +612,8 @@ function goalResult(){
   switch(S.goal){
     case 'chief':return S.maxRank>=6?'완전 달성 (원장)':S.maxRank>=5?'달성 (실장)':'미달성';
     case 'wlb':return (k==='정년퇴직'&&avg>=55?'달성':'미달성')+` (평균 멘탈 ${Math.round(avg)})`;
-    case 'exit':return ['공기업 이직','민간 이직','동기 추천 이직'].includes(k)?'달성':'미달성';
+    case 'exit':return (S.moves||0)>0||['공기업 이직','민간 이직','동기 추천 이직'].includes(k)?'달성':'미달성';
+    case 'fnd':return S.exited?'완전 달성 (엑싯)':S.foundCount?'달성':'미달성';
     case 'expert':return ((S.maxSk||0)>=85?'달성':'미달성')+` (최고 역량 ${Math.round(S.maxSk||0)})`;
     case 'fire':return k==='자진 퇴사'&&age()<55&&netWorth()>=100000?'달성':'미달성';
   }
@@ -1125,7 +1130,7 @@ const EV=[
   X('옮긴다',()=>{endGame('민간 이직','민간 IT기업으로 옮겼다. 마지막 출근일에 사원증을 반납했다.');return '면접은 두 번이었다. 처우 협의는 일주일 걸렸다.';}),
   X('거절한다',()=>(E({mn:1}),'답장을 쓰는 데 사흘이 걸렸다.'))]},
 {id:'other_pe',manual:true,w:2,cool:24,when:()=>S.selfdev>=9&&age()<42,title:'필기 합격',text:()=>S.home==='far'||S.home==='mid'?'준비해 오던 다른 공기업 필기에 합격했다. 연고지에서 가까운 곳이다. 면접이 2주 뒤다.':'준비해 오던 다른 공기업 필기에 합격했다. 면접이 2주 뒤다.',choices:[
-  X('면접을 본다',()=>{if(chance(0.35+S.sk/300)){endGame('공기업 이직','최종 합격 문자를 받았다. 사직서를 썼다.');return '최종 합격이었다.';}S.selfdev=0;E({mn:-4});return '최종에서 떨어졌다. 다음 날 평소처럼 출근했다.';}),
+  X('면접을 본다',()=>{if(chance(0.35+S.sk/300)){if(HAND){moveCompany('pub',{bump:-0.1});return '최종 합격 문자를 받았다.';}endGame('공기업 이직','최종 합격 문자를 받았다. 사직서를 썼다.');return '최종 합격이었다.';}S.selfdev=0;E({mn:-4});return '최종에서 떨어졌다. 다음 날 평소처럼 출근했다.';}),
   X('지금 자리에 남는다',()=>{S.selfdev=0;return '면접 날, 평소처럼 출근했다.';})]},
 {id:'discipline',w:0.3,cool:120,when:()=>S.type==='reg'&&S.rank>=1&&S.rank<=5,title:'징계위원회',text:'보안 서약 위반으로 징계위원회가 열렸다. 승인받지 않은 USB 반출 기록이 문제였다.',choices:[
   X('경위를 소명한다',()=>(rel(seatOf('ceo'),-8,'징계위원회 건을 알고 있다'),rel(boss(),-5,'징계 건으로 곤란해졌다'),chance(0.6)?(E({rp:-4,mn:-5}),'견책으로 끝났다.'):(demote('강등 처분을 받았다.'),''))),
@@ -1509,7 +1514,7 @@ async function monthTick(){
   if(S.referral&&S.mi>=S.referral.at&&S.leave===0){
     const rf=S.referral;S.referral=null;
     await resolve('동기 추천',`먼저 나간 동기 ${rf.name}에게서 연락이 왔다. 지금 다니는 ${rf.place}에 자리가 났다며 추천하겠다고 한다.`,[
-      X('지원한다',()=>{if(chance(0.45+S.sk/400)){endGame('동기 추천 이직',`${rf.name}의 추천으로 ${rf.place}(으)로 옮겼다. 첫 출근 날 점심은 ${rf.name}${J(rf.name,'이','가')} 샀다.`);return '최종 합격이었다.';}E({mn:-3});return '면접까지 갔다. 이번엔 인연이 아니었다.';}),
+      X('지원한다',()=>{if(chance(0.45+S.sk/400)){if(HAND){moveCompany(rf.place.includes('공기업')||rf.place.includes('기관')?'pub':'mid',{bump:0.1});return `${rf.name}의 추천으로 최종 합격했다. 첫 출근 날 점심은 ${rf.name}${J(rf.name,'이','가')} 샀다.`;}endGame('동기 추천 이직',`${rf.name}의 추천으로 ${rf.place}(으)로 옮겼다. 첫 출근 날 점심은 ${rf.name}${J(rf.name,'이','가')} 샀다.`);return '최종 합격이었다.';}E({mn:-3});return '면접까지 갔다. 이번엔 인연이 아니었다.';}),
       X('고맙지만 거절한다',()=>'다음에 밥 한번 먹자고 답했다.')],true,'key');
     if(S.ended)return;
   }
@@ -1639,6 +1644,7 @@ function finishPeers(){
 /* ---------- 렌더 ---------- */
 function renderCard(){
   $('#pName').textContent=S.name;
+  if(HAND)$('#pAvatar').innerHTML=avatarSVG(HAND.gender,age(),{suit:true,tie:CO.k==='st'?'#2F7D6B':'#8C2F27'});
   const kv=[
     ['나이',`${age()}세 · ${S.gender}`],['직렬',S.trackName],['고용',S.type==='reg'?'정규직':S.type==='perm'?'무기계약직':'기간제 계약직'],
     ['직급',rankTitle(S)],['부서',deptLabel(S)+(S.track==='admin'&&S.task?` · ${S.task}`:'')],
@@ -1658,6 +1664,7 @@ function renderCard(){
   kv.splice(1,0,['회사',CO.name+(PRIV()&&S.rivals.length?` · 업계 ${coRank()}위`:'')+(CO.k==='st'&&S.round?` · ${['','시리즈 A','시리즈 B','시리즈 C'][S.round]}`:'')]);
   if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);
   kv.splice(2,0,['학력',eduLine()]);if(HAND.army)kv.splice(3,0,['병역',HAND.army==='미필'?'미필 · 입대 예정':HAND.army]);
+  if(S.founder)kv.push(['창업',`${S.item} · 지분 ${Math.round(S.equity*100)}% · 기업가치 ${fmtMoney(S.val)}원`]);
   $('#pKv').innerHTML=W(kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join(''));
   $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
   const ar=[['통장',S.money]];
@@ -1724,6 +1731,8 @@ function showEnding(){
   const rows=[
     ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.coHist[0]} 정규직`],
     ...(S.coHist.length>1?[['거친 회사',S.coHist.join(' → ')]]:[]),
+    ...(S.moves?[['이직',`${S.moves}번`]]:[]),
+    ...(S.foundCount?[['창업',`${S.foundCount}번${S.exited?' · 엑싯':''}`]]:[]),
     ...(PRIV()&&S.rivals.length?[['업계 순위',`퇴직할 때 ${coRank()}위`]]:[]),
     ['퇴직',`${y}.${String(m).padStart(2,'0')} · ${age()}세`],
     ['재직 기간',tenureStr(e.mi)],
@@ -1807,7 +1816,7 @@ $('#btnFirstDay').addEventListener('click',()=>{
   if(CARRY){const w=$('#logWrap');w.scrollTop=w.scrollHeight;}
   addLog(`${CO.name} ${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});
   if(HAND.loan)addLog(`학자금 대출 ${fmtMoney(HAND.loan)}원을 통장에서 갚아 나가기로 했다.`,{kind:'sys'});
-  const rv=S.rivals.map(r=>r.name);if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다. 해마다 순위가 갈린다.`,{kind:'sys',tag:'업계'});
+  const rv=S.rivals.map(r=>r.name);if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다. 해마다 순위가 갈린다.`,{kind:'sys'});
   addLog(`같은 날 입사한 동기는 ${cohort.map(p=>p.name).join(', ')}이다.`,{kind:'sys'});
   cohortTieLogs();
   render();schedule();

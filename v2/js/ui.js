@@ -95,7 +95,7 @@ function goWork(rows){
   const d={v:1,name:S.name,gender:S.gender,age:S.age,birthY:S.birthY,fam:S.fam,famName:S.famName,region:S.region,regionName:S.regionName,
     ac:Math.round(S.ac),hp:Math.round(S.hp),sc:Math.round(S.sc),mn:Math.round(S.mn),money:Math.round(S.money),loan:Math.round(S.loan||0),
     co:S.job.co,team:S.job.team,fc:S.fc,gradDone:!!S.gradDone,jc:!!(S.univ&&UNIV_TIERS[S.univ.tier].k==='jc'),
-    univ:S.univ?{tierName:S.univ.tierName,majorName:S.univ.majorName}:null,
+    univ:S.univ?{tierName:S.univ.tierName,majorName:S.univ.majorName,k:UNIV_TIERS[S.univ.tier].k}:null,
     friends:S.friends.slice().sort((a,b)=>b.fr-a.fr).slice(0,4).map(f=>({name:f.name,from:f.from,fr:Math.round(f.fr),int:f.int})),
     auto:true,autoPick:settings.auto,pace:settings.pace,speed,
     school:HIGH_SCHOOLS.find(h=>h.k===S.school)?.name||'',sat:S.sat||null,gpa:S.univ&&S.univ.avg||null,

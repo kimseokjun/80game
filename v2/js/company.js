@@ -278,3 +278,40 @@ async function schoolMenu(i){
   if(ch[k].t!=='그냥 둔다'){f.lastMi=S.mi;addLog(ch[k].f(),{kind:'act',tag:'친구 '+f.name});}
   settings.auto=prev;busy=false;render();schedule();
 }
+
+/* ---------- 동문·아는 동기 (이스터에그) ---------- */
+// 윗사람 중 일부는 몰래 같은 학교 출신이다. 처음 같이 밥을 먹을 때 드러난다.
+function rollAlum(){
+  if(!HAND)return false;
+  const k=HAND.univ&&HAND.univ.k;
+  let p=!HAND.univ?0.06:{top:0.22,seoul:0.15,natl:0.12,local:0.08,jc:0.05}[k]||0.08;
+  if(k==='top'&&CO.k==='big')p+=0.08;
+  if(HAND.gradDone)p+=0.03;
+  return chance(p);
+}
+function alumLunch(p){
+  if(!p.alum||p.alumKnown)return null;
+  p.alumKnown=true;
+  const t=HAND.univ?pick(['알고 보니 같은 대학 선배였다. 학교 앞 국밥집 이야기로 한 시간을 떠들었다.','알고 보니 같은 대학 출신이었다. 그 교수님 아직 계시냐고 물었다.','같은 대학 선배라는 걸 알게 됐다. 축제 때 무대에 섰던 이야기를 들었다.'])
+    :'알고 보니 같은 고등학교 선배였다. 매점 아주머니 이야기로 한참 웃었다.';
+  return {text:t,why:HAND.univ?'같은 대학 후배라는 걸 알게 됐다':'같은 고등학교 후배라는 걸 알게 됐다'};
+}
+// 같은 회사에 들어간 학교 친구는 동기가 된다. 나머지 동기 중에도 동문·동네 친구가 섞인다.
+let tieLogs=[];
+function linkCohort(){
+  tieLogs=[];
+  const same=(S.friends||[]).filter(f=>f.co==='same');
+  same.slice(0,cohort.length).forEach((f,i)=>{
+    const p=cohort[i];
+    p.name=f.name;p.fr=Math.max(50,f.fr);p.tie=f.from.replace(' 친구','').replace(' 동기','')+(f.from.includes('동기')?' 동기':' 친구');
+    p.birthMi=S.birthMi+randint(-12,12);
+    tieLogs.push(`${f.from} ${f.name}${J(f.name,'과','와')} 같은 날 입사했다. 입사식에서 서로 보고 한참 웃었다.`);
+  });
+  S.friends=(S.friends||[]).filter(f=>f.co!=='same');
+  cohort.forEach(p=>{
+    if(p.tie)return;
+    if(HAND.univ&&chance(0.2)){p.tie='대학 동문';p.fr=clamp(p.fr+30,0,100);tieLogs.push(`동기 ${p.name}${J(p.name,'은','는')} 같은 대학 출신이다. 학교 다닐 때 얼굴만 알던 사이다.`);}
+    else if(chance(0.15)){p.tie='동네 친구';p.fr=clamp(p.fr+25,0,100);tieLogs.push(`동기 ${p.name}${J(p.name,'은','는')} 같은 동네에서 자랐다. 어릴 때 같은 놀이터에서 놀았던 것 같다.`);}
+  });
+}
+function cohortTieLogs(){tieLogs.forEach(t=>addLog(t,{kind:'peer',tag:'동기'}));}

@@ -668,7 +668,7 @@ const SEATS=['ceo','d:it','d:ms',...Object.keys(DEPTS).map(k=>'t:'+k)];
 const seatRole=k=>k==='ceo'?'원장':k.startsWith('d:')?'실장':'팀장';
 function seatLabel(k){if(k==='ceo')return '원장';if(k==='d:it')return PRIV()?'실장 · 기술':'실장 · 정보화';if(k==='d:ms')return PRIV()?'실장 · 경영':'실장 · 경영·연구';return '팀장 · '+DEPTS[k.slice(2)].name;}
 const ROLE_M={팀장:1,실장:1.3,원장:1.6};
-function newPerson(seat){let n,t=0;do{n=pick(SUR)+pick(GIVEN);t++;}while(t<50&&((S.people||[]).some(p=>p.name===n)||cohort.some(p=>p.name===n)||n===S.name));return {seat,name:n,rel:randint(-5,5),hist:[],flat:0};}
+function newPerson(seat){let n,t=0;do{n=pick(SUR)+pick(GIVEN);t++;}while(t<50&&((S.people||[]).some(p=>p.name===n)||cohort.some(p=>p.name===n)||n===S.name));return {seat,name:n,rel:randint(-5,5),hist:[],flat:0,alum:CO?rollAlum():false};}
 function mySeat(){if(S.acting)return S.acting.seat;if(S.type!=='reg')return null;if(S.rank>=6)return 'ceo';if(S.rank===5)return dirSeat();if(S.rank===4)return 't:'+S.dept;return null;}
 const dirSeat=()=>S.track==='it'?'d:it':'d:ms';
 const seatOf=k=>(S.people||[]).find(p=>p.seat===k);
@@ -756,7 +756,7 @@ function renderPeople(){
     const p=seatOf(k);if(!p)return '';
     const r=Math.round(p.rel),w=Math.abs(r)/2,left=r>=0?50:50-w;
     const tone=r>=25?' good':r<=-25?' bad':'';
-    const tag=(k===bs?`<span class="ptag">내 ${seatRole(k)}</span>`:k===dirSeat()&&S.rank<4?'<span class="ptag">담당 실장</span>':'')+(p.disc?' <span class="ptag bad">징계 이력</span>':'')+(p.award?' <span class="ptag good">표창</span>':'');
+    const tag=(k===bs?`<span class="ptag">내 ${seatRole(k)}</span>`:k===dirSeat()&&S.rank<4?'<span class="ptag">담당 실장</span>':'')+(p.disc?' <span class="ptag bad">징계 이력</span>':'')+(p.award?' <span class="ptag good">표창</span>':'')+(p.alumKnown?' <span class="ptag good">동문</span>':'');
     const h=p.hist[0];
     const cd=seatRole(k)==='원장'?6:3,wait=p.lastMi!==undefined&&S.mi-p.lastMi<cd;
     return `<div class="prow${tone}${k===bs?' boss':''}">
@@ -783,7 +783,7 @@ async function personMenu(k){
   const bf=Math.min(0.8,0.25+p.flat*0.05);
   const m=ym(S.mi).m;
   const ch=[
-    X('점심 같이 하자고 하기',()=>{E({money:-5});if(chance(refuse)){rel(p,-1,'점심 제안을 미뤘다');return `${p.name} ${ro}께 점심을 청했다. 바쁘다며 다음에 보자고 했다.`;}rel(p,6*mult,'같이 점심을 먹었다');return `${p.name} ${ro}과 점심을 먹었다. ${pick(['처음으로 업무 밖 이야기를 했다.','자녀 이야기를 오래 들었다.','계산은 '+ro.replace('님','')+'이 했다.','입사 때 이야기를 물어봤다.'])}`;},'−5만원 관계↑',()=>1-refuse,'함께할 가능성'),
+    X('점심 같이 하자고 하기',()=>{E({money:-5});if(chance(refuse)&&!(p.alum&&!p.alumKnown)){rel(p,-1,'점심 제안을 미뤘다');return `${p.name} ${ro}께 점심을 청했다. 바쁘다며 다음에 보자고 했다.`;}const al=alumLunch(p);rel(p,6*mult*(p.alumKnown&&!al?1.5:1),'같이 점심을 먹었다');if(al){rel(p,15,al.why);return `${p.name} ${ro}과 점심을 먹었다. ${al.text}`;}return `${p.name} ${ro}과 점심을 먹었다. ${pick(['처음으로 업무 밖 이야기를 했다.','자녀 이야기를 오래 들었다.','계산은 '+ro.replace('님','')+'이 했다.','입사 때 이야기를 물어봤다.'])}`;},'−5만원 관계↑',()=>1-refuse,'함께할 가능성'),
     X('업무 조언 구하기',()=>{rel(p,4*mult,'업무 조언을 구하러 왔다');E({sk:1});return `${p.name} ${ro}께 업무 조언을 구했다. ${pick(['메모가 한 쪽이 넘었다.','예전 비슷한 사례를 알려줬다.','생각보다 길게 이야기해줬다.'])}`;},'관계 조금↑ 역량 조금↑'),
   ];
   if(m===2||m===9)ch.push(X('명절 선물 챙기기',()=>{E({money:-10});rel(p,5*mult,'명절 선물을 챙겼다');return `${p.name} ${ro}께 명절 선물을 보냈다. 고맙다는 문자가 왔다.`;},'−10만원 관계↑'));
@@ -1673,7 +1673,7 @@ function renderCohort(){
   $('#cohortList').innerHTML=W(cohort.map((p,i)=>{
     const st=p.ended?`${p.ended.kind} · ${ym(p.ended.mi).y}`+(p.now?`<br>지금은 ${p.now}`:''):'재직 중';
     const fr=Math.round(p.fr);
-    return `<button type="button" class="peer-card${p.ended?' out':''}" data-i="${i}" ${p.ended?'disabled':''}><b>${p.name}</b> <span class="meta">${ageOf(p,p.ended?p.ended.mi:S.mi)}세</span><div class="meta">${p.ended?p.ended.title:rankTitle(p)+' · '+deptLabel(p)}</div><div class="st">${st}</div><div class="fr"><span>친밀도 ${fr}</span><div class="track"><div class="fill" style="width:${fr}%"></div></div></div></button>`;
+    return `<button type="button" class="peer-card${p.ended?' out':''}" data-i="${i}" ${p.ended?'disabled':''}><b>${p.name}</b> <span class="meta">${ageOf(p,p.ended?p.ended.mi:S.mi)}세</span>${p.tie?` <span class="ptag">${p.tie}</span>`:''}<div class="meta">${p.ended?p.ended.title:rankTitle(p)+' · '+deptLabel(p)}</div><div class="st">${st}</div><div class="fr"><span>친밀도 ${fr}</span><div class="track"><div class="fill" style="width:${fr}%"></div></div></div></button>`;
   }).join(''));
   renderFriends();
 }
@@ -1779,7 +1779,7 @@ $('#btnJoin').addEventListener('click',()=>{
   if(!HAND)return;
   S=makeFromHand();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0,tax:0,kid:0,cm:0,par:0,car:0,prop:0},kidsList:[],loans:[],days:15,inv:0,savMonthly:0,savBal:0,savPrin:0,savStart:0,stock:0,reit:0,ofs:null,rateAdj:0,rateUntil:null,houseVal:0,houseLoan:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;S.sal0=salary(S,0);companyInit();
   $('#goalSeg').innerHTML=Object.entries(GOALS).map(([k,g])=>`<button type="button" data-g="${k}" aria-pressed="${k==='wlb'}">${g.name}</button>`).join('');
-  cohort=Array.from({length:CO.cohortN},()=>makePeer());
+  cohort=Array.from({length:CO.cohortN},()=>makePeer());linkCohort();
   S.people=[];syncSeats();rel(boss(),randint(5,12),'첫 출근 날 인사를 잘했다');
   const sal=salary(S,0);
   const rows=[
@@ -1809,6 +1809,7 @@ $('#btnFirstDay').addEventListener('click',()=>{
   if(HAND.loan)addLog(`학자금 대출 ${fmtMoney(HAND.loan)}원을 통장에서 갚아 나가기로 했다.`,{kind:'sys'});
   const rv=S.rivals.map(r=>r.name);if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다. 해마다 순위가 갈린다.`,{kind:'sys',tag:'업계'});
   addLog(`같은 날 입사한 동기는 ${cohort.map(p=>p.name).join(', ')}이다.`,{kind:'sys'});
+  cohortTieLogs();
   render();schedule();
 });
 segBind('#goalSeg','g',v=>{S.goal=v;});

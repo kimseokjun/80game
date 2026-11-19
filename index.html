@@ -169,6 +169,8 @@ select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);bord
 .prole{font-size:12px;color:var(--muted)}
 .pnm{font-size:15px;font-weight:700;margin:1px 0 0}
 .ptag{font-size:11px;border:1px solid var(--accent);color:var(--accent);border-radius:3px;padding:0 5px}
+.ptag.bad{border-color:var(--stamp);color:var(--stamp)}
+.ptag.good{border-color:var(--muted);color:var(--muted)}
 .pmeet{margin-left:auto;padding:3px 10px!important;font-size:12px!important;white-space:nowrap}
 .pbar{position:relative;height:6px;background:var(--paper);border:1px solid var(--line);border-radius:3px;margin:6px 0 4px}
 .pbar::after{content:"";position:absolute;left:50%;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
@@ -231,7 +233,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.8.2 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.8.3 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -445,7 +447,7 @@ function makePerson(){
 function rankTitle(p){
   if(p.type==='temp')return p.track==='research'?'기간제 연구원':'계약직';
   if(p.type==='perm')return '전문원';
-  return (p.track==='research'?RRANKS:RANKS)[p.rank];
+  return (p.track==='research'?RRANKS:RANKS)[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');
 }
 function deptLabel(p){
   if(p.rank>=6&&p.type==='reg')return '원장실';
@@ -668,7 +670,7 @@ const seatRole=k=>k==='ceo'?'원장':k.startsWith('d:')?'실장':'팀장';
 function seatLabel(k){if(k==='ceo')return '원장';if(k==='d:it')return '실장 · 정보화';if(k==='d:ms')return '실장 · 경영·연구';return '팀장 · '+DEPTS[k.slice(2)].name;}
 const ROLE_M={팀장:1,실장:1.3,원장:1.6};
 function newPerson(seat){let n,t=0;do{n=pick(SUR)+pick(GIVEN);t++;}while(t<50&&((S.people||[]).some(p=>p.name===n)||cohort.some(p=>p.name===n)||n===S.name));return {seat,name:n,rel:randint(-5,5),hist:[],flat:0};}
-function mySeat(){if(S.type!=='reg')return null;if(S.rank>=6)return 'ceo';if(S.rank===5)return dirSeat();if(S.rank===4)return 't:'+S.dept;return null;}
+function mySeat(){if(S.acting)return S.acting.seat;if(S.type!=='reg')return null;if(S.rank>=6)return 'ceo';if(S.rank===5)return dirSeat();if(S.rank===4)return 't:'+S.dept;return null;}
 const dirSeat=()=>S.track==='it'?'d:it':'d:ms';
 const seatOf=k=>(S.people||[]).find(p=>p.seat===k);
 function syncSeats(){
@@ -677,7 +679,7 @@ function syncSeats(){
   S.people=S.people.filter(p=>p.seat);
   for(const k of SEATS){if(k===my||seatOf(k))continue;const d=out.shift();if(d){d.seat=k;S.people.push(d);}else S.people.push(newPerson(k));}
 }
-function bossSeat(){if(S.type==='reg'&&S.rank>=6)return null;if(S.type==='reg'&&S.rank===5)return 'ceo';if(S.type==='reg'&&S.rank===4)return dirSeat();return 't:'+S.dept;}
+function bossSeat(){if(S.acting)return dirSeat();if(S.type==='reg'&&S.rank>=6)return null;if(S.type==='reg'&&S.rank===5)return 'ceo';if(S.type==='reg'&&S.rank===4)return dirSeat();return 't:'+S.dept;}
 const boss=()=>{const k=bossSeat();return k?seatOf(k):null;};
 const bossTitle=()=>{const k=bossSeat();return k?seatRole(k):'';};
 function rel(p,d,why){if(!p)return;p.rel=clamp(p.rel+d,-100,100);p.hist.unshift({mi:S.mi,d:Math.round(d),why});p.hist=p.hist.slice(0,4);}
@@ -689,11 +691,64 @@ function reshuffle(){
     if(k===my||n>=1)continue;
     const pr=k==='ceo'?(S.mi-(S.ceoMi??0)>=36?1:0):k.startsWith('d:')?0.08:0.1;
     if(!chance(pr))continue;
-    const old=seatOf(k);S.people=S.people.filter(p=>p!==old);const np=newPerson(k);S.people.push(np);n++;
+    const old=seatOf(k);S.people=S.people.filter(p=>p!==old);
+    if(k.startsWith('d:')){const aw=S.people.filter(p=>p.award&&p.seat.startsWith('t:'));if(aw.length&&chance(0.6)){const c=pick(aw),os=c.seat;c.seat=k;c.award=false;S.people.push(newPerson(os));n++;addLog(`표창을 받았던 ${c.name} 팀장이 ${seatLabel(k).replace(' · ',' (')}) 자리에 올랐다.`,{kind:'sys',tag:'인사'});leaveReact(old);continue;}}
+    const np=newPerson(k);S.people.push(np);n++;
     if(k==='ceo')S.ceoMi=S.mi;
     const b=k===bossSeat();
     addLog(b?`${seatRole(k)}이 바뀌었다. ${old?old.name+' '+seatRole(k)+'은 다른 자리로 갔고, ':''}새로 ${np.name}${J(np.name,'이','가')} 왔다.`:`인사이동으로 ${seatLabel(k).replace(' · ',' (')}${k==='ceo'?'':')'} 자리에 ${np.name}${J(np.name,'이','가')} 왔다.`,{kind:'sys',tag:'인사'});
   }
+}
+function leaveReact(old){
+  if(!old)return '';
+  if(old.rel>=40){E({mn:-3});return ' 든든한 아군이 사라졌다.';}
+  if(old.rel<=-30){E({mn:3});return ' 솔직히 숨통이 트였다.';}
+  return '';
+}
+function vacate(k){const old=seatOf(k);S.people=S.people.filter(p=>p!==old);return old;}
+const ORGS=['근로복지공단','한국산업인력공단','한국장애인고용공단','노사발전재단','한국기술교육대학교'];
+async function incident(){
+  const my=mySeat(),bs=bossSeat();
+  const pool=SEATS.filter(k=>k.startsWith('t:')&&k!==my&&seatOf(k));
+  if(!pool.length)return;
+  const k=bs&&bs.startsWith('t:')&&pool.includes(bs)&&chance(0.25)?bs:pick(pool);
+  const p=seatOf(k),team=DEPTS[k.slice(2)].name,isBoss=k===bs,who=isBoss?'우리 팀장':`${team} ${p.name} 팀장`,ws=isBoss?'우리 팀장':`${p.name} 팀장`;
+  const type=wpick([{w:20,v:'outage'},{w:20,v:'audit'},{w:12,v:'gapjil'},{w:20,v:'award'},{w:10,v:'out'},{w:18,v:'press'}]).v;
+  const opt={kind:'sys',tag:'사내'};
+  let gone=false;
+  if(type==='outage'){
+    if(chance(0.5)){rel(p,0,'장애 책임으로 경고를 받았다');addLog(`${team}이 맡은 시스템에 대규모 장애가 났다. ${ws}${J(ws,'이','가')} 경고를 받았다.`,opt);}
+    else{vacate(k);gone=true;addLog(`${team}이 맡은 시스템에 대규모 장애가 났다. ${ws}${J(ws,'이','가')} 보직에서 해임됐다.`+leaveReact(p),opt);}
+  }else if(type==='audit'){
+    p.disc=true;
+    if(chance(0.4)){
+      const ceo=seatOf('ceo');
+      await resolve('탄원서',`감사에서 ${team} 예산 집행 문제가 지적됐다. ${p.name} 팀장의 징계를 막자는 탄원서가 돌고 있다.`,[
+        X('서명한다',()=>{rel(p,15,'징계 위기 때 탄원서에 서명해줬다');rel(ceo,-3,'징계 건 탄원서에 이름을 올렸다');return chance(0.5)?`징계는 견책으로 낮아졌다. ${p.name} 팀장이 따로 고맙다고 했다.`:'결국 감봉 처분이 나왔다.';},`${p.name} 팀장 관계↑↑ 원장 관계 조금↓`),
+        X('서명하지 않는다',()=>{rel(p,-6,'탄원서에 서명하지 않았다');rel(ceo,1,'징계 건에 거리를 뒀다');return '감봉 처분이 나왔다. 복도에서 마주쳤을 때 인사가 짧았다.';},`${p.name} 팀장 관계↓`)],true,'key');
+    }else addLog(`감사에서 ${team} 예산 집행 문제가 지적됐다. ${ws}${J(ws,'이','가')} ${pick(['견책','감봉 1개월'])} 처분을 받았다.`,opt);
+  }else if(type==='gapjil'){
+    if(chance(0.35)){
+      await resolve('증언 요청',`${team}에서 ${p.name} 팀장에 대한 갑질 신고가 들어왔다. 조사 담당자가 나에게 목격 진술을 요청했다.`,[
+        X('본 대로 진술한다',()=>{E({mn:2,sc:2});if(chance(0.6)){vacate(k);gone=true;return `조사 결과 ${p.name} 팀장은 다른 부서로 옮겼다. 신고한 직원이 고맙다는 메시지를 보냈다.`+leaveReact(p);}rel(p,-15,'갑질 조사에서 불리한 진술을 했다');return '무혐의로 끝났다. 그 뒤로 그 팀장과는 눈을 마주치지 않는다.';},'사교↑ 멘탈 조금↑ · 그 팀장 관계↓'),
+        X('기억이 잘 안 난다고 한다',()=>{E({mn:-2});return '조사는 무혐의로 끝났다. 신고한 직원이 나를 피하는 것 같았다.';},'멘탈 조금↓')],true,'key');
+    }else if(chance(0.5)){vacate(k);gone=true;addLog(`${team}에서 갑질 신고가 들어왔다. 조사 끝에 ${ws}${J(ws,'은','는')} 다른 부서로 옮겼다.`+leaveReact(p),opt);}
+    else{rel(p,0,'갑질 신고가 무혐의로 끝났다');addLog(`${team}에서 갑질 신고가 들어왔다. 조사는 무혐의로 끝났다. 팀 분위기는 한동안 가라앉았다.`,opt);}
+  }else if(type==='award'){
+    p.award=true;rel(p,0,'원장 표창을 받았다');addLog(`${who}${J(who,'이','가')} ${pick(['혁신 성과','대국민 서비스 개선','예산 절감'])}로 원장 표창을 받았다. 다음 실장 후보로 이름이 거론된다.`,opt);
+  }else if(type==='out'){
+    vacate(k);gone=true;addLog(`${who}${J(who,'이','가')} ${pick(ORGS)} 상임이사로 영전했다. 송별회가 크게 열렸다.`+leaveReact(p),opt);
+  }else{
+    if(isBoss)E({mn:-2});
+    addLog(`${team} 사업이 '${pick(['예산만 쓰고 효과는 없다','시스템이 또 멈췄다','현장과 동떨어졌다'])}'는 기사에 났다. 그 팀 분위기가 어수선하다.`,opt);
+  }
+  if(gone&&isBoss&&S.type==='reg'&&S.rank===3&&!S.acting&&chance(0.35)){
+    await resolve('팀장 대행',`팀장 자리가 갑자기 비었다. ${seatOf(dirSeat())?.name||''} 실장이 새 팀장이 올 때까지 1년간 대행을 맡아달라고 한다.`,[
+      X('대행을 맡는다',()=>{S.acting={seat:k,until:S.mi+12};E({rp:3});return '팀장 자리로 짐을 옮겼다. 결재함이 금방 찼다.';},'평판↑ 체력↓ · 1년 뒤 승진 가점'),
+      X('사양한다',()=>{rel(seatOf(dirSeat()),-3,'팀장 대행 제안을 사양했다');return '다른 차장이 대행을 맡았다.';},'실장 관계 조금↓')],true,'key');
+  }
+  syncSeats();
+  if(gone&&!S.acting){const np=seatOf(k);if(np)addLog(`${team}에 새 팀장 ${np.name}${J(np.name,'이','가')} 왔다.`,opt);}
 }
 function renderPeople(){
   const my=mySeat(),bs=bossSeat();
@@ -702,7 +757,7 @@ function renderPeople(){
     const p=seatOf(k);if(!p)return '';
     const r=Math.round(p.rel),w=Math.abs(r)/2,left=r>=0?50:50-w;
     const tone=r>=25?' good':r<=-25?' bad':'';
-    const tag=k===bs?`<span class="ptag">내 ${seatRole(k)}</span>`:k===dirSeat()&&S.rank<4?'<span class="ptag">담당 실장</span>':'';
+    const tag=(k===bs?`<span class="ptag">내 ${seatRole(k)}</span>`:k===dirSeat()&&S.rank<4?'<span class="ptag">담당 실장</span>':'')+(p.disc?' <span class="ptag bad">징계 이력</span>':'')+(p.award?' <span class="ptag good">표창</span>':'');
     const h=p.hist[0];
     const cd=seatRole(k)==='원장'?6:3,wait=p.lastMi!==undefined&&S.mi-p.lastMi<cd;
     return `<div class="prow${tone}${k===bs?' boss':''}">
@@ -1212,6 +1267,7 @@ function monthlyStats(){
   const d=DEPTS[S.dept],f=FOCUS[S.focus];
   let hp=d.hp+0.65+f.hp,mn=d.mn+0.75+f.mn,sk=d.sk*0.6+f.sk,rp=d.rp*0.6+f.rp;
   if(S.type==='reg'&&S.rank>=4){mn-=0.4;rp+=0.1;}
+  if(S.acting){hp-=0.5;mn-=0.3;rp+=0.15;}
   if(age()>=45)hp-=0.25;
   if(!S.moved)hp-=(S.home==='far'?0.5:S.home==='metro'?0.3:S.home==='mid'?0.1:0)*(S.car?0.5:1);
   hp+=(70-S.hp)*0.03;mn+=(65-S.mn)*0.03+(S.sc-50)*0.004+(S.pet?0.5:0);
@@ -1281,7 +1337,9 @@ function endGame(kind,text){
 }
 
 async function calendar(m){
-  if(m===1){S.days=15;reshuffle();await personnel();}
+  if(m===1){S.days=15;reshuffle();const n=wpick([{w:35,v:0},{w:45,v:1},{w:20,v:2}]).v;S.incMonths=[2,3,4,5,6,7,8,9,10,11,12].sort(()=>R()-0.5).slice(0,n);await personnel();}
+  if(S.incMonths&&S.incMonths.includes(m)&&S.leave===0)await incident();
+  if(S.acting&&S.mi>=S.acting.until){S.acting=null;S.evalBonus=(S.evalBonus||0)+0.15;E({mn:3});syncSeats();const np=boss();addLog(`팀장 대행 1년이 끝났다.${np?` 새 팀장 ${np.name}${J(np.name,'이','가')} 왔다.`:''} 승진 심사에 가점이 붙는다.`,{kind:'key'});}
   if(m===2||m===9){
     if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(pick([`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`,`${m===2?'설':'추석'} 연휴, 휴게소마다 줄이 길었다.`,`${m===2?'설':'추석'} 연휴, 새벽 네 시에 출발해 차를 피했다.`,`${m===2?'설':'추석'} 연휴, KTX 표를 겨우 구했다.`]));}
   }

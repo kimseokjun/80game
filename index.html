@@ -114,6 +114,8 @@ button{font:inherit;color:inherit}
 .entry.peer .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}
 .entry.sys p{color:var(--muted);font-size:14px}
 .entry.key p{font-weight:600}
+.amt{font-family:var(--font-mono);font-size:12px;font-weight:500;color:var(--accent);margin-left:8px;white-space:nowrap}
+.amt.neg{color:var(--stamp)}
 
 .cohort .peer-card{padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}
 .cohort .peer-card:last-child{border-bottom:0}
@@ -159,7 +161,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.1 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.2 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -346,7 +348,9 @@ function salary(p,mi){
 let S=null, cohort=[], settings={dur:30,auto:false};
 let timer=null, speed=1, busy=false, baseMs=5000, resignReq=false;
 const age=()=>ageOf(S,S.mi);
-function E(o){for(const k in o){if(k==='money')S.money+=o[k];else S[k]=clamp(S[k]+o[k],0,100);}}
+let pendingMoney=0;
+function E(o){for(const k in o){if(k==='money'){S.money+=o[k];pendingMoney+=o[k];S.yr.ev+=o[k];}else S[k]=clamp(S[k]+o[k],0,100);}}
+const fmtSigned=v=>(v>=0?'+':'−')+fmtMoney(Math.abs(v))+'원';
 
 /* ---------- 로그 ---------- */
 let lastYearHeader=null;
@@ -370,6 +374,8 @@ function addLog(text,opt={}){
   p.appendChild(document.createTextNode(text));body.appendChild(p);
   if(opt.pick){const q=document.createElement('p');q.className='pick';q.textContent='→ '+opt.pick;body.appendChild(q);}
   if(opt.res){const q=document.createElement('p');q.className='res';q.textContent=opt.res;body.appendChild(q);}
+  if(pendingMoney&&Math.abs(pendingMoney)>=1){const last=body.lastChild,a=document.createElement('span');a.className='amt'+(pendingMoney<0?' neg':'');a.textContent=fmtSigned(Math.round(pendingMoney));last.appendChild(a);}
+  pendingMoney=0;
   d.innerHTML=`<div class="when">${m}월</div>`;d.appendChild(body);
   $('#log').appendChild(d);
   if(stick)wrap.scrollTop=wrap.scrollHeight;
@@ -669,11 +675,11 @@ function monthlyMoney(){
   let inc=S.leave>0&&S.leaveType==='parental'?150:sal/12*0.8;
   const infl=Math.pow(1.025,S.mi/12);
   let exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?110:0);
-  S.money+=inc-exp;
+  S.money+=inc-exp;S.yr.inc+=inc;S.yr.exp+=exp;
   if(S.mortgage>0)S.mortgage--;
   const base=Math.max(S.money,0);
-  if(S.focus==='money'){const r=0.005+randn()*0.04;S.money+=base*0.5*r;S.yrInvest=(S.yrInvest||0)+base*0.5*r;}
-  else S.money+=base*0.0015;
+  if(S.focus==='money'){const r=0.005+randn()*0.04;S.money+=base*0.5*r;S.yr.inv+=base*0.5*r;}
+  else{S.money+=base*0.0015;S.yr.int+=base*0.0015;}
   S.maxSal=Math.max(S.maxSal||0,sal);
 }
 function pool(){
@@ -735,7 +741,7 @@ async function calendar(m){
     const g=wpick([{w:2,v:'S',r:1.5},{w:20+(S.evalBoost||0)*60,v:'A',r:1.2},{w:45,v:'B',r:0.9},{w:25,v:'C',r:0.6},{w:8,v:'D',r:0}]);
     S.evalBoost=0;
     if(S.type==='temp')addLog(`경영평가 결과 ${g.v}등급이 나왔다. 계약직은 성과급 대상이 아니었다.`,{kind:'sys'});
-    else{const b=salary(S,S.mi)/12*g.r*0.8;S.money+=b;E({mn:g.v==='D'?-3:g.v==='S'||g.v==='A'?2:0});addLog(`경영평가 결과 ${g.v}등급이 나왔다. 성과급 ${fmtMoney(b)}원이 들어왔다.`,{kind:'sys'});}
+    else{const b=salary(S,S.mi)/12*g.r*0.8;S.money+=b;S.yr.bonus+=b;E({mn:g.v==='D'?-3:g.v==='S'||g.v==='A'?2:0});addLog(`경영평가 결과 ${g.v}등급이 나왔다. 성과급 ${fmtMoney(b)}원이 들어왔다.`,{kind:'sys'});}
   }
   if(m===10&&S.leave===0){
     if(['chwi1','chwi2','research','mgmt'].includes(S.dept)&&S.rank<5){
@@ -814,9 +820,16 @@ async function monthTick(){
   }
   if(settings.auto&&(m===1||m===4||m===7||m===10))autoFocus();
   if(m===12){
-    const inv=S.yrInvest?` 재테크 손익 ${S.yrInvest>=0?'+':''}${fmtMoney(S.yrInvest)}원.`:'';
-    S.yrInvest=0;
-    addLog(`올해 연봉 ${fmtMoney(salary(S,S.mi))}원. 통장 ${fmtMoney(S.money)}원.${inv}`,{kind:'sys'});
+    const Y=S.yr,r=v=>Math.round(v);
+    const parts=[`급여 ${fmtSigned(r(Y.inc))}`];
+    if(Y.bonus)parts.push(`성과급 ${fmtSigned(r(Y.bonus))}`);
+    parts.push(`생활비 ${fmtSigned(-r(Y.exp))}`);
+    if(Math.abs(Y.ev)>=1)parts.push(`이벤트 ${fmtSigned(r(Y.ev))}`);
+    if(Math.abs(Y.inv)>=1)parts.push(`재테크 ${fmtSigned(r(Y.inv))}`);
+    if(Y.int>=1)parts.push(`이자 ${fmtSigned(r(Y.int))}`);
+    const net=Y.inc+Y.bonus-Y.exp+Y.ev+Y.inv+Y.int;
+    addLog(`올해 연봉 ${fmtMoney(salary(S,S.mi))}원. ${parts.join(' · ')}. 한 해 ${fmtSigned(r(net))}, 통장 ${fmtMoney(S.money)}원.`,{kind:'sys'});
+    S.yr={inc:0,exp:0,ev:0,inv:0,int:0,bonus:0};
   }
 }
 function autoFocus(){
@@ -965,7 +978,7 @@ segBind('#durSeg','dur',v=>settings.dur=+v);
 segBind('#autoSeg','auto',v=>settings.auto=v==='1');
 
 $('#btnJoin').addEventListener('click',()=>{
-  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,yrInvest:0,maxSal:0});
+  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0}});pendingMoney=0;
   cohort=[0,1,2,3].map(()=>makePerson());
   const sal=salary(S,0);
   const rows=[

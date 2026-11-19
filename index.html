@@ -146,7 +146,15 @@ select{font:inherit;font-size:13px;color:var(--ink);background:var(--paper);bord
 .stat-head h3{margin:0}
 .qbtn{width:20px;height:20px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-size:12px;line-height:1;cursor:pointer;padding:0;color:var(--muted)}
 .qbtn:hover{border-color:var(--accent);color:var(--accent)}
-#help{z-index:30}
+#help,#asset{z-index:30}
+.asec{border-top:1px solid var(--line);padding:12px 0}
+.asec h5{margin:0 0 6px;font-size:14px}
+.asec .note{font-size:12px;color:var(--muted);margin-bottom:8px}
+.asec .seg button{padding:5px 10px;font-size:13px}
+.arow{display:flex;justify-content:space-between;font-size:13px;padding:2px 0}
+.arow b{font-family:var(--font-mono);font-weight:500}
+.abtns{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.abtns button:disabled{opacity:.45;cursor:not-allowed}
 .help-list{display:grid;grid-template-columns:56px 1fr;gap:10px 12px;margin:0 0 18px;font-size:13px;line-height:1.6}
 .help-list dt{font-weight:600}
 .help-list dd{margin:0}
@@ -190,7 +198,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.5 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.6 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -256,6 +264,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
     <div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div>
     <div class="stats" id="pStats"></div>
     <div class="money"><span>통장</span><b id="pMoney"></b></div>
+    <div class="money" style="border-top:0"><span>순자산</span><b id="pNet"></b></div>
     <div class="money" style="border-top:0"><span>연봉</span><b id="pSalary"></b></div>
     <div class="focus">
       <h3 style="margin-top:12px">요즘 집중하는 것</h3>
@@ -271,8 +280,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
       <h3>행동</h3>
       <div class="act-meta" id="actMeta"></div>
       <div class="act-list" id="actList"></div>
-      <h3 style="margin-top:14px">투자 비중</h3>
-      <div class="seg" id="invSeg"></div>
+      <button type="button" class="btn" id="btnAsset" style="width:100%;margin-top:10px">자산 관리</button>
     </div>
     <button type="button" class="btn danger resign" id="btnResign">사직서 내기</button>
   </aside>
@@ -295,6 +303,13 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
       <dt>친밀도</dt><dd>동기마다 따로 있다. 밥·술·스터디로 오르고, 시간이 지나면 조금씩 준다. 60 이상이면 결혼식 사회, 이직 추천, 승진 경쟁 이벤트가 생긴다.</dd>
     </dl>
     <button type="button" class="btn primary" id="btnHelpClose">닫기</button>
+  </div>
+</div>
+<div id="asset" class="modal" hidden>
+  <div class="dialog help" role="dialog" aria-modal="true" aria-labelledby="aTitle">
+    <h4 id="aTitle">자산 관리</h4>
+    <div id="aBody"></div>
+    <button type="button" class="btn primary" id="btnAssetClose">닫기</button>
   </div>
 </div>
 <div id="modal" class="modal" hidden>
@@ -438,6 +453,12 @@ function addLog(text,opt={}){
   if(stick)wrap.scrollTop=wrap.scrollHeight;
 }
 
+const CLUBS={
+  '등산':{join:{hp:2,mn:2},hint:'체력↑ 멘탈↑'},
+  '풋살':{join:{hp:2,sc:2},hint:'체력↑ 사교↑ · 가끔 부상'},
+  '보드게임':{join:{sc:2,mn:2},hint:'사교↑ 멘탈↑ · 다른 부서 인맥'},
+  '독서':{join:{mn:2,sk:1},hint:'멘탈↑ 역량 조금↑ · 연애 확률 조금↑'},
+};
 /* ---------- 선택지 힌트 ---------- */
 const LEAVE_ENDING='게임 종료 (이직 엔딩)';
 const HINTS={
@@ -472,7 +493,7 @@ const HINTS={
 function hintFor(title,c){
   if(c.d)return {d:c.d};
   const h=HINTS[title+'|'+c.t];if(h)return h;
-  if(title==='동호회'&&c.t.endsWith('동호회에 든다'))return {d:'사교↑ 멘탈↑'};
+  if(title==='동호회'&&c.t.endsWith('동호회에 든다'))return {d:CLUBS[c.t.split(' ')[0]].hint};
   if(title==='순환보직')return {d:c.t.includes('유지')?'':'',p:()=>0.35+S.rp/200,label:'희망 반영 가능성'};
   return null;
 }
@@ -517,7 +538,7 @@ const GOALS={
   wlb:{name:'워라밸',hint:'정년까지 다니고 평균 멘탈 55 이상이면 달성.',w:{club_act:2,dating_intro:1.5,soc_workshop:1.3,pet_day:1.5}},
   exit:{name:'이직',hint:'다른 공기업이나 민간으로 옮기면 달성.',w:{other_pe:2,job_offer:2}},
   expert:{name:'전문가',hint:'역량 85에 한 번이라도 도달하면 달성.',w:{}},
-  fire:{name:'조기 은퇴',hint:'55세 전에 통장 10억을 넘기고 사직서를 내면 달성.',w:{house:1.5}},
+  fire:{name:'조기 은퇴',hint:'55세 전에 순자산 10억을 넘기고 사직서를 내면 달성.',w:{house:1.5}},
 };
 function goalResult(){
   const k=S.ended.kind,avg=S.mnN?S.mnSum/S.mnN:0;
@@ -526,7 +547,7 @@ function goalResult(){
     case 'wlb':return (k==='정년퇴직'&&avg>=55?'달성':'미달성')+` (평균 멘탈 ${Math.round(avg)})`;
     case 'exit':return ['공기업 이직','민간 이직','동기 추천 이직'].includes(k)?'달성':'미달성';
     case 'expert':return ((S.maxSk||0)>=85?'달성':'미달성')+` (최고 역량 ${Math.round(S.maxSk||0)})`;
-    case 'fire':return k==='자진 퇴사'&&age()<55&&S.money>=100000?'달성':'미달성';
+    case 'fire':return k==='자진 퇴사'&&age()<55&&netWorth()>=100000?'달성':'미달성';
   }
   return '';
 }
@@ -551,9 +572,11 @@ const LOVE=[
 ];
 function loveLog(){
   const boost=recentDate()||S.focus==='rel'?1.6:1;
-  const items=LOVE.map(l=>({w:l.w()*(l.good?boost:1),l})).filter(x=>x.w>0);
+  S.loveCd=S.loveCd||{};
+  const items=LOVE.map((l,i)=>({w:(S.loveCd[i]!==undefined&&S.mi-S.loveCd[i]<12)?0:l.w()*(l.good?boost:1),l,i})).filter(x=>x.w>0);
   if(!items.length)return;
-  addLog(wpick(items).l.f(),{kind:'love',tag:S.married?'가족':'연애'});
+  const it=wpick(items);S.loveCd[it.i]=S.mi;
+  addLog(it.l.f(),{kind:'love',tag:S.married?'가족':'연애'});
 }
 const lead=()=>S.type==='reg'&&S.rank>=4;
 const TEAM=[
@@ -574,6 +597,54 @@ const TEAM=[
   ()=>'점심 메뉴를 두고 국밥파와 샐러드파가 갈렸다. 결국 둘 다 갔다.',
   ()=>{E({rp:-1,mn:-1});return '내가 올린 공문에 오타가 있었다. 정정 공문을 다시 냈다.';},
 ];
+
+/* ---------- 자산 ---------- */
+const netWorth=()=>S.money+S.savBal+S.stock+S.reit+(S.house?S.houseVal-S.houseLoan:0)+(S.ofs?S.ofs.value-S.ofs.loan:0);
+const houseRate=()=>S.houseLoc==='hq'?0.02:S.homeZone==='수도권'?0.035:0.015;
+function assetLog(t){addLog(t,{kind:'act'});}
+function renderAsset(){
+  const rate=S.rateAdj>0?'금리 인상기':S.rateAdj<0?'금리 인하기':'보통';
+  const sv=S.savMonthly;
+  const left=S.savBal>0?12-(S.mi-S.savStart):0;
+  $('#aBody').innerHTML=`
+  <div class="asec"><div class="arow"><span>통장(예금)</span><b>${fmtMoney(S.money)}원</b></div><div class="arow"><span>순자산</span><b>${fmtMoney(netWorth())}원</b></div><div class="note">금리 ${rate} · 예금 연 ${((0.025+S.rateAdj)*100).toFixed(1)}% · 적금 연 ${((0.035+S.rateAdj)*100).toFixed(1)}%</div></div>
+  <div class="asec"><h5>주식</h5><div class="note">통장과 주식을 합친 돈 중 주식 비중. 평균 연 6~7%, 해마다 크게 흔들린다.</div><div class="arow"><span>평가액</span><b>${fmtMoney(S.stock)}원</b></div><div class="seg abtns">${[0,20,40,60,80].map(v=>`<button type="button" data-inv="${v}" aria-pressed="${Math.round(S.inv*100)===v}">${v}%</button>`).join('')}</div></div>
+  <div class="asec"><h5>적금</h5><div class="note">매달 통장에서 자동 이체. 1년 만기에 원금과 이자가 통장으로 들어온다. 0으로 바꾸면 중도 해지(원금만 돌려받음).</div><div class="arow"><span>잔액</span><b>${fmtMoney(S.savBal)}원${left>0?` · 만기 ${left}개월 뒤`:''}</b></div><div class="seg abtns">${[0,10,30,50,100].map(v=>`<button type="button" data-sav="${v}" aria-pressed="${sv===v}">${v?'월 '+v+'만':'안 함'}</button>`).join('')}</div></div>
+  <div class="asec"><h5>리츠</h5><div class="note">부동산 펀드. 배당 연 5%가 통장으로 들어오고, 시세가 연 ±10% 정도 흔들린다.</div><div class="arow"><span>보유</span><b>${fmtMoney(S.reit)}원</b></div><div class="abtns"><button type="button" class="btn" data-reit="buy" ${S.money>=1000?'':'disabled'}>1,000만 사기</button><button type="button" class="btn" data-reit="sell" ${S.reit>=1?'':'disabled'}>${S.reit>=1000?'1,000만 팔기':'전부 팔기'}</button></div></div>
+  <div class="asec"><h5>오피스텔</h5><div class="note">2억짜리 한 채. 계약금 6,000만, 나머지는 대출. 월세 60만에서 대출 이자 45만을 빼고 들어온다. 가끔 공실이 난다.</div>${S.ofs?`<div class="arow"><span>시세</span><b>${fmtMoney(S.ofs.value)}원</b></div><div class="arow"><span>대출</span><b>${fmtMoney(S.ofs.loan)}원</b></div><div class="arow"><span>상태</span><b>${S.ofs.vacant>0?`공실 · ${S.ofs.vacant}개월`:'임대 중'}</b></div><div class="abtns"><button type="button" class="btn" data-ofs="sell">팔기</button></div>`:`<div class="abtns"><button type="button" class="btn" data-ofs="buy" ${S.money>=6000?'':'disabled'}>사기 (계약금 6,000만)</button></div>`}</div>
+  ${S.house?`<div class="asec"><h5>내 집</h5><div class="arow"><span>${S.house==='big'?'큰 집':'작은 집'} 시세</span><b>${fmtMoney(S.houseVal)}원</b></div><div class="arow"><span>대출 잔액</span><b>${fmtMoney(S.houseLoan)}원</b></div><div class="note">시세는 매년 12월에 자동으로 다시 계산된다.</div></div>`:''}`;
+}
+function assetClick(ev){
+  const b=ev.target.closest('button');if(!b||b.disabled||!S||S.ended)return;
+  if(b.dataset.inv!==undefined){const v=+b.dataset.inv;if(Math.round(S.inv*100)!==v){S.inv=v/100;assetLog(v?`통장과 주식을 합친 돈의 ${v}%를 주식에 두기로 했다.`:'주식을 모두 정리했다.');}}
+  else if(b.dataset.sav!==undefined){const v=+b.dataset.sav;if(v!==S.savMonthly){
+    if(v===0&&S.savBal>0){S.money+=S.savPrin;assetLog(`적금을 중도 해지했다. 원금 ${fmtMoney(S.savPrin)}원만 돌려받았다.`);S.savBal=0;S.savPrin=0;}
+    else if(S.savMonthly===0){S.savStart=S.mi;assetLog(`매달 ${v}만 원씩 적금을 들기 시작했다.`);}
+    else assetLog(`적금 납입액을 월 ${v}만 원으로 바꿨다.`);
+    S.savMonthly=v;}}
+  else if(b.dataset.reit==='buy'){S.money-=1000;S.reit+=1000;assetLog('리츠를 1,000만 원어치 샀다.');}
+  else if(b.dataset.reit==='sell'){const v=Math.min(1000,S.reit);S.reit-=v;S.money+=v;if(S.reit<1)S.reit=0;assetLog(`리츠를 ${fmtMoney(v)}원어치 팔았다.`);}
+  else if(b.dataset.ofs==='buy'){S.money-=6000;S.ofs={value:20000,loan:14000,vacant:0,mi:S.mi};assetLog('혁신도시에 2억짜리 오피스텔을 샀다. 계약금 6,000만 원, 나머지는 대출이다.');}
+  else if(b.dataset.ofs==='sell'){const o=S.ofs,eq=o.value-o.loan,d=o.value-20000;S.money+=eq;S.ofs=null;assetLog(`오피스텔을 ${fmtMoney(o.value)}원에 팔았다. 산 값보다 ${d>=0?fmtMoney(d)+'원 올랐다':fmtMoney(-d)+'원 내렸다'}. 대출을 갚고 ${fmtMoney(eq)}원이 남았다.`);}
+  renderAsset();render();
+}
+const MARKET=[
+  {k:'up',f:()=>{S.rateAdj=0.01;S.rateUntil=S.mi+24;return shock('기준금리가 크게 올랐다. 예금·적금 이자가 오르고 주식과 집값이 내렸다.',-0.10,0,-0.05);}},
+  {k:'down',f:()=>{S.rateAdj=-0.01;S.rateUntil=S.mi+24;return shock('기준금리가 내렸다. 예금·적금 이자가 줄고 주식과 집값이 올랐다.',0.08,0,0.05);}},
+  {k:'crash',f:()=>shock('증시가 크게 빠졌다. 뉴스 첫 화면이 온통 파란색이었다.',-0.25,-0.10,0)},
+  {k:'boom',f:()=>shock('수도권과 혁신도시 아파트값이 크게 올랐다.',0,0,0.10,true)},
+];
+function shock(text,st,re,ho,boomOnly){
+  const parts=[];
+  if(st&&S.stock>0){const d=S.stock*st;S.stock+=d;S.yr.inv+=d;parts.push(`주식 ${fmtSigned(Math.round(d))}`);}
+  if(re&&S.reit>0){const d=S.reit*re;S.reit+=d;S.yr.reit+=d;parts.push(`리츠 ${fmtSigned(Math.round(d))}`);}
+  if(ho){
+    const ok=!boomOnly||S.houseLoc==='hq'||S.homeZone==='수도권';
+    if(S.house&&ok){const d=S.houseVal*ho;S.houseVal+=d;S.yr.house+=d;parts.push(`집 ${fmtSigned(Math.round(d))}`);}
+    if(S.ofs){const d=S.ofs.value*ho;S.ofs.value+=d;S.yr.house+=d;parts.push(`오피스텔 ${fmtSigned(Math.round(d))}`);}
+  }
+  return text+(parts.length?` 내 자산: ${parts.join(' · ')}.`:'');
+}
 
 /* ---------- 행동 ---------- */
 const CERTS={it:['정보통신기사','정보보안기사','SQLP','AWS 자격증','PMP'],admin:['전산회계 1급','공인노무사 1차','재경관리사'],research:['ADP','사회조사분석사 1급']};
@@ -596,15 +667,16 @@ const ACTIONS=[
     if(chance(0.15+(S.sc-50)/500)){startDating();E({mn:5});return '소개팅 앱에서 대화가 잘 통하는 사람을 만났다. 세 번째 만남부터 주말이 기다려졌다.';}
     return pick(['소개팅 앱을 깔았다. 약속 당일 상대가 나오지 않았다.','소개팅 앱으로 한 번 만났다. 사진과 분위기가 많이 달랐다.','소개팅 앱을 한 달 썼다. 대화는 많았고 만남은 없었다.']);}},
   {k:'date',name:'데이트',cost:10,cd:2,when:()=>S.dating,why:'연애 중일 때만 할 수 있다',run:()=>{E({mn:5});S.lastDate=S.mi;return pick([`${pw()}와 영화를 보고 저녁을 먹었다.`,`${pw()}와 청주에 새로 생긴 카페에 갔다.`,`${pw()}와 하루 종일 걸었다. 만 보를 넘겼다.`]);}},
-  {k:'house_s',name:'작은 집 사기',cost:8000,when:()=>!S.house,why:'이미 집이 있다',pickLoc:true,run:loc=>{buyHouse('small',loc);return `${loc==='hq'?'혁신도시':S.homeName}에 작은 집을 샀다. 대출은 20년이다. 월세를 더 내지 않아도 된다.`;}},
-  {k:'house_b',name:'큰 집 사기',cost:20000,costFn:()=>S.house==='small'?12000:20000,when:()=>S.house!=='big',why:'이미 큰 집에 산다',pickLoc:true,run:loc=>{
+  {k:'house_s',name:'작은 집 사기',cost:8000,when:()=>!S.house,why:'이미 집이 있다',pickLoc:true,run:loc=>{buyHouse('small',loc);return `${loc==='hq'?'혁신도시':S.homeName}에 2억짜리 작은 집을 샀다. 대출은 20년이다. 월세를 더 내지 않아도 된다.`;}},
+  {k:'house_b',name:'큰 집 사기',cost:20000,costFn:()=>S.house==='small'?Math.round(20000-(S.houseVal-S.houseLoan)):20000,when:()=>S.house!=='big',why:'이미 큰 집에 산다',pickLoc:true,run:loc=>{
     let t='';
-    if(S.house==='small'){const yrs=(S.mi-S.houseMi)/12,sale=Math.round(8000*(1+0.02*yrs+randn()*0.1)),d=sale-8000;E({money:d});t=`살던 작은 집을 팔았다. 산 값보다 ${d>=0?fmtMoney(d)+'원 올랐다':fmtMoney(-d)+'원 내렸다'}. `;}
-    buyHouse('big',loc);return t+`${loc==='hq'?'혁신도시':S.homeName}에 큰 집을 샀다. 대출은 20년이다.`+(S.married||S.kids?' 아이 방이 생겼다.':'');}},
+    if(S.house==='small'){const d=Math.round(S.houseVal-20000);t=`살던 작은 집을 ${fmtMoney(S.houseVal)}원에 팔았다. 산 값보다 ${d>=0?fmtMoney(d)+'원 올랐다':fmtMoney(-d)+'원 내렸다'}. `;}
+    buyHouse('big',loc);return t+`${loc==='hq'?'혁신도시':S.homeName}에 5억짜리 큰 집을 샀다. 대출은 20년이다.`+(S.married||S.kids?' 아이 방이 생겼다.':'');}},
   {k:'pet',name:'반려동물 입양',cost:100,once:true,when:()=>!S.pet,why:'이미 함께 사는 동물이 있다',run:()=>{S.pet=pick(['고양이','강아지']);S.petName=pick(['보리','콩이','두부','라떼','호두','모카']);return `${S.pet}를 입양했다. 이름은 ${S.petName}로 지었다. 매달 15만 원이 더 든다.`;}},
 ];
 function buyHouse(size,loc){
   S.house=size;S.houseLoc=loc;S.houseMi=S.mi;S.mortgage=240;S.mortgagePay=size==='big'?150:60;
+  S.houseVal=size==='big'?50000:20000;S.houseLoan=size==='big'?30000:12000;S.houseLoanInit=S.houseLoan;
   if(loc==='hq')S.moved=true;
   E({mn:size==='big'?8+((S.married||S.kids)?3:0):4});
 }
@@ -811,12 +883,14 @@ const EV=[
 {id:'soc_blind',text:'블라인드에 우리 기관 이야기가 올라왔다. 누가 썼는지 다들 짐작하는 눈치다.',auto:()=>E({mn:-1})},
 {id:'soc_edu',text:'법정 의무교육 다섯 개를 하루에 몰아서 들었다.',auto:()=>E({mn:-1})},
 {id:'soc_bus',when:()=>S.home==='metro'&&!S.moved,text:'통근버스가 고속도로에서 40분 멈춰 있었다. 지각 처리는 되지 않았다.',auto:()=>E({hp:-2,mn:-1})},
-{id:'club_act',w:1.5,when:()=>!!S.club,text:()=>({
-    '등산':'동호회에서 속리산에 갔다. 정상에서 단체 사진을 찍었다.',
-    '풋살':'풋살 동호회가 지역 대회 8강에 올랐다. 다음 날 출근길 계단이 힘들었다.',
-    '보드게임':'보드게임 동호회 정기 모임. 다른 부서 차장과 처음 말을 텄다.',
-    '독서':'독서 모임에서 같은 책을 읽은 다른 팀 사람과 오래 이야기했다.'})[S.club],
-  auto:()=>{E({mn:3,rp:1,sc:2,hp:S.club==='등산'||S.club==='풋살'?2:0});if(!S.married&&!S.dating&&age()<40&&chance(0.05+S.sc/700)){startDating();return '모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}return '';}},
+{id:'club_act',w:1.5,cool:10,when:()=>!!S.club,text:()=>'',auto:()=>{
+  let t;
+  if(S.club==='등산'){E({hp:3,mn:2,sc:1});t=pick(['동호회에서 속리산에 갔다. 정상에서 단체 사진을 찍었다.','동호회에서 월악산에 갔다. 하산길이 더 힘들었다.']);if(chance(0.2)){E({rp:2});t+=' 같이 오른 실장님과 처음으로 길게 이야기했다.';}}
+  else if(S.club==='풋살'){if(chance(0.1)){E({hp:-6,money:-30});t='풋살을 하다 발목을 접질렸다. 한 달 동안 한의원을 다녔다.';}else{E({hp:4,sc:2});t=pick(['풋살 동호회가 지역 대회 8강에 올랐다. 다음 날 출근길 계단이 힘들었다.','퇴근 후 풋살장에서 두 시간을 뛰었다. 땀이 많이 났다.']);}}
+  else if(S.club==='보드게임'){E({sc:4,mn:2});t=pick(['보드게임 동호회 정기 모임. 다른 부서 차장과 처음 말을 텄다.','보드게임 동호회에서 새벽 한 시까지 한 판을 끝냈다.']);}
+  else{E({mn:3,sk:1});t=pick(['독서 모임에서 같은 책을 읽은 다른 팀 사람과 오래 이야기했다.','독서 모임 발제를 맡았다. 밑줄을 마흔 군데 그었다.']);}
+  if(!S.married&&!S.dating&&age()<40&&chance((0.05+S.sc/700)*(S.club==='독서'?1.8:1))){startDating();t+=' 모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}
+  return t;}},
 {id:'dating_intro',manual:true,when:()=>!S.married&&!S.dating&&age()<40,title:'소개팅',text:'같은 층 다른 팀 직원이 소개팅을 주선하겠다고 한다.',choices:[
   X('나간다',()=>chance(0.2+S.sc/350)?(startDating(),E({mn:4}),'세 번째 만남부터 주말이 기다려졌다.'):'좋은 사람이었다. 연락은 자연스럽게 끊겼다.'),
   X('괜찮다고 한다',()=>'주선자는 아쉬워했다.')]},
@@ -957,10 +1031,22 @@ function monthlyMoney(){
   const infl=Math.pow(1.025,S.mi/12);
   const exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?(S.mortgagePay||110):0);
   S.money+=inc-exp;S.yr.inc+=inc;S.yr.exp+=exp;
-  if(S.mortgage>0)S.mortgage--;
-  const base=Math.max(S.money,0);
-  if(S.inv>0){const g=base*S.inv*(0.005+randn()*0.035);S.money+=g;S.yr.inv+=g;}
-  const it=base*(1-S.inv)*0.0015;S.money+=it;S.yr.int+=it;
+  if(S.mortgage>0){S.mortgage--;S.houseLoan=Math.max(0,S.houseLoan-(S.houseLoanInit||0)/240);}
+  // 적금
+  if(S.savMonthly>0&&S.money>=S.savMonthly){S.money-=S.savMonthly;S.savBal+=S.savMonthly;S.savPrin+=S.savMonthly;}
+  if(S.savBal>0){const it=S.savBal*(0.035+S.rateAdj)/12;S.savBal+=it;S.yr.sav+=it;}
+  if(S.savBal>0&&S.mi-S.savStart>=12){const it=S.savBal-S.savPrin;S.money+=S.savBal;addLog(`적금이 만기됐다. 원금 ${fmtMoney(S.savPrin)}원에 이자 ${fmtMoney(Math.round(it))}원이 붙어 통장으로 들어왔다.`,{kind:'sys'});S.savBal=0;S.savPrin=0;S.savStart=S.mi;}
+  // 주식 (통장+주식 중 목표 비중 유지)
+  const liquid=S.money+S.stock;
+  if(liquid<=0||S.inv===0){S.money+=S.stock;S.stock=0;}
+  else{const target=liquid*S.inv;S.money-=target-S.stock;S.stock=target;}
+  if(S.stock>0){const g=S.stock*(0.0055+randn()*0.055);S.stock+=g;S.yr.inv+=g;}
+  // 예금 이자
+  if(S.money>0){const it=S.money*(0.025+S.rateAdj)/12;S.money+=it;S.yr.int+=it;}
+  // 리츠
+  if(S.reit>0){const dv=S.reit*0.05/12,ch=S.reit*randn()*0.029;S.money+=dv;S.reit=Math.max(0,S.reit+ch);S.yr.reit+=dv+ch;}
+  // 오피스텔
+  if(S.ofs){const rent=S.ofs.vacant>0?0:60;if(S.ofs.vacant>0)S.ofs.vacant--;const net=rent-45;S.money+=net;S.yr.rent+=net;}
   S.maxSal=Math.max(S.maxSal||0,sal);
 }
 function pool(){
@@ -978,7 +1064,7 @@ function pool(){
 async function runEvent(ev){
   S.cd[ev.id]=S.mi;
   const text=typeof ev.text==='function'?ev.text():ev.text;
-  if(ev.auto){const r=ev.auto();addLog(r?text+' '+r:text);return;}
+  if(ev.auto){const r=ev.auto();addLog(text&&r?text+' '+r:(text||r));return;}
   await resolve(ev.title||'선택',text,ev.choices,!!ev.manual);
 }
 function endGame(kind,text){
@@ -992,12 +1078,12 @@ async function calendar(m){
     if(!S.moved&&S.home==='far'&&chance(0.7)){E({hp:-2});addLog(`${m===2?'설':'추석'} 연휴, 귀성길에 일곱 시간이 걸렸다.`);}
   }
   if(m===3&&!S.club&&chance(0.35)){
-    const ch=['등산','풋살','보드게임','독서'].map(c=>X(c+' 동호회에 든다',()=>{S.club=c;E({mn:2,sc:2});return '첫 모임에 나갔다. 회비는 월 2만 원이었다.';}));
+    const ch=['등산','풋살','보드게임','독서'].map(c=>X(c+' 동호회에 든다',()=>{S.club=c;E(CLUBS[c].join);return '첫 모임에 나갔다. 회비는 월 2만 원이었다.';}));
     ch.push(X('가입하지 않는다',()=>'공고 창을 닫았다.'));
     const t='사내 동호회 신규 회원 모집 공고가 올라왔다.';const i=await ask('동호회',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f()});
   }
   if((m===3||m===9)&&S.type!=='reg'){
-    const t=`원내 ${m===3?'1차':'2차'} 직원 채용 공고가 났다. ${S.track==='research'?'5급 연구원':'정보화 직렬 일반직 5급'}을 뽑는다.`;
+    const t=`원내 ${m===3?'1차':'2차'} 직원 채용 공고가 났다. ${S.track==='research'?'5급 연구원':S.track==='admin'?'경영사무 직렬 일반직 5급':'정보화 직렬 일반직 5급'}을 뽑는다.`;
     const ch=[X('지원한다',()=>{
       const p=0.1+S.sk/350+Math.min(S.selfdev,12)*0.012;
       if(chance(p)){S.type='reg';S.rank=1;S.rankSince=S.mi;S.joinMi=S.mi;S.contractEnd=null;E({mn:10});S.selfdev=0;return '필기와 면접을 거쳐 합격했다. 같은 건물에서 새 사번을 받았다.';}
@@ -1127,6 +1213,13 @@ async function monthTick(){
     const ch=[X('지원한다',()=>{if(chance(0.06+S.rp/600)){S.rank=6;S.rankSince=S.mi;S.chiefUntil=S.mi+36;E({mn:6});return '임명장을 받았다. 임기는 3년이다.';}E({mn:-3});return '최종 3배수에 들었다. 임명되지 않았다.';}),X('지원하지 않는다',()=>'공고 마감일이 지나갔다.')];
     const i=await ask('원장 공모',t,ch);addLog(t,{pick:ch[i].t,res:ch[i].f(),kind:'key'});
   }
+  if(S.rateUntil&&S.mi>=S.rateUntil){S.rateAdj=0;S.rateUntil=null;addLog('금리가 예전 수준으로 돌아왔다.',{kind:'sys',tag:'시장'});}
+  if(S.mi-(S.mktMi??-99)>=36&&chance(1/30)){S.mktMi=S.mi;const ev=S.rateUntil?pick(MARKET.filter(x=>x.k==='crash'||x.k==='boom')):pick(MARKET);addLog(ev.f(),{kind:'sys',tag:'시장'});}
+  if(S.ofs&&S.ofs.vacant===0&&chance(0.012)){S.ofs.vacant=randint(2,5);addLog('오피스텔 세입자가 나갔다. 다음 세입자를 구하는 데 몇 달이 걸릴 것 같다.',{kind:'sys',tag:'시장'});}
+  if(m===12){
+    if(S.house){const d=S.houseVal*(houseRate()+randn()*0.04);S.houseVal+=d;S.yr.house+=d;}
+    if(S.ofs){const d=S.ofs.value*(0.015+randn()*0.03);S.ofs.value+=d;S.yr.house+=d;}
+  }
   cohort.forEach(p=>peerTick(p,S.mi,false));
   if(settings.auto&&(m===1||m===4||m===7||m===10))autoFocus();
   if(m===12){
@@ -1135,11 +1228,14 @@ async function monthTick(){
     if(Y.bonus)parts.push(`성과급 ${fmtSigned(r(Y.bonus))}`);
     parts.push(`생활비 ${fmtSigned(-r(Y.exp))}`);
     if(Math.abs(Y.ev)>=1)parts.push(`이벤트 ${fmtSigned(r(Y.ev))}`);
-    if(Math.abs(Y.inv)>=1)parts.push(`재테크 ${fmtSigned(r(Y.inv))}`);
-    if(Y.int>=1)parts.push(`이자 ${fmtSigned(r(Y.int))}`);
-    const net=Y.inc+Y.bonus-Y.exp+Y.ev+Y.inv+Y.int;
-    addLog(`올해 연봉 ${fmtMoney(salary(S,S.mi))}원. ${parts.join(' · ')}. 한 해 ${fmtSigned(r(net))}, 통장 ${fmtMoney(S.money)}원.`,{kind:'sys'});
-    S.yr={inc:0,exp:0,ev:0,inv:0,int:0,bonus:0};
+    if(Y.int>=1)parts.push(`예금 이자 ${fmtSigned(r(Y.int))}`);
+    if(Y.sav>=1)parts.push(`적금 이자 ${fmtSigned(r(Y.sav))}`);
+    if(Math.abs(Y.inv)>=1)parts.push(`주식 ${fmtSigned(r(Y.inv))}`);
+    if(Math.abs(Y.reit)>=1)parts.push(`리츠 ${fmtSigned(r(Y.reit))}`);
+    if(Math.abs(Y.rent)>=1)parts.push(`월세 ${fmtSigned(r(Y.rent))}`);
+    if(Math.abs(Y.house)>=1)parts.push(`부동산 시세 ${fmtSigned(r(Y.house))}`);
+    addLog(`올해 연봉 ${fmtMoney(salary(S,S.mi))}원. ${parts.join(' · ')}. 통장 ${fmtMoney(S.money)}원, 순자산 ${fmtMoney(netWorth())}원.`,{kind:'sys'});
+    S.yr={inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0};
   }
 }
 function autoFocus(){
@@ -1190,18 +1286,20 @@ function renderCard(){
     ['나이',`${age()}세 · ${S.gender}`],['직렬',S.trackName],['고용',S.type==='reg'?'정규직':S.type==='perm'?'무기계약직':'기간제 계약직'],
     ['직급',rankTitle(S)],['부서',deptLabel(S)+(S.track==='admin'&&S.task?` · ${S.task}`:'')],
     ['근속',tenureStr(S.mi)],['거주',S.moved&&S.home!=='near'?'혁신도시 (연고 '+S.homeName+')':S.homeName],
-    ['연차',`${S.days}일 남음`],['투자',`통장의 ${Math.round(S.inv*100)}%`],
+    ['연차',`${S.days}일 남음`],
     ['가족',S.married?('기혼'+(S.kids?` · 자녀 ${S.kids}`:'')):S.dating?`연애 중 (${pw()})`:'미혼'],
   ];
   if(S.type==='temp')kv.splice(3,0,['계약',`${tenureStr(Math.max(0,S.contractEnd-S.mi))} 남음`]);
   if(S.club)kv.push(['동호회',S.club]);
   if(S.pet)kv.push(['반려',`${S.pet} ${S.petName}`]);
   if(S.car)kv.push(['차','있음']);
+  const as=[];if(S.stock>0)as.push(`주식 ${fmtMoney(S.stock)}`);if(S.savBal>0)as.push(`적금 ${fmtMoney(S.savBal)}`);if(S.reit>0)as.push(`리츠 ${fmtMoney(S.reit)}`);if(S.ofs)as.push('오피스텔 1채');if(as.length)kv.push(['자산',as.join(' · ')]);
   if(S.house)kv.push(['집',`${S.house==='big'?'큰 집':'작은 집'} · ${S.houseLoc==='hq'?'혁신도시':S.homeName}`]);
   if(S.leave>0)kv.push(['상태',(S.leaveType==='parental'?'육아휴직':'병가')+` · ${S.leave}개월 남음`]);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
   $('#pMoney').textContent=fmtMoney(S.money)+'원';
+  $('#pNet').textContent=fmtMoney(netWorth())+'원';
   $('#pSalary').textContent=fmtMoney(salary(S,S.mi))+'원';
   const {y,m}=ym(S.mi);
   $('#barDate').textContent=`${y}.${String(m).padStart(2,'0')} · 근속 ${tenureStr(S.mi)}`;
@@ -1216,7 +1314,6 @@ function renderCohort(){
 function renderActions(){
   $('#actMeta').textContent=`연차 ${S.days}일 · 통장 ${fmtMoney(S.money)}원`;
   $('#actList').innerHTML=ACTIONS.map(a=>{const st=actState(a);return `<button type="button" data-a="${a.k}" ${st.ok?'':'disabled'}><span>${a.name}</span><span class="c">${st.note}</span></button>`;}).join('');
-  [...$('#invSeg').children].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===Math.round(S.inv*100)?'true':'false'));
   const gs=$('#goalSel');if(gs.value!==S.goal)gs.value=S.goal;
   const yNow=ym(S.mi).y;gs.disabled=S.goalY===yNow;
   $('#goalHint').textContent=GOALS[S.goal].hint+(S.goalY===yNow?' 올해는 이미 바꿨다.':'');
@@ -1264,7 +1361,7 @@ function showEnding(){
     ['최종 직급',rankTitle(S)],
     ['거친 부서',S.deptHist.join(' → ')],
     ['최고 연봉',fmtMoney(S.maxSal||salary(S,S.mi))+'원'],
-    ['남은 통장',fmtMoney(S.money)+'원'],
+    ['순자산',`${fmtMoney(netWorth())}원 (통장 ${fmtMoney(S.money)}원)`],
     ['가족',fam],
     ['목표',`${GOALS[S.goal].name} · ${goalResult()}`],
   ];
@@ -1303,7 +1400,7 @@ segBind('#durSeg','dur',v=>settings.dur=+v);
 segBind('#autoSeg','auto',v=>settings.auto=v==='1');
 
 $('#btnJoin').addEventListener('click',()=>{
-  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0},days:15,inv:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;
+  S=makePerson();Object.assign(S,{mi:0,focus:'work',cd:{},selfdev:0,leave:0,maxSal:0,yr:{inc:0,exp:0,ev:0,inv:0,int:0,bonus:0,sav:0,reit:0,rent:0,house:0},days:15,inv:0,savMonthly:0,savBal:0,savPrin:0,savStart:0,stock:0,reit:0,ofs:null,rateAdj:0,rateUntil:null,houseVal:0,houseLoan:0,actCd:{},mnSum:0,mnN:0,maxRank:0,goal:'wlb',goalY:null});pendingMoney=0;
   $('#goalSeg').innerHTML=Object.entries(GOALS).map(([k,g])=>`<button type="button" data-g="${k}" aria-pressed="${k==='wlb'}">${g.name}</button>`).join('');
   cohort=[0,1,2,3].map(()=>makePerson());
   const sal=salary(S,0);
@@ -1324,7 +1421,6 @@ $('#btnFirstDay').addEventListener('click',()=>{
   $('#log').innerHTML='';lastYearHeader=null;
   $('#focusSeg').innerHTML=Object.entries(FOCUS).map(([k,f])=>`<button type="button" data-f="${k}" aria-pressed="false">${f.name}</button>`).join('');
   setFocus('work',true);
-  $('#invSeg').innerHTML=[0,20,40,60,80].map(v=>`<button type="button" data-v="${v}">${v}%</button>`).join('');
   $('#goalSel').innerHTML=Object.entries(GOALS).map(([k,g])=>`<option value="${k}">${g.name}</option>`).join('');
   $('#autoPick').checked=settings.auto;
   const months=Math.max(60,(60-ageOf(S,0))*12);
@@ -1336,7 +1432,10 @@ $('#btnFirstDay').addEventListener('click',()=>{
 });
 segBind('#goalSeg','g',v=>{S.goal=v;});
 $('#actList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-a]');if(b)doAction(b.dataset.a);});
-$('#invSeg').addEventListener('click',ev=>{const b=ev.target.closest('button');if(!b||!S||S.ended)return;const v=+b.dataset.v;if(Math.round(S.inv*100)===v)return;S.inv=v/100;addLog(v?`통장의 ${v}%를 주식에 두기로 했다.`:'주식을 모두 정리했다.',{kind:'act'});render();});
+let assetPaused=false;
+$('#btnAsset').addEventListener('click',()=>{if(!S||S.ended||busy||!$('#modal').hidden)return;clearTimeout(timer);assetPaused=true;renderAsset();$('#asset').hidden=false;$('#btnAssetClose').focus();});
+$('#btnAssetClose').addEventListener('click',()=>{$('#asset').hidden=true;if(assetPaused){assetPaused=false;schedule();}});
+$('#aBody').addEventListener('click',assetClick);
 $('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});
 $('#goalSel').addEventListener('change',e=>{if(!S||S.ended)return;const y=ym(S.mi).y;if(S.goalY===y){e.target.value=S.goal;return;}S.goal=e.target.value;S.goalY=y;addLog(`커리어 목표를 '${GOALS[S.goal].name}'(으)로 바꿨다.`,{kind:'act'});render();});
 let helpPaused=false;

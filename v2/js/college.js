@@ -82,7 +82,6 @@ async function semTick(){
   S.semAbs=(S.semAbs||0)+1;
   if(S.semAbs%2===1)S.age++;
   header();
-  S.money+=famOf().pocket*6;
   if(S.phase==='univ')await univSem();
   else if(S.phase==='army')await armySem();
   else if(S.phase==='grad')await gradSem();

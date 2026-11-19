@@ -156,7 +156,6 @@ async function yearTick(){
   S.age++;
   const a=S.age,st=stageOf(a).k;
   header();
-  if(a>=8)S.money+=famOf().pocket*12;
   if(a>=14&&a<=19)E({ac:1}); // 중학생부터 해마다 조금씩 공부가 쌓인다
   tutorYear(false);
   if(st==='baby'){

@@ -7,7 +7,7 @@ function render(){
   $('#pName').textContent=S.name;
   $('#pSub').textContent=`${S.age}살 · ${S.phase&&S.phase!=='school'?S.label:(S.age>7?gradeLabel(S.age):'미취학')} · ${S.genderName}`;
   const school=S.school?HIGH_SCHOOLS.find(h=>h.k===S.school).name:'-';
-  const kv=[['집',S.famName],['지역',S.regionName],['형제',S.sibName],['고등학교',S.age>=17||S.school?school:'-'],['용돈 통장',fmtMoney(S.money)+'원']];
+  const kv=[['집',S.famName],['지역',S.regionName],['형제',S.sibName],['고등학교',S.age>=17||S.school?school:'-'],['통장',fmtMoney(S.money)+'원']];
   if(S.sat)kv.push(['수능',`평균 ${S.sat}등급`]);
   if(S.univ)kv.push(['대학',`${S.univ.tierName} ${S.univ.majorName}`]);
   if(S.army)kv.push(['군 복무',S.armyDone?`${S.army.name} 만기`:`${S.army.name} · ${S.army.left}학기 남음`]);

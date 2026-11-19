@@ -74,13 +74,15 @@
     <h3>생활기록부</h3>
     <div class="who"><div id="pAvatar"></div><div><div class="nm" id="pName"></div><div class="sub" id="pSub"></div></div></div>
     <dl class="kv" id="pKv"></dl>
-    <div class="sec-h">성장 스탯</div>
-    <div class="stats" id="pStats"></div>
-    <div class="sec-h">행동</div>
-    <div id="actions"></div>
     <p class="hidden-note">어떤 경험을 했는지는 따로 기록되지 않는다. 대신 나중에 조용히 영향을 준다.</p>
   </aside>
-  <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
+  <div class="centercol">
+    <div class="strip">
+      <div><div class="sec-h" style="margin-top:0">성장 스탯</div><div class="stats" id="pStats"></div></div>
+      <div><div class="sec-h" style="margin-top:0">행동</div><div id="actions"></div></div>
+    </div>
+    <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
+  </div>
   <aside class="panel">
     <h3>친구 · 눌러서 같이 시간 보내기</h3>
     <div id="friendList"></div>

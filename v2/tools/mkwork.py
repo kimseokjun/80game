@@ -137,6 +137,18 @@ R('<script src="js/company.js"></script>','<script src="js/avatar.js"></script>\
 R("</style>",".entry .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}.who{display:flex;gap:12px;align-items:center;margin-bottom:6px}.who .pname{margin:0}.avatar{width:56px;height:56px;flex:none;border-radius:50%;background:var(--paper);border:1px solid var(--line)}\n</style>")
 R("  return (p.track==='research'?RRANKS:RANKS)[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');","  return (p.coRanks||(p.track==='research'?RRANKS:RANKS))[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');")
 R("  return DEPTS[p.dept].name;\n}","  if(p.coDepts)return `${p.coName} ${p.coDepts[p.dept]||''}`;\n  return DEPTS[p.dept].name;\n}")
+# ---- 선택창 스크롤·잠깐 내려 두기, 로그 위 띠, 결혼 제안 ----
+R('    <div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div>\n    <div class="stats" id="pStats"></div>\n',"")
+_a=s.index('    <div class="focus">\n      <h3 style="margin-top:12px">요즘 집중하는 것</h3>');_b=s.index('    <button type="button" class="btn danger resign" id="btnResign">',_a)
+FOC=s[_a:_b];s=s[:_a]+s[_b:]
+R('  <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>','  <div class="centercol">\n    <div class="strip">\n      <div><div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div><div class="stats" id="pStats"></div></div>\n      <div>'+FOC.replace('<h3 style="margin-top:12px">','<h3>')+'</div>\n    </div>\n    <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>\n  </div>')
+R('    <div class="d-when" id="mWhen"></div>\n    <h4 id="mTitle"></h4>','    <div class="d-top"><div class="d-when" id="mWhen"></div><button type="button" class="park" id="mPark">잠깐 내려 두기</button></div>\n    <h4 id="mTitle"></h4>')
+R('<footer>','<button type="button" class="btn primary resume" id="mResume" hidden>선택 이어서 하기</button>\n<footer>')
+R("    const finish=i=>{if(done)return;done=true;$('#modal').hidden=true;res(i);};","    const finish=i=>{if(done)return;done=true;$('#modal').hidden=true;$('#mResume').hidden=true;res(i);};\n    $('#mPark').hidden=settings.auto;")
+R("</style>",".dialog{max-height:calc(100vh - 32px);overflow-y:auto}.d-top{display:flex;align-items:center;gap:8px}.park{margin-left:auto;background:none;border:0;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:4px}.resume{position:fixed;right:20px;bottom:20px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.18)}.centercol{display:grid;gap:12px;min-width:0}.strip{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.strip .stats{margin:0;gap:6px}.strip .stat-head h3,.strip .focus h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:500}.strip .focus{margin:0 0 10px}.strip .focus .hint{min-height:0}.centercol .logwrap{height:calc(100vh - 330px);min-height:360px}@media (max-width:980px){.strip{grid-template-columns:1fr}.centercol .logwrap{height:62vh}}\n</style>")
+R("  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))){",
+  "  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&S.mi-(S.propMi??-99)>=12&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))&&(await proposeOk())){")
+PARK="\n$('#mPark').addEventListener('click',()=>{$('#modal').hidden=true;$('#mResume').hidden=false;});\n$('#mResume').addEventListener('click',()=>{$('#modal').hidden=false;$('#mResume').hidden=true;});\n"
 # ---- 성장기에서 바로 이어지기 ----
 R("const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;","const Y0=HAND?HAND.birthY+HAND.age:NOW.getFullYear(), M0=HAND?3:NOW.getMonth()+1;")
 R("if(rv.length)addLog(`업계 경쟁사는 ${rv.join(', ')}이다.","if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다.")
@@ -151,6 +163,6 @@ if(HAND&&HAND.auto){
   $('#btnJoin').click();$('#btnFirstDay').click();
 }
 '''
-R('</script>\n</body>',AUTO+'</script>\n</body>')
+R('</script>\n</body>',PARK+AUTO+'</script>\n</body>')
 open(DST,'w',encoding='utf-8').write(s)
 print('ok',len(s))

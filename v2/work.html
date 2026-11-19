@@ -230,6 +230,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
   .row{animation:none}.fill{transition:none}
 }
 .entry .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}.who{display:flex;gap:12px;align-items:center;margin-bottom:6px}.who .pname{margin:0}.avatar{width:56px;height:56px;flex:none;border-radius:50%;background:var(--paper);border:1px solid var(--line)}
+.dialog{max-height:calc(100vh - 32px);overflow-y:auto}.d-top{display:flex;align-items:center;gap:8px}.park{margin-left:auto;background:none;border:0;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:4px}.resume{position:fixed;right:20px;bottom:20px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.18)}.centercol{display:grid;gap:12px;min-width:0}.strip{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.strip .stats{margin:0;gap:6px}.strip .stat-head h3,.strip .focus h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:500}.strip .focus{margin:0 0 10px}.strip .focus .hint{min-height:0}.centercol .logwrap{height:calc(100vh - 330px);min-height:360px}@media (max-width:980px){.strip{grid-template-columns:1fr}.centercol .logwrap{height:62vh}}
 </style>
 </head>
 <body>
@@ -293,24 +294,28 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
     <h3>인사기록카드</h3>
     <div class="who"><div id="pAvatar"></div><div class="pname" id="pName"></div></div>
     <dl class="kv" id="pKv"></dl>
-    <div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div>
-    <div class="stats" id="pStats"></div>
     <button type="button" class="btn" id="btnPeople" style="width:100%;margin:2px 0 12px">사내 관계</button>
     <div class="assets" id="pAssets"></div>
     <div class="money" style="border-top:0"><span>연봉</span><b id="pSalary"></b></div>
-    <div class="focus">
-      <h3 style="margin-top:12px">요즘 집중하는 것</h3>
+    <button type="button" class="btn danger resign" id="btnResign">사직서 내기</button>
+  </aside>
+  <div class="centercol">
+    <div class="strip">
+      <div><div class="stat-head"><h3>스탯</h3><button type="button" class="qbtn" id="btnHelp" aria-label="스탯 설명 보기">?</button></div><div class="stats" id="pStats"></div></div>
+      <div>    <div class="focus">
+      <h3>요즘 집중하는 것</h3>
       <div class="seg" id="focusSeg"></div>
       <div class="hint" id="focusHint"></div>
     </div>
     <div class="focus">
-      <h3 style="margin-top:12px">커리어 목표</h3>
+      <h3>커리어 목표</h3>
       <select id="goalSel" aria-label="커리어 목표"></select>
       <div class="hint" id="goalHint"></div>
     </div>
-    <button type="button" class="btn danger resign" id="btnResign">사직서 내기</button>
-  </aside>
-  <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
+</div>
+    </div>
+    <section class="logwrap" id="logWrap" aria-live="polite"><div id="log"></div></section>
+  </div>
   <div class="rightcol">
     <aside class="panel actions-panel">
       <h3>행동</h3>
@@ -358,13 +363,14 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </div>
 <div id="modal" class="modal" hidden>
   <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-    <div class="d-when" id="mWhen"></div>
+    <div class="d-top"><div class="d-when" id="mWhen"></div><button type="button" class="park" id="mPark">잠깐 내려 두기</button></div>
     <h4 id="mTitle"></h4>
     <p id="mText"></p>
     <div class="choices" id="mChoices"></div>
   </div>
 </div>
 
+<button type="button" class="btn primary resume" id="mResume" hidden>선택 이어서 하기</button>
 <footer>비공식 팬메이드 시뮬레이션입니다. 실제 기관의 공식 자료가 아니며 실존 인물과 관계없습니다. 인원·초봉·채용 구조는 공개된 채용 공고와 공공기관 공시 정보를 참고했고, 승진 연수·확률·이벤트는 추정입니다. '80억 분의 1'에서 영감을 받았습니다.</footer>
 
 <script src="js/avatar.js"></script>
@@ -582,7 +588,8 @@ function ask(title,text,choices){
     $('#mTitle').textContent=W(title);$('#mText').textContent=W(text);
     const box=$('#mChoices');box.innerHTML='';
     let done=false;
-    const finish=i=>{if(done)return;done=true;$('#modal').hidden=true;res(i);};
+    const finish=i=>{if(done)return;done=true;$('#modal').hidden=true;$('#mResume').hidden=true;res(i);};
+    $('#mPark').hidden=settings.auto;
     choices.forEach((c,i)=>{
       const b=document.createElement('button');b.type='button';
       b.textContent=W(c.t);
@@ -1440,7 +1447,7 @@ async function monthTick(){
   }
   // 가족
   if(!S.married&&!S.dating&&a<40&&chance(0.002+S.sc/25000)){startDating();addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
-  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))){
+  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&S.mi-(S.propMi??-99)>=12&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))&&(await proposeOk())){
     const best=cohort.filter(p=>p.ended?.kind!=='사망'&&p.fr>=60).sort((x,z)=>z.fr-x.fr)[0];
     const W=[{k:'big',t:'성대하게',c:5000,g:1500,e:{mn:10,sc:3}},{k:'mid',t:'내 수준에 맞게',c:2500,g:1000,e:{mn:8}},{k:'small',t:'스몰웨딩',c:800,g:300,e:{mn:6}},{k:'none',t:'혼인신고만',c:0,g:0,e:{mn:3}}];
     const pref=S.pPref||'mid',who=pw();
@@ -1868,6 +1875,9 @@ $('#btnResign').addEventListener('click',async()=>{
   if(S.ended){showEnding();return;}
   schedule();
 });
+
+$('#mPark').addEventListener('click',()=>{$('#modal').hidden=true;$('#mResume').hidden=false;});
+$('#mResume').addEventListener('click',()=>{$('#modal').hidden=false;$('#mResume').hidden=true;});
 
 if(HAND&&HAND.auto){
   settings.auto=!!HAND.autoPick;settings.dur=({0.6:20,1:30,1.6:60})[HAND.pace]||30;

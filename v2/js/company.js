@@ -431,3 +431,15 @@ const CO_ACTIONS=[
   {k:'jobhunt',name:'이직 알아보기',cost:0,cd:12,when:()=>!S.founder&&age()<55&&S.leave===0,why:'지금은 어렵다',run:()=>{setTimeout(jobHuntFlow,0);return '이직 사이트에 이력서를 올렸다.';}},
   {k:'found',name:'창업하기',cost:3000,cd:24,when:()=>!S.founder&&age()<50&&S.leave===0,why:'지금은 어렵다',run:()=>{E({money:3000});setTimeout(foundFlow,0);return '창업을 진지하게 고민하기 시작했다.';}},
 ];
+
+/* ---------- 결혼: 하겠다고 고른 뒤에 예식 규모를 고른다 ---------- */
+async function proposeOk(){
+  if(!HAND)return true;
+  if(S.weddingAt&&S.mi>=S.weddingAt)return true; // 내가 결혼 준비를 눌러 날짜를 잡은 경우
+  S.propMi=S.mi;const w=pw();let ok=false;
+  const yrs=Math.max(1,Math.round((S.mi-(S.datingSince||0))/12));
+  await resolve('결혼 이야기',`${w}${J(w,'이','가')} 조심스럽게 결혼 이야기를 꺼냈다. 만난 지 ${yrs}년이 됐다.`,[
+    X('결혼하자',()=>{ok=true;PF(6);E({mn:4});return '둘 다 한참 웃었다. 양가에 인사드릴 날을 잡았다.';},'멘탈↑ · 예식 규모를 고른다'),
+    X('조금 더 생각해 보자',()=>{S.propNo=(S.propNo||0)+1;PF(-8);E({mn:-1});if(S.propNo>=3&&chance(0.5)){S.dating=false;S.propNo=0;E({mn:-8});return `${w}${J(w,'은','는')} 더 기다릴 수 없다고 했다. 헤어졌다.`;}return `${w}${J(w,'은','는')} 알겠다고 했다. 표정이 조금 굳었다.`;},(S.propNo||0)>=2?'친밀도↓ · 헤어질 수도 있다':'친밀도↓ · 1년 뒤 다시 이야기')],true,'key');
+  return ok;
+}

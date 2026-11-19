@@ -417,7 +417,7 @@ const STAT_NAMES={sk:'역량',rp:'평판',sc:'사교',hp:'체력',mn:'멘탈'};
 
 /* ---------- 시간 ---------- */
 const NOW=new Date();
-const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;
+const Y0=HAND?HAND.birthY+HAND.age:NOW.getFullYear(), M0=HAND?3:NOW.getMonth()+1;
 const ym=mi=>({y:Y0+Math.floor((M0-1+mi)/12),m:((M0-1+mi)%12)+1});
 const ageOf=(p,mi)=>Math.floor((mi-p.birthMi)/12);
 function deathQ(a){return a<30?0.0004:a<40?0.0008:a<50?0.0018:0.0045;}
@@ -1657,6 +1657,7 @@ function renderCard(){
   if(S.leave>0)kv.push(['상태',(S.leaveType==='parental'?'육아휴직':'병가')+` · ${S.leave}개월 남음`]);
   kv.splice(1,0,['회사',CO.name+(PRIV()&&S.rivals.length?` · 업계 ${coRank()}위`:'')+(CO.k==='st'&&S.round?` · ${['','시리즈 A','시리즈 B','시리즈 C'][S.round]}`:'')]);
   if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);
+  kv.splice(2,0,['학력',eduLine()]);if(HAND.army)kv.splice(3,0,['병역',HAND.army==='미필'?'미필 · 입대 예정':HAND.army]);
   $('#pKv').innerHTML=W(kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join(''));
   $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
   const ar=[['통장',S.money]];
@@ -1795,17 +1796,18 @@ $('#btnJoin').addEventListener('click',()=>{
 });
 $('#btnFirstDay').addEventListener('click',()=>{
   $('#notice').hidden=true;$('#game').hidden=false;$('#gameCtrl').hidden=false;$('#btnResign').disabled=false;
-  $('#log').innerHTML='';lastYearHeader=null;
+  $('#log').innerHTML=CARRY||'';lastYearHeader=null;
   $('#focusSeg').innerHTML=Object.entries(FOCUS).map(([k,f])=>`<button type="button" data-f="${k}" aria-pressed="false">${f.name}</button>`).join('');
   setFocus('work',true);
   $('#goalSel').innerHTML=W(Object.entries(GOALS).map(([k,g])=>`<option value="${k}">${g.name}</option>`).join(''));
   $('#autoPick').checked=settings.auto;
   const months=Math.max(60,(60-ageOf(S,0))*12);
   baseMs=settings.dur*60000/months;
-  speed=1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',b.dataset.speed==='1'?'true':'false'));
+  speed=HAND&&HAND.auto?wSpeed():1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.speed===speed?'true':'false'));
+  if(CARRY){const w=$('#logWrap');w.scrollTop=w.scrollHeight;}
   addLog(`${CO.name} ${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});
   if(HAND.loan)addLog(`학자금 대출 ${fmtMoney(HAND.loan)}원을 통장에서 갚아 나가기로 했다.`,{kind:'sys'});
-  const rv=S.rivals.map(r=>r.name);if(rv.length)addLog(`업계 경쟁사는 ${rv.join(', ')}이다. 해마다 순위가 갈린다.`,{kind:'sys',tag:'업계'});
+  const rv=S.rivals.map(r=>r.name);if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다. 해마다 순위가 갈린다.`,{kind:'sys',tag:'업계'});
   addLog(`같은 날 입사한 동기는 ${cohort.map(p=>p.name).join(', ')}이다.`,{kind:'sys'});
   render();schedule();
 });
@@ -1856,6 +1858,13 @@ $('#btnResign').addEventListener('click',async()=>{
   if(S.ended){showEnding();return;}
   schedule();
 });
+
+if(HAND&&HAND.auto){
+  settings.auto=!!HAND.autoPick;settings.dur=({0.6:20,1:30,1.6:60})[HAND.pace]||30;
+  [...$('#autoSeg').children].forEach(b=>b.setAttribute('aria-pressed',(b.dataset.auto==='1')===settings.auto?'true':'false'));
+  $('#start').hidden=true;
+  $('#btnJoin').click();$('#btnFirstDay').click();
+}
 </script>
 </body>
 </html>

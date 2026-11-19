@@ -115,5 +115,20 @@ R("  $('#goalSel').innerHTML=Object.entries(GOALS).map(([k,g])=>`<option value=\
 R("  $('#goalHint').textContent=GOALS[S.goal].hint+","  $('#goalHint').textContent=W(GOALS[S.goal].hint)+(0?'':'')+")
 R("$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});","$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});\n$('#schoolList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-f]');if(b)schoolMenu(+b.dataset.f);});\nif(HAND){\n  $('#stTitle').textContent=`${HAND.name}, ${CO.name} ${(DEPTS[TEAM_KEY[HAND.team]]||DEPTS[CO.teams[0]]).name} 입사`;\n  $('#stLead').textContent=`${HAND.age}살에 첫 직장을 얻었다. 지금까지 쌓은 학업·체력·사교·멘탈은 그대로 이어지고, 역량과 평판이 새로 생긴다. 한 달이 한 턴이다. 정년이나 퇴사까지 간다.`;\n  $('#stFacts').innerHTML=W(`<div class=\"fact\"><b>${CO.name}</b><span>회사</span></div><div class=\"fact\"><b>${CO.staff.replace('임직원 ','').replace('직원 ','')}</b><span>임직원</span></div><div class=\"fact\"><b>${fmtMoney(CO.sal[0])}</b><span>신입 초봉(원, 추정)</span></div><div class=\"fact\"><b>${CO.teams.length}개 팀</b><span>배치 가능 부서</span></div>`);\n}else{\n  $('#stTitle').textContent='먼저 태어나야 한다';\n  $('#stLead').textContent='회사생활은 0살부터 시작해 취업에 성공한 캐릭터로만 할 수 있다. 처음 화면에서 태어나 취업까지 가 보자.';\n  $('#btnJoin').hidden=true;document.querySelector('#start .opts').hidden=true;\n}")
 R("  const months=Math.max(60,(60-ageOf(S,0))*12);","  const months=Math.max(60,(60-ageOf(S,0))*12);")
+# ---- 성장기에서 바로 이어지기 ----
+R("const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;","const Y0=HAND?HAND.birthY+HAND.age:NOW.getFullYear(), M0=HAND?3:NOW.getMonth()+1;")
+R("if(rv.length)addLog(`업계 경쟁사는 ${rv.join(', ')}이다.","if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다.")
+R("  $('#log').innerHTML='';lastYearHeader=null;","  $('#log').innerHTML=CARRY||'';lastYearHeader=null;")
+R("  speed=1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',b.dataset.speed==='1'?'true':'false'));","  speed=HAND&&HAND.auto?wSpeed():1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.speed===speed?'true':'false'));\n  if(CARRY){const w=$('#logWrap');w.scrollTop=w.scrollHeight;}")
+R("  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);","  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);\n  kv.splice(2,0,['학력',eduLine()]);if(HAND.army)kv.splice(3,0,['병역',HAND.army==='미필'?'미필 · 입대 예정':HAND.army]);")
+AUTO='''
+if(HAND&&HAND.auto){
+  settings.auto=!!HAND.autoPick;settings.dur=({0.6:20,1:30,1.6:60})[HAND.pace]||30;
+  [...$('#autoSeg').children].forEach(b=>b.setAttribute('aria-pressed',(b.dataset.auto==='1')===settings.auto?'true':'false'));
+  $('#start').hidden=true;
+  $('#btnJoin').click();$('#btnFirstDay').click();
+}
+'''
+R('</script>\n</body>',AUTO+'</script>\n</body>')
 open(DST,'w',encoding='utf-8').write(s)
 print('ok',len(s))

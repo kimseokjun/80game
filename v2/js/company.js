@@ -19,6 +19,10 @@ function readHandoff(){
   return null;
 }
 const HAND=readHandoff();
+// 성장기 로그 (0살~입사). 회사생활 로그 위에 그대로 붙인다.
+const CARRY=HAND?(HAND.log||(()=>{try{return localStorage.getItem('n1_log');}catch(_){return null;}})()):null;
+const eduLine=()=>HAND.univ?`${HAND.univ.tierName} ${HAND.univ.majorName}${HAND.gradDone?' · 석사':''}${HAND.gpa?` · 학점 ${HAND.gpa.toFixed(2)}`:''}`:`${HAND.school||'고등학교'} 졸업`;
+const wSpeed=()=>({0:1,1:1,3:4,8:16})[HAND.speed]||1;
 let CO=HAND?COS[HAND.co]||COS.mid:null;
 const PRIV=()=>CO&&CO.k!=='pub';
 let WORDS=[];

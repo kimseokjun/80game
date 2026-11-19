@@ -53,6 +53,8 @@ function showEnding(){
     r2.push(['학자금 대출',S.loan?fmtMoney(S.loan)+'원':'없음'],['통장',fmtMoney(S.money)+'원']);
     rows.splice(1,0,...r2);
   }
+  // 입사했으면 결산 카드 없이 바로 회사생활로 이어간다
+  if(S.job){addLog('첫 출근 준비를 한다.',{kind:'sys'});setTimeout(()=>goWork(rows),1200);return;}
   $('#endingWrap').innerHTML=`<div class="ending"><div class="mono" style="font-size:12px;color:var(--muted)">${S.ended.kind==='v2.0 결산'?'인생 기록 · 0살부터 첫 직장까지':'생활기록부 · 1단계'}</div><h2>${S.name}</h2><p class="lead">${S.ended.text}</p>
     <div>${rows.map(([k,v])=>`<div class="row"><span class="k">${k}</span><span>${v}</span></div>`).join('')}</div>
     <div class="acts">${S.job?'<button type="button" class="btn primary" id="btnWork">회사생활 시작하기 →</button>':''}<button type="button" class="btn${S.job?'':' primary'}" id="btnAgain">다시 태어나기</button></div></div>`;
@@ -95,7 +97,14 @@ function goWork(rows){
     co:S.job.co,team:S.job.team,fc:S.fc,gradDone:!!S.gradDone,jc:!!(S.univ&&UNIV_TIERS[S.univ.tier].k==='jc'),
     univ:S.univ?{tierName:S.univ.tierName,majorName:S.univ.majorName}:null,
     friends:S.friends.slice().sort((a,b)=>b.fr-a.fr).slice(0,4).map(f=>({name:f.name,from:f.from,fr:Math.round(f.fr),int:f.int})),
+    auto:true,autoPick:settings.auto,pace:settings.pace,speed,
+    school:HIGH_SCHOOLS.find(h=>h.k===S.school)?.name||'',sat:S.sat||null,gpa:S.univ&&S.univ.avg||null,
+    army:S.gender==='m'?(S.armyDone?S.armyName+' 만기':'미필'):null,
     life:rows.filter(([k])=>!['성장 스탯','분야별 경험','가장 친한 친구','창의적 체험활동'].includes(k)).map(([k,v])=>[k,String(v)])};
+  // 성장기 로그도 통째로 들고 간다. 저장소가 막히면 주소에 같이 싣는다.
+  const log=$('#log').innerHTML;let stored=false;
+  try{localStorage.setItem('n1_log',log);stored=localStorage.getItem('n1_log')===log;}catch(_){}
+  if(!stored)d.log=log;
   const js=JSON.stringify(d);
   try{localStorage.setItem('n1_handoff',js);}catch(_){}
   location.href='work.html#d='+encodeURIComponent(js);

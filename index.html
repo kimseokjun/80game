@@ -115,6 +115,8 @@ button{font:inherit;color:inherit}
 .entry.sys p{color:var(--muted);font-size:14px}
 .entry.key p{font-weight:600}
 .entry.act .when{color:var(--accent)}
+.entry.love .tag,.entry.team .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}
+.entry.love .tag{color:var(--stamp);border-color:var(--stamp)}
 .actions{margin-top:14px}
 .act-meta{font-size:12px;color:var(--muted);margin:-4px 0 8px}
 .act-list{display:grid;gap:6px}
@@ -176,7 +178,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 </head>
 <body>
 <header class="bar">
-  <div class="brand">고용정보원 N분의 1<small>v1.3.1 · 비공식 팬메이드</small></div>
+  <div class="brand">고용정보원 N분의 1<small>v1.4 · 비공식 팬메이드</small></div>
   <div class="date" id="barDate"></div>
   <div class="spacer"></div>
   <div class="ctrl" id="gameCtrl" hidden>
@@ -344,7 +346,7 @@ function makePerson(){
   const age=ty.k==='reg6'?randint(19,22):tr.k==='research'?randint(29,35):ty.k==='temp'?randint(23,32):randint(25,31);
   const type=ty.k.startsWith('reg')?'reg':ty.k;
   const p={
-    name:pick(SUR)+pick(GIVEN),track:tr.k,trackName:tr.name,trackP:pct(tr,TRACKS),
+    name:pick(SUR)+pick(GIVEN),gender:pick(['남','여']),track:tr.k,trackName:tr.name,trackP:pct(tr,TRACKS),
     typeName:ty.name,typeP:pct(ty,tys),type,rank:ty.k==='reg6'?0:1,
     dept,deptP,home:home.k,homeName:home.name,homeP:pct(home,HOMES),
     birthMi:-(age*12+randint(0,11)),
@@ -453,6 +455,50 @@ function goalResult(){
   return '';
 }
 
+/* ---------- 연애·가족 ---------- */
+const pw=()=>S.married?(S.gender==='남'?'아내':'남편'):(S.gender==='남'?'여자친구':'남자친구');
+const pwJ=(a,b)=>pw()+J(pw(),a,b);
+function startDating(){S.dating=true;S.datingSince=S.mi;}
+const recentDate=()=>S.lastDate!==undefined&&S.mi-S.lastDate<=3;
+const LOVE=[
+  {w:()=>(S.focus==='work'||S.hp<40)?3:0.3,f:()=>{E({mn:-2});S.sulkMi=S.mi;return `야근이 잦아 ${pwJ('이','가')} 서운해했다.`;}},
+  {w:()=>{const m=ym(S.mi).m;return (m===6||m===7)&&S.type!=='temp'?3:0;},f:()=>{E({mn:3,money:-10});return `성과급으로 ${pw()}에게 맛있는 걸 사줬더니 좋아했다.`;}},
+  {w:()=>S.dating&&!S.moved&&(S.home==='far'||S.home==='metro')?1.5:0,f:()=>{E({hp:-1});return '주말마다 KTX를 탄다. 장거리 연애가 이어지고 있다.';}},
+  {w:()=>{const base=S.married&&S.marriedAt!==undefined?S.marriedAt:(S.datingSince||0);return S.mi-base>=12&&S.annY!==ym(S.mi).y?1:0;},good:1,f:()=>{const n=Math.floor((S.mi-(S.married&&S.marriedAt!==undefined?S.marriedAt:S.datingSince||0))/12);S.annY=ym(S.mi).y;E({mn:2,money:-5});return `${S.married?'결혼':'만난 지'} ${n}주년이었다. 작은 꽃다발을 샀다.`;}},
+  {w:()=>1,f:()=>{E({mn:-1});return pick(['사소한 일로 다퉜다. 이틀 뒤 먼저 연락했다.','약속 시간을 두고 다퉜다. 저녁을 사며 화해했다.']);}},
+  {w:()=>S.dating&&!S.metParents?1:0,good:1,f:()=>{S.metParents=true;return `${pw()}의 부모님께 처음 인사를 드렸다. 과일 바구니를 들고 갔다.`;}},
+  {w:()=>1,good:1,f:()=>{E({mn:2});return '다음 연휴에 같이 갈 여행지를 정했다.';}},
+  {w:()=>S.married?1:0,good:1,f:()=>{E({mn:2});return `${pw()}의 생일이었다. ${pick(['미역국을 끓였다.','케이크를 예약해 뒀다.'])}`;}},
+  {w:()=>S.married&&S.kids>0?1.2:0,f:()=>{E({mn:-2});return '육아 분담 문제로 다퉜다. 주말 오전은 내가 맡기로 했다.';}},
+  {w:()=>S.married?1:0,f:()=>'주말에 같이 장을 봤다. 카트가 금방 찼다.'},
+  {w:()=>S.mn<35?2:0,good:1,f:()=>{E({mn:4});return `회사 일로 힘들어하자 ${pwJ('이','가')} 조용히 이야기를 들어줬다.`;}},
+];
+function loveLog(){
+  const boost=recentDate()||S.focus==='rel'?1.6:1;
+  const items=LOVE.map(l=>({w:l.w()*(l.good?boost:1),l})).filter(x=>x.w>0);
+  if(!items.length)return;
+  addLog(wpick(items).l.f(),{kind:'love',tag:S.married?'가족':'연애'});
+}
+const lead=()=>S.type==='reg'&&S.rank>=4;
+const TEAM=[
+  ()=>{if(lead()){E({rp:1,hp:-1});return '신입이 팀에 배치됐다. 첫 주 업무 계획을 직접 짰다.';}
+       if(S.mi<24)return '팀에 신입이 들어왔다. 나도 아직 신입인데 질문을 받았다.';
+       if(S.sc>=55){E({sc:1,rp:1});return '팀에 신입이 들어왔다. 옛날 내 모습 같아서 먼저 다가가 도와줬다.';}
+       return '팀에 신입이 들어왔다. 인사만 하고 자리로 돌아왔다.';},
+  ()=>{if(lead()){E({mn:-1});return '팀원이 육아휴직을 신청했다. 대체 인력을 요청했다.';}E({hp:-1});return '옆자리 선배가 육아휴직에 들어갔다. 업무 일부가 내게 넘어왔다.';},
+  ()=>'1년 동안 휴직했던 팀원이 복직했다. 시스템이 많이 바뀌었다며 웃었다.',
+  ()=>{if(lead())return '옆 팀 팀장이 바뀌었다. 협조 요청 메일의 말투가 달라졌다.';E({mn:-1});return '팀장이 바뀌었다. 첫 회의에서 주간보고 양식이 바뀌었다.';},
+  ()=>{if(chance(0.5)){E({mn:1});return '자리 배치가 바뀌었다. 창가 자리가 됐다.';}E({mn:-1});return '자리 배치가 바뀌었다. 팀장 바로 앞자리가 됐다.';},
+  ()=>{E({sc:1});return '다른 기관으로 옮기는 팀원의 송별회가 있었다. 롤링페이퍼에 한 줄을 적었다.';},
+  ()=>'회의실 에어컨이 고장 났다. 일주일 동안 회의가 짧아졌다.',
+  ()=>'팀 단톡방에 결혼 소식이 올라왔다. 축하 이모티콘이 이어졌다.',
+  ()=>{E({hp:-1});return '팀 사무실이 3층에서 5층으로 옮겼다. 짐 상자 네 개를 날랐다.';},
+  ()=>S.track==='it'?'협력사 직원 세 명이 팀에 상주하기 시작했다. 회의실 예약이 어려워졌다.':'팀에 새 복합기가 들어왔다. 첫날 종이가 두 번 걸렸다.',
+  ()=>{E({sc:1});return lead()?'팀원이 승진했다. 점심은 내가 샀다.':'팀 선배가 승진했다. 점심은 선배가 샀다.';},
+  ()=>'점심 메뉴를 두고 국밥파와 샐러드파가 갈렸다. 결국 둘 다 갔다.',
+  ()=>{E({rp:-1,mn:-1});return '내가 올린 공문에 오타가 있었다. 정정 공문을 다시 냈다.';},
+];
+
 /* ---------- 행동 ---------- */
 const CERTS={it:['정보통신기사','정보보안기사','SQLP','AWS 자격증','PMP'],admin:['전산회계 1급','공인노무사 1차','재경관리사'],research:['ADP','사회조사분석사 1급']};
 const ACTIONS=[
@@ -465,21 +511,53 @@ const ACTIONS=[
   {k:'cert',name:'학원·자격증',cost:80,cd:6,run:()=>{E({sk:5});S.selfdev+=2;const c=pick(CERTS[S.track]);if(chance(0.3)){S.certPay=(S.certPay||0)+5;return `학원에 등록해 ${c} 시험을 준비했다. 합격했다. 다음 달부터 자격 수당이 나온다.`;}return `학원에 등록해 ${c} 시험을 준비했다. 이번 시험은 떨어졌다.`;}},
   {k:'car',name:'차 사기',cost:2500,once:true,when:()=>!S.car,why:'이미 차가 있다',run:()=>{S.car=true;return S.home==='near'?'중고 SUV를 샀다. 주말에 갈 수 있는 곳이 늘었다.':'중고 SUV를 샀다. 출퇴근이 한결 수월해졌다.';}},
   {k:'wedding',name:'결혼 준비',cost:2500,once:true,when:()=>S.dating&&!S.married&&!S.weddingAt,why:'연애 중일 때만 할 수 있다',run:()=>{S.weddingAt=S.mi+randint(3,6);return '결혼 준비를 시작했다. 예식장 계약서에 서명했다.';}},
+  {k:'intro',name:'소개 받기',cost:10,cd:3,when:()=>!S.married&&!S.dating,why:'연애 중이거나 기혼이다',run:()=>{
+    const fr=cohort.filter(p=>!p.ended&&p.fr>=60).sort((x,z)=>z.fr-x.fr)[0];
+    const who=fr?`동기 ${fr.name}${J(fr.name,'이','가')}`:pick(['고향 친구가','대학 선배가','팀 선배가']);
+    if(chance(0.25+(S.sc-50)/400+(fr?0.1:0))){startDating();E({mn:5});return `${who} 소개해 준 사람과 만났다. 두 번째 약속을 바로 잡았다.`;}
+    return `${who} 소개해 준 사람과 만났다. ${pick(['대화는 즐거웠다. 연락은 이어지지 않았다.','서로 바쁜 시기였다.'])}`;}},
+  {k:'app',name:'소개팅 앱',cost:5,cd:2,when:()=>!S.married&&!S.dating,why:'연애 중이거나 기혼이다',run:()=>{
+    if(chance(0.15+(S.sc-50)/500)){startDating();E({mn:5});return '소개팅 앱에서 대화가 잘 통하는 사람을 만났다. 세 번째 만남부터 주말이 기다려졌다.';}
+    return pick(['소개팅 앱을 깔았다. 약속 당일 상대가 나오지 않았다.','소개팅 앱으로 한 번 만났다. 사진과 분위기가 많이 달랐다.','소개팅 앱을 한 달 썼다. 대화는 많았고 만남은 없었다.']);}},
+  {k:'date',name:'데이트',cost:10,cd:2,when:()=>S.dating,why:'연애 중일 때만 할 수 있다',run:()=>{E({mn:5});S.lastDate=S.mi;return pick([`${pw()}와 영화를 보고 저녁을 먹었다.`,`${pw()}와 청주에 새로 생긴 카페에 갔다.`,`${pw()}와 하루 종일 걸었다. 만 보를 넘겼다.`]);}},
+  {k:'house_s',name:'작은 집 사기',cost:8000,when:()=>!S.house,why:'이미 집이 있다',pickLoc:true,run:loc=>{buyHouse('small',loc);return `${loc==='hq'?'혁신도시':S.homeName}에 작은 집을 샀다. 대출은 20년이다. 월세를 더 내지 않아도 된다.`;}},
+  {k:'house_b',name:'큰 집 사기',cost:20000,costFn:()=>S.house==='small'?12000:20000,when:()=>S.house!=='big',why:'이미 큰 집에 산다',pickLoc:true,run:loc=>{
+    let t='';
+    if(S.house==='small'){const yrs=(S.mi-S.houseMi)/12,sale=Math.round(8000*(1+0.02*yrs+randn()*0.1)),d=sale-8000;E({money:d});t=`살던 작은 집을 팔았다. 산 값보다 ${d>=0?fmtMoney(d)+'원 올랐다':fmtMoney(-d)+'원 내렸다'}. `;}
+    buyHouse('big',loc);return t+`${loc==='hq'?'혁신도시':S.homeName}에 큰 집을 샀다. 대출은 20년이다.`+(S.married||S.kids?' 아이 방이 생겼다.':'');}},
   {k:'pet',name:'반려동물 입양',cost:100,once:true,when:()=>!S.pet,why:'이미 함께 사는 동물이 있다',run:()=>{S.pet=pick(['고양이','강아지']);S.petName=pick(['보리','콩이','두부','라떼','호두','모카']);return `${S.pet}를 입양했다. 이름은 ${S.petName}로 지었다. 매달 15만 원이 더 든다.`;}},
 ];
+function buyHouse(size,loc){
+  S.house=size;S.houseLoc=loc;S.houseMi=S.mi;S.mortgage=240;S.mortgagePay=size==='big'?150:60;
+  if(loc==='hq')S.moved=true;
+  E({mn:size==='big'?8+((S.married||S.kids)?3:0):4});
+}
 function actState(a){
   if(a.once&&S.actCd[a.k]!==undefined)return {ok:false,note:'완료'};
   if(a.when&&!a.when())return {ok:false,note:a.why||'지금은 할 수 없다'};
   const cd=S.actCd[a.k];if(cd!==undefined&&S.mi-cd<a.cd)return {ok:false,note:`${a.cd-(S.mi-cd)}개월 뒤`};
-  if(S.money<a.cost)return {ok:false,note:'돈이 모자라다'};
+  const cost=a.costFn?a.costFn():a.cost;
+  if(S.money<cost)return {ok:false,note:'돈이 모자라다'};
   if(a.days&&S.days<a.days)return {ok:false,note:'연차가 모자라다'};
-  return {ok:true,note:fmtMoney(a.cost)+(a.days?` · 연차 ${a.days}일`:'')};
+  return {ok:true,note:(a.costFn&&S.house==='small'?'차액 약 ':'')+fmtMoney(cost)+(a.days?` · 연차 ${a.days}일`:'')};
 }
-function doAction(k){
-  if(!S||S.ended||!$('#modal').hidden)return;
+async function doAction(k){
+  if(!S||S.ended||busy||!$('#modal').hidden)return;
   const a=ACTIONS.find(x=>x.k===k),st=actState(a);if(!st.ok)return;
-  E({money:-a.cost});if(a.days)S.days-=a.days;S.actCd[k]=S.mi;
-  addLog(a.run(),{kind:'act'});render();
+  let loc=null;
+  if(a.pickLoc){
+    if(S.home==='near')loc='hq';
+    else{
+      clearTimeout(timer);busy=true;const prev=settings.auto;settings.auto=false;
+      const i=await ask(a.name,'어디에 살까?',[X('혁신도시 (출퇴근이 편해진다)',()=>'hq'),X(`연고지 ${S.homeName} (주말용)`,()=>'home'),X('그만둔다',()=>null)]);
+      settings.auto=prev;busy=false;
+      loc=[ 'hq','home',null][i];
+      if(!loc){schedule();return;}
+    }
+  }
+  E({money:-(a.costFn?a.costFn():a.cost)});if(a.days)S.days-=a.days;S.actCd[k]=S.mi;
+  addLog(a.run(loc),{kind:'act'});render();
+  if(a.pickLoc&&S.home!=='near')schedule();
 }
 async function peerMenu(i){
   const p=cohort[i];
@@ -662,9 +740,9 @@ const EV=[
     '풋살':'풋살 동호회가 지역 대회 8강에 올랐다. 다음 날 출근길 계단이 힘들었다.',
     '보드게임':'보드게임 동호회 정기 모임. 다른 부서 차장과 처음 말을 텄다.',
     '독서':'독서 모임에서 같은 책을 읽은 다른 팀 사람과 오래 이야기했다.'})[S.club],
-  auto:()=>{E({mn:3,rp:1,sc:2,hp:S.club==='등산'||S.club==='풋살'?2:0});if(!S.married&&!S.dating&&age()<40&&chance(0.05+S.sc/700)){S.dating=true;return '모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}return '';}},
+  auto:()=>{E({mn:3,rp:1,sc:2,hp:S.club==='등산'||S.club==='풋살'?2:0});if(!S.married&&!S.dating&&age()<40&&chance(0.05+S.sc/700)){startDating();return '모임이 끝나고 한 사람과 둘이서 커피를 마셨다. 연락을 이어가게 됐다.';}return '';}},
 {id:'dating_intro',manual:true,when:()=>!S.married&&!S.dating&&age()<40,title:'소개팅',text:'같은 층 다른 팀 직원이 소개팅을 주선하겠다고 한다.',choices:[
-  X('나간다',()=>chance(0.2+S.sc/350)?(S.dating=true,E({mn:4}),'세 번째 만남부터 주말이 기다려졌다.'):'좋은 사람이었다. 연락은 자연스럽게 끊겼다.'),
+  X('나간다',()=>chance(0.2+S.sc/350)?(startDating(),E({mn:4}),'세 번째 만남부터 주말이 기다려졌다.'):'좋은 사람이었다. 연락은 자연스럽게 끊겼다.'),
   X('괜찮다고 한다',()=>'주선자는 아쉬워했다.')]},
 // 개인
 {id:'health_check',when:()=>age()>=35&&S.hp<45,text:"건강검진 결과지에 '추적 관찰' 항목이 하나 생겼다.",auto:()=>E({mn:-2})},
@@ -674,10 +752,6 @@ const EV=[
 {id:'move',manual:true,w:1.2,cool:36,when:()=>(S.home==='far'||S.home==='metro')&&!S.moved,title:'거처',text:()=>S.home==='far'?'주말마다 왕복 다섯 시간을 운전한다. 혁신도시 원룸 계약이 곧 끝난다.':'통근버스로 매일 왕복 세 시간을 다닌다. 혁신도시 원룸 공고가 눈에 들어온다.',choices:[
   X('혁신도시로 완전히 이사한다',()=>{S.moved=true;E({hp:4,mn:-2,money:-300});return S.home==='far'?'본가에는 한 달에 한 번 가게 됐다.':'퇴근 후 시간이 두 시간 늘었다. 주말엔 서울로 올라간다.';}),
   X('지금처럼 다닌다',()=>(E({hp:-2}),'익숙해졌다고 생각하기로 했다.'))]},
-{id:'house',manual:true,w:2,cool:24,when:()=>S.money>=20000&&!S.house,title:'내 집',text:'통장 잔고가 2억을 넘었다. 혁신도시 아파트 분양 공고가 났다.',choices:[
-  X('혁신도시 아파트를 산다',()=>{S.house=true;S.moved=true;S.mortgage=240;E({money:-18000,mn:4});return '잔금일에 연차를 냈다. 대출은 20년이다.';}),
-  X('연고지에 집을 산다',()=>{S.house=true;S.mortgage=240;E({money:-18000,mn:3});return '주말에만 머무는 집이 생겼다.';}),
-  X('아직 보류한다',()=>'분양은 마감됐다.')]},
 {id:'job_offer',manual:true,w:0.5,cool:48,when:()=>S.track==='it'&&S.sk>=72&&age()<45,title:'이직 제안',text:'민간 IT기업에서 연락이 왔다. 연봉은 지금의 1.4배다.',choices:[
   X('옮긴다',()=>{endGame('민간 이직','민간 IT기업으로 옮겼다. 마지막 출근일에 사원증을 반납했다.');return '면접은 두 번이었다. 처우 협의는 일주일 걸렸다.';}),
   X('거절한다',()=>(E({mn:1}),'답장을 쓰는 데 사흘이 걸렸다.'))]},
@@ -805,7 +879,7 @@ function monthlyMoney(){
   const sal=salary(S,S.mi);
   const inc=(S.leave>0&&S.leaveType==='parental'?150:sal/12*0.8)+(S.certPay||0);
   const infl=Math.pow(1.025,S.mi/12);
-  const exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?110:0);
+  const exp=(140+(S.married?90:0)+S.kids*80+(S.house?0:45)+(!S.moved&&S.home!=='near'?30:0)+(S.pet?15:0)+FOCUS[S.focus].cost)*infl+(S.mortgage>0?(S.mortgagePay||110):0);
   S.money+=inc-exp;S.yr.inc+=inc;S.yr.exp+=exp;
   if(S.mortgage>0)S.mortgage--;
   const base=Math.max(S.money,0);
@@ -926,13 +1000,27 @@ async function monthTick(){
     if(S.ended)return;
   }
   // 가족
-  if(!S.married&&!S.dating&&a<40&&chance(0.002+S.sc/25000)){S.dating=true;addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
-  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&chance(0.012)))){
+  if(!S.married&&!S.dating&&a<40&&chance(0.002+S.sc/25000)){startDating();addLog(pick(['주말 모임에서 만난 사람과 연락을 이어가게 됐다.','친구 결혼식에서 만난 사람과 다시 만나기로 했다.']));}
+  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&chance(0.012+(recentDate()?0.008:0))))){
     const best=cohort.filter(p=>!p.ended&&p.fr>=60).sort((x,z)=>z.fr-x.fr)[0];
-    S.married=true;S.dating=false;
+    S.married=true;S.dating=false;S.marriedAt=S.mi;
     E(S.weddingAt?{mn:8}:{mn:8,money:best?-2200:-2500});S.weddingAt=null;
     addLog('결혼했다. 팀에서 버스 한 대를 대절해 내려왔다.'+(best?` 사회는 동기 ${best.name}${J(best.name,'이','가')} 봤다.`:' 축의금 정산은 두 달 뒤에 끝났다.'),{kind:'key'});
   }
+  if(S.dating&&!S.married&&!S.weddingAt){
+    const q=Math.max(0.002,0.01+(S.sulkMi===S.mi?0.03:0)-(recentDate()?0.006:0)-(S.focus==='rel'?0.003:0));
+    if(chance(q)){const w=pw();S.dating=false;E({mn:-8});addLog(`${w}${J(w,'과','와')} 헤어졌다. `+pick(['서로 바쁜 시기가 길었다.','마지막 통화는 짧았다.','정리하는 데 한 계절이 걸렸다.']),{kind:'key'});}
+  }
+  if(!S.married&&!S.dating&&S.leave===0&&((a>=30&&!S.intro30)||(a>30&&m===1&&chance(0.3)))){
+    S.intro30=true;
+    const fr=cohort.filter(p=>!p.ended&&p.fr>=60)[0];
+    const who=pick(['어머니','아버지','고향 친구','팀 선배'].concat(fr?[`동기 ${fr.name}`]:[]));
+    await resolve('소개 제안',`${who}${J(who,'이','가')} 만나볼 사람이 있다며 자리를 만들어 주겠다고 한다.`,[
+      X('나간다',()=>{if(chance(0.4+(S.sc-50)/300)){startDating();E({mn:5});return '두 번째 만남에서 다음 약속을 먼저 잡았다.';}return '좋은 사람이었다. 연락은 자연스럽게 끊겼다.';}),
+      X('정중히 거절한다',()=>'지금은 일에 집중하고 싶다고 말했다.')],true,'key');
+  }
+  if((S.dating||S.married)&&chance(0.28))loveLog();
+  if(S.leave===0&&chance(0.2)){S.teamCd=S.teamCd||{};const ok=TEAM.map((f,i)=>i).filter(i=>S.teamCd[i]===undefined||S.mi-S.teamCd[i]>=36);if(ok.length){const i=pick(ok);S.teamCd[i]=S.mi;addLog(TEAM[i](),{kind:'team',tag:'팀'});}}
   if(S.referral&&S.mi>=S.referral.at&&S.leave===0){
     const rf=S.referral;S.referral=null;
     await resolve('동기 추천',`먼저 나간 동기 ${rf.name}에게서 연락이 왔다. 지금 다니는 ${rf.place}에 자리가 났다며 추천하겠다고 한다.`,[
@@ -1023,16 +1111,17 @@ function finishPeers(){
 function renderCard(){
   $('#pName').textContent=S.name;
   const kv=[
-    ['나이',age()+'세'],['직렬',S.trackName],['고용',S.type==='reg'?'정규직':S.type==='perm'?'무기계약직':'기간제 계약직'],
+    ['나이',`${age()}세 · ${S.gender}`],['직렬',S.trackName],['고용',S.type==='reg'?'정규직':S.type==='perm'?'무기계약직':'기간제 계약직'],
     ['직급',rankTitle(S)],['부서',deptLabel(S)+(S.track==='admin'&&S.task?` · ${S.task}`:'')],
     ['근속',tenureStr(S.mi)],['거주',S.moved&&S.home!=='near'?'혁신도시 (연고 '+S.homeName+')':S.homeName],
     ['연차',`${S.days}일 남음`],['투자',`통장의 ${Math.round(S.inv*100)}%`],
-    ['가족',S.married?('기혼'+(S.kids?` · 자녀 ${S.kids}`:'')):S.dating?'연애 중':'미혼'],
+    ['가족',S.married?('기혼'+(S.kids?` · 자녀 ${S.kids}`:'')):S.dating?`연애 중 (${pw()})`:'미혼'],
   ];
   if(S.type==='temp')kv.splice(3,0,['계약',`${tenureStr(Math.max(0,S.contractEnd-S.mi))} 남음`]);
   if(S.club)kv.push(['동호회',S.club]);
   if(S.pet)kv.push(['반려',`${S.pet} ${S.petName}`]);
   if(S.car)kv.push(['차','있음']);
+  if(S.house)kv.push(['집',`${S.house==='big'?'큰 집':'작은 집'} · ${S.houseLoc==='hq'?'혁신도시':S.homeName}`]);
   if(S.leave>0)kv.push(['상태',(S.leaveType==='parental'?'육아휴직':'병가')+` · ${S.leave}개월 남음`]);
   $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');
   $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(k=>{const v=Math.round(S[k]);return `<div class="stat"><span>${STAT_NAMES[k]}</span><div class="track"><div class="fill${v<25?' low':''}" style="width:${v}%"></div></div><span class="v">${v}</span></div>`;}).join('');
@@ -1143,7 +1232,7 @@ $('#btnJoin').addEventListener('click',()=>{
   cohort=[0,1,2,3].map(()=>makePerson());
   const sal=salary(S,0);
   const rows=[
-    ['성명',S.name,''],['나이',ageOf(S,0)+'세',''],
+    ['성명',S.name,''],['나이',ageOf(S,0)+'세',''],['성별',S.gender,'50%'],
     ['직렬',S.trackName,S.trackP+'%'],['고용형태',S.typeName,S.typeP+'%'],
     ['배치 부서',DEPTS[S.dept].name,S.deptP+'%'],['연고지',S.homeName,S.homeP+'%'],
     ['초봉',fmtMoney(sal)+'원',''],['통장',fmtMoney(S.money)+'원',''],

@@ -86,6 +86,7 @@ async function semTick(){
   else if(S.phase==='army')await armySem();
   else if(S.phase==='grad')await gradSem();
   else if(S.phase==='retake')await retakeSem();
+  else if(S.phase==='job')await jobSem();
   S.mn=clamp(S.mn+(62-S.mn)*0.1,0,100);
   friendYear2();
 }
@@ -125,7 +126,7 @@ async function univSem(){
     if(u.total===8)await gradDecision();
     if(S.gender==='m'&&!S.armyDone){startArmy(true);return;}
     if(S.phase==='grad')return;
-    endStage2('대학을 졸업했다. 취업 준비는 다음 단계에서 이어진다.');
+    endStage2('대학을 졸업했다.');
   }
 }
 async function univChoice(){
@@ -210,7 +211,7 @@ async function armySem(){
     addLog(`${a.name} 복무를 마쳤다.`,{kind:'key'});
     if(!a.post){S.phase='univ';S.armyPlan='done';addLog('복학 신청서를 냈다.',{kind:'sys'});}
     else if(S.gradPending){S.gradPending=false;S.phase='grad';S.grad={sem:0};}
-    else endStage2('병역까지 마쳤다. 취업 준비는 다음 단계에서 이어진다.');
+    else endStage2('병역까지 마쳤다.');
   }
 }
 
@@ -233,7 +234,7 @@ async function gradSem(){
       X('조교를 하며 등록금을 번다',()=>{E({mn:-1});S.money+=400;S.gradFocus='ta';return '학부생 과제를 채점했다.';},'멘탈− · +400만원')];
     await resolve('대학원 생활','연구실 생활이 시작됐다. 어디에 무게를 둘까?',ch);
   }else addLog(pick(['랩 미팅에서 교수님 질문에 대답을 못 했다.','실험이 또 실패했다. 다시 돌렸다.','첫 논문이 학회에 채택됐다.','연구실 회식이 새벽까지 이어졌다.']));
-  if(g.sem>=4){S.gradDone=true;addLog('석사 학위를 받았다.',{kind:'key'});endStage2('대학원까지 마쳤다. 취업 준비는 다음 단계에서 이어진다.');}
+  if(g.sem>=4){S.gradDone=true;addLog('석사 학위를 받았다.',{kind:'key'});endStage2('대학원까지 마쳤다.');}
 }
 
-function endStage2(text){S.phase='done';S.ended={kind:'2단계 완료',text};}
+function endStage2(text){S.phase='job';S.jobTry=0;S.stage2Text=text;}

@@ -50,6 +50,7 @@ function renderHint(el,c){
 }
 function ask(title,text,choices,note,opt={}){
   return new Promise(res=>{
+    render();
     $('#mWhen').textContent=`${S.birthY+S.age}년 · ${S.age}살 · ${S.phase&&S.phase!=='school'?S.label:gradeLabel(S.age)}`;
     $('#mBig').hidden=!opt.big;
     $('#mTitle').textContent=title;$('#mText').textContent=text;
@@ -93,7 +94,7 @@ function schedule(){
 
 // 학교 다니는 동안은 1년, 졸업 후에는 1학기 단위
 async function tick(){if(!S.phase||S.phase==='school')await yearTick();else await semTick();}
-function phaseName(){return {univ:'대학생',army:'군 복무',grad:'대학원생',retake:'재수생'}[S.phase]||'';}
+function phaseName(){return {univ:'대학생',army:'군 복무',grad:'대학원생',retake:'재수생',job:'취업 준비생'}[S.phase]||'';}
 
 /* 잠깐 내려 두기: 선택창을 접고 로그를 본 뒤 다시 연다 */
 $('#mPark').addEventListener('click',()=>{$('#modal').hidden=true;$('#mResume').hidden=false;});

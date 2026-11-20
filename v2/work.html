@@ -231,6 +231,7 @@ footer{max-width:1240px;margin:0 auto;padding:12px 20px 28px;font-size:12px;colo
 }
 .entry .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}.who{display:flex;gap:12px;align-items:center;margin-bottom:6px}.who .pname{margin:0}.avatar{width:56px;height:56px;flex:none;border-radius:50%;background:var(--paper);border:1px solid var(--line)}
 .dialog{max-height:calc(100vh - 32px);overflow-y:auto}.d-top{display:flex;align-items:center;gap:8px}.park{margin-left:auto;background:none;border:0;color:var(--muted);font-size:12px;cursor:pointer;text-decoration:underline;padding:4px}.resume{position:fixed;right:20px;bottom:20px;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.18)}.centercol{display:grid;gap:12px;min-width:0}.strip{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}.strip .stats{margin:0;gap:6px}.strip .stat-head h3,.strip .focus h3{margin:0 0 8px;font-size:13px;color:var(--muted);font-weight:500}.strip .focus{margin:0 0 10px}.strip .focus .hint{min-height:0}.centercol .logwrap{height:calc(100vh - 330px);min-height:360px}@media (max-width:980px){.strip{grid-template-columns:1fr}.centercol .logwrap{height:62vh}}
+.tinput{width:100%;padding:10px 12px;font-size:15px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}.tcount{font-size:12px;color:var(--muted);margin:6px 0 10px}
 </style>
 </head>
 <body>
@@ -1337,12 +1338,13 @@ function pool(){
     if(ev.when&&!ev.when())continue;
     const cd=S.cd[ev.id];if(cd!==undefined&&S.mi-cd<(ev.cool||48))continue;
     const gw=(GOALS[S.goal].w[ev.id]||1)*(S.goal==='expert'&&ev.dept?1.3:1);
-    out.push({w:(ev.w||1)*(ev.dept?2.2:1)*gw,ev});
+    out.push({w:Math.pow(0.5,(S.seen||{})[ev.id]||0)*(ev.w||1)*(ev.dept?2.2:1)*gw,ev});
   }
   return out;
 }
 async function runEvent(ev){
-  S.cd[ev.id]=S.mi;
+  S.cd[ev.id]=S.mi;S.seen=S.seen||{};S.seen[ev.id]=(S.seen[ev.id]||0)+1;
+  if(ev.input){await ev.input();return;}
   const text=typeof ev.text==='function'?ev.text():ev.text;
   if(ev.auto){const r=ev.auto();addLog(text&&r?text+' '+r:(text||r));return;}
   const i=await resolve(ev.title||'선택',text,ev.choices,!!ev.manual);
@@ -1434,7 +1436,7 @@ async function monthTick(){
     const cause=a<45?pick(['교통사고','심근경색','뇌출혈']):pick(['암','심근경색','뇌졸중']);
     endGame('사망',`${y}년 ${m}월, ${cause}로 세상을 떠났다. ${a}세였다. 원내 게시판에 부고가 올라왔다.`);return;
   }
-  if(m===12&&a>=60){endGame('정년퇴직',`${y}년 12월, 정년퇴직했다. 근속 ${tenureStr(S.mi)}. 마지막 날 팀에서 꽃다발을 받았다.`);return;}
+  if(m===12&&a>=60){if(HAND)S.lastWord=await askText('마지막 출근','정년퇴직 날이다. 송별회에서 마지막 인사를 한다.','덕분에 잘 다녔습니다',40);endGame('정년퇴직',`${y}년 12월, 정년퇴직했다. 근속 ${tenureStr(S.mi)}. 마지막 날 팀에서 꽃다발을 받았다.`);return;}
   if(S.type==='reg'&&S.rank===6&&S.mi>=S.chiefUntil){endGame('원장 임기 만료','원장 임기 3년을 마쳤다. 이임식은 강당에서 30분 동안 열렸다.');return;}
   if(S.type==='temp'&&S.mi>=S.contractEnd){
     if(S.contractTotal<24&&chance(0.6+(S.renewBonus||0))){const ext=pick([4,6,12]);S.contractEnd+=ext;S.contractTotal+=ext;addLog(`계약이 ${ext}개월 연장됐다.`,{kind:'key'});}
@@ -1532,7 +1534,7 @@ async function monthTick(){
     if(S.ended)return;
   }
   if(S.married&&S.kids<3&&a<43&&S.leave===0&&chance(S.kids===0?0.025:0.012)){
-    S.kids++;S.kidsList=S.kidsList||[];const kn=HAND?kidName():null;S.kidsList.push({born:S.mi,fr:60,name:kn});
+    S.kids++;S.kidsList=S.kidsList||[];const kn=HAND?await askText('아이 이름',(S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`)+' 이름을 지어주자.',kidName(),6):null;S.kidsList.push({born:S.mi,fr:60,name:kn});
     const t=(S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`)+(kn?` 이름은 ${kn}${J(kn,'으로','로')} 지었다.`:'');
     const ch=[X('육아휴직 1년',()=>{S.leave=12;S.leaveType='parental';E({mn:6,rp:-2});S.kidsList[S.kidsList.length-1].fr+=15;PF(5);return '휴직 신청서는 하루 만에 결재됐다.';}),
       X('육아휴직 3개월',()=>{S.leave=3;S.leaveType='parental';E({mn:3});S.kidsList[S.kidsList.length-1].fr+=6;PF(2);return '석 달 뒤 복귀하기로 했다.';}),
@@ -1749,6 +1751,9 @@ function showEnding(){
     ...(S.moves?[['부서 이동',`${S.moves}번`]]:[]),
     ...(S.foundCount?[['사내벤처',`${S.foundCount}번${S.exited?' · 분사':''}`]]:[]),
     ['평균 행복',`${Math.round(S.hySum/Math.max(1,S.hyN))} / 100`],
+    ...(S.motto?[['입사 다짐',`“${esc(S.motto)}”`]]:[]),
+    ...(S.proposeLine?[['프로포즈',`“${esc(S.proposeLine)}”`]]:[]),
+    ...(S.lastWord?[['마지막 인사',`“${esc(S.lastWord)}”`]]:[]),
     ['퇴직',`${y}.${String(m).padStart(2,'0')} · ${age()}세`],
     ['재직 기간',tenureStr(e.mi)],
     ['최종 직급',rankTitle(S)],

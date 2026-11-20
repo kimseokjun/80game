@@ -93,7 +93,7 @@ R("    <h3>같은 날 입사한 동기들</h3>\n    <div class=\"rows\">${peers}
 R("    <div id=\"fallback\"></div>\n  </div>`;","    <div id=\"fallback\"></div>\n  </div>`);")
 R("<button type=\"button\" class=\"btn primary\" id=\"btnAgain\">다시 입사하기</button>","<button type=\"button\" class=\"btn primary\" id=\"btnAgain\">0살부터 다시 태어나기</button>")
 R("  $('#btnAgain').addEventListener('click',()=>{w.hidden=true;$('#game').hidden=true;$('#start').hidden=false;$('#barDate').textContent='';window.scrollTo(0,0);});","  $('#btnAgain').addEventListener('click',()=>{location.href='index.html';});")
-R("    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.typeName}`],","    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.coHist[0]} 정규직`],\n    ...(S.deptHist&&S.deptHist.length>1?[['거친 부서',S.deptHist.join(' → ')]]:[]),\n    ['본부 평가',`마지막 해 ${HQS[hqOf(S.dept)]} ${coRank()}위`],\n    ['평균 행복',`${Math.round(S.hySum/Math.max(1,S.hyN))} / 100`],")
+R("    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.typeName}`],","    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.coHist[0]} 정규직`],\n    ...(S.deptHist&&S.deptHist.length>1?[['거친 부서',S.deptHist.join(' → ')]]:[]),\n    ['본부 평가',`마지막 해 ${HQS[hqOf(S.dept)]} ${coRank()}위`],\n    ['평균 행복',`${Math.round(S.hySum/Math.max(1,S.hyN))} / 100`],\n    ...(S.motto?[['입사 다짐',`“${esc(S.motto)}”`]]:[]),\n    ...(S.proposeLine?[['프로포즈',`“${esc(S.proposeLine)}”`]]:[]),\n    ...(S.lastWord?[['마지막 인사',`“${esc(S.lastWord)}”`]]:[]),")
 R("    const txt=`[직장생활 N분의 1]\\n","    const txt=W(`[직장생활 N분의 1 v2]\\n")
 R("${cohort.map(p=>`${p.name}: ${p.ended.title}, ${p.ended.kind} (${p.ended.age}세)`).join('\\n')}`;","${cohort.map(p=>`${p.name}: ${p.ended.title}, ${p.ended.kind} (${p.ended.age}세)`).join('\\n')}`);")
 
@@ -164,7 +164,12 @@ R("`${S.kids>1?ORD[i]:'아이'}가 친구들이 다니는","`${kidNm(i)}${J(kidN
 R("`고등학생이 된 ${S.kids>1?ORD[i]:'아이'}가 수학","`고등학생이 된 ${kidNm(i)}${J(kidNm(i),'이','가')} 수학")
 R("S.kids>1?ORD[i]:'아이'","kidNm(i)",cnt=0)
 R("    S.kids++;S.kidsList=S.kidsList||[];S.kidsList.push({born:S.mi,fr:60});\n    const t=S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`;",
-  "    S.kids++;S.kidsList=S.kidsList||[];const kn=HAND?kidName():null;S.kidsList.push({born:S.mi,fr:60,name:kn});\n    const t=(S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`)+(kn?` 이름은 ${kn}${J(kn,'으로','로')} 지었다.`:'');")
+  "    S.kids++;S.kidsList=S.kidsList||[];const kn=HAND?await askText('아이 이름',(S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`)+' 이름을 지어주자.',kidName(),6):null;S.kidsList.push({born:S.mi,fr:60,name:kn});\n    const t=(S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`)+(kn?` 이름은 ${kn}${J(kn,'으로','로')} 지었다.`:'');")
+# ---- 이벤트 반복 줄이기·입력형 이벤트 ----
+R("  S.cd[ev.id]=S.mi;\n  const text=typeof ev.text","  S.cd[ev.id]=S.mi;S.seen=S.seen||{};S.seen[ev.id]=(S.seen[ev.id]||0)+1;\n  if(ev.input){await ev.input();return;}\n  const text=typeof ev.text")
+R("    out.push({w:(ev.w||1)*","    out.push({w:Math.pow(0.5,(S.seen||{})[ev.id]||0)*(ev.w||1)*")
+R("  if(m===12&&a>=60){endGame('정년퇴직',","  if(m===12&&a>=60){if(HAND)S.lastWord=await askText('마지막 출근','정년퇴직 날이다. 송별회에서 마지막 인사를 한다.','덕분에 잘 다녔습니다',40);endGame('정년퇴직',")
+R("</style>",".tinput{width:100%;padding:10px 12px;font-size:15px;border:1px solid var(--line);border-radius:6px;background:var(--paper);color:var(--ink)}.tcount{font-size:12px;color:var(--muted);margin:6px 0 10px}\n</style>")
 # ---- 성장기에서 바로 이어지기 ----
 R("const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;","const Y0=HAND?HAND.birthY+HAND.age:NOW.getFullYear(), M0=HAND?3:NOW.getMonth()+1;")
 R("  $('#log').innerHTML='';lastYearHeader=null;","  $('#log').innerHTML=CARRY||'';lastYearHeader=null;")

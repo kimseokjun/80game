@@ -25,7 +25,7 @@ const WORDS=[['공공기관','회사'],['민간 IT기업','다른 회사'],['민
 function W(t){if(t==null)return t;let s=String(t);for(const [a,b] of WORDS)s=s.split(a).join(b);return s;}
 
 /* ---------- v1 데이터를 KSJ로 바꾸기 ---------- */
-const PUB_ONLY=['h_requests','h_thanks','h_visit','h_center_call','a_budget','a_demo','a_model','m_audit','s_leak','x_assembly','x_eval','r_brief','r_conf','job_offer','other_pe'];
+const PUB_ONLY=['pol_line','c_townhall','h_requests','h_thanks','h_visit','h_center_call','a_budget','a_demo','a_model','m_audit','s_leak','x_assembly','x_eval','r_brief','r_conf','job_offer','other_pe'];
 const CERTS_HQ={tech:['정보처리기사','정보보안기사','SQLP','클라우드 자격증','PMP'],mgmt:['재경관리사','공인노무사 1차','CPA 1차'],biz:['무역영어 1급','비즈니스 영어 시험','유통관리사'],
   crea:['컬러리스트기사','GTQ 1급','영상편집 자격증'],spt:['생활스포츠지도사','스포츠경영관리사'],life:['영양사','호텔서비스사','보건교육사'],ops:['물류관리사','지게차 운전기능사','산업안전기사']};
 const certsFor=()=>CERTS_HQ[hqOf(S.dept)]||CERTS_HQ.tech;
@@ -40,7 +40,9 @@ function applyCompany(){
   setHqDepts();
   for(let i=EV.length-1;i>=0;i--)if(PUB_ONLY.includes(EV[i].id))EV.splice(i,1);
   rep(ORGS,['KSJ 해외법인','KSJ 재단','KSJ 연구원']);
-  EV.push(...buildCoEv(),...(typeof buildKsjEv==='function'?buildKsjEv():[]));
+  EV.push(...buildCoEv(),...(typeof buildKsjEv==='function'?buildKsjEv():[]),...buildInputEv());
+  for(let i=EV.length-1;i>=0;i--)if(EV[i].id==='c_townhall')EV.splice(i,1);
+  const pet=ACTIONS.find(a=>a.k==='pet');if(pet){const run=pet.run;pet.run=()=>{const r=run();setTimeout(petName,0);return r.split(' 이름은')[0]+' 매달 15만 원이 더 든다.';};}
   ACTIONS.push(...CO_ACTIONS);
   Object.assign(STYLE,CO_STYLE,typeof KSJ_STYLE==='object'?KSJ_STYLE:{});
   Object.assign(STAT_NAMES,{ar:'감성',hy:'행복'});
@@ -177,6 +179,7 @@ async function companyMonth(m){
   if(!HAND)return;
   const a=age();
   monthlyFeel();
+  await textMonth();
   if(m===1&&S.mi>0){
     const before=S.lastRank||coRank();
     S.coScore=clamp(S.coScore+randn()*5+(S.sk-55)*0.04+(S.rank>=4?(S.rp-50)*0.05:0),10,95);
@@ -196,7 +199,8 @@ async function companyMonth(m){
       X('버틴다',()=>(E({mn:-6,rp:-2,hy:-3}),'신청하지 않았다. 다음 달 자리 배치가 바뀌었다.'),'멘탈↓ 평판 조금↓ 행복 조금↓')],true,'key');
     if(S.ended)return;
   }
-  if(S.friends&&S.friends.length&&S.leave===0&&chance(0.035))await friendEvent();
+  if(S.friends&&S.friends.length&&S.leave===0&&chance(0.03))await friendEvent();
+  for(const f of S.friends||[])if(f.loan&&!f.loanDone&&S.mi-f.loan>=3){f.loanDone=1;if(chance(0.7)){E({money:300});addLog(`${f.name}${J(f.name,'이','가')} 빌려간 300만 원을 갚았다. 커피 쿠폰도 같이 보냈다.`,{kind:'peer',tag:'친구 '+f.name});}else{f.fr=clamp(f.fr-10,0,100);addLog(`${f.name}에게 빌려준 300만 원은 결국 돌아오지 않았다.`,{kind:'peer',tag:'친구 '+f.name});}}
   const hunting=S.huntUntil&&S.mi<S.huntUntil;
   if(!S.venture&&S.leave===0&&a<55&&(hunting?(S.sk>=50||S.rp>=55):(S.sk>=62||S.rp>=66))&&S.mi-(S.scoutMi??-99)>=(hunting?3:24)&&chance(hunting?0.2:0.015)){S.scoutMi=S.mi;await scoutEvent();if(S.ended)return;}
   if(!S.venture&&S.leave===0&&a>=27&&a<=48&&S.mi-(S.coFoundAsk??-99)>=36&&chance(0.006)){
@@ -245,16 +249,39 @@ async function hqEvent(){
 }
 
 /* ---------- 학교 친구 (모두 KSJ 세계에 산다) ---------- */
+// 학교 친구 연락: 친구마다 2년에 한 번, 내용은 여러 가지
 async function friendEvent(){
-  const f=pick(S.friends.filter(x=>x.fr>=10)||[]);if(!f)return;
-  if(f.co==='ksj'){
-    await resolve('친구 연락',`${f.from} ${f.name}에게서 연락이 왔다. ${f.place}에 있다. 저녁이나 먹자고 한다.`,[
-      X('만나서 근황을 나눈다',()=>{f.fr=clamp(f.fr+10,0,100);E({mn:3,hy:2,money:-5});if(chance(0.5)){S.intelUntil=S.mi+12;return `${f.name}${J(f.name,'이','가')} 그 본부 분위기를 슬쩍 이야기했다. 다음 본부 경쟁 때 도움이 될 것 같다.`;}return '회사 이야기는 거의 안 했다. 옛날 이야기만 세 시간 했다.';},'친밀도↑ 멘탈↑ 행복↑ · 사내 정보를 들을 수도'),
-      X('회사 이야기는 피한다',()=>{f.fr=clamp(f.fr+4,0,100);return '근황만 짧게 나눴다.';},'친밀도 조금↑'),
+  const pool=(S.friends||[]).filter(x=>x.fr>=10&&S.mi-(x.evMi??-99)>=24);
+  const f=pool.length?pick(pool):null;if(!f)return;
+  f.evMi=S.mi;f.evN=(f.evN||0)+1;
+  const nm=`${f.from} ${f.name}`,gi=J(f.name,'이','가');
+  const kinds=['meet','wedding','worry','loan','trip','reunion'].filter(k=>!(f.evDone||[]).includes(k)&&(k!=='meet'||f.co==='ksj'));
+  const k=kinds.length?pick(kinds):'meet';(f.evDone=f.evDone||[]).push(k);
+  if(k==='meet'){
+    await resolve('친구 연락',`${nm}에게서 연락이 왔다. ${f.place}에 있다. 저녁이나 먹자고 한다.`,[
+      X('만나서 근황을 나눈다',()=>{f.fr=clamp(f.fr+10,0,100);E({mn:3,hy:2,money:-5});if(chance(0.5)){S.intelUntil=S.mi+12;f.told=true;return `${f.name}${gi} 그 본부 분위기를 슬쩍 이야기했다. 다음 본부 경쟁이나 사내 공모 때 도움이 될 것 같다.`;}return '회사 이야기는 거의 안 했다. 옛날 이야기만 세 시간 했다.';},'친밀도↑ 멘탈↑ 행복↑ · 사내 정보를 들을 수도'),
       X('바쁘다고 미룬다',()=>{f.fr=clamp(f.fr-6,0,100);return '다음에 보자고 답했다.';},'친밀도↓')],true,'');
+  }else if(k==='wedding'){
+    await resolve('청첩장',`${nm}${gi} 결혼한다며 청첩장을 보냈다. 축사를 해줄 수 있냐고 묻는다.`,[
+      X('축사를 맡는다',()=>{f.fr=clamp(f.fr+12,0,100);E({money:-20,sc:2,hy:2});return '축사 중에 학교 다닐 때 이야기를 하다 둘 다 울었다.';},'−20만원 · 친밀도↑↑ 사교↑'),
+      X('축의금만 보낸다',()=>{f.fr=clamp(f.fr-2,0,100);E({money:-10});return '계좌로 축의금을 보냈다.';},'−10만원')],true,'');
+  }else if(k==='worry'){
+    await resolve('늦은 밤 전화',`밤 11시, ${nm}${gi} 전화를 걸어왔다. 일을 그만두고 싶다고 한다.`,[
+      X('끝까지 들어준다',()=>{f.fr=clamp(f.fr+10,0,100);E({hp:-1,hy:1});return '새벽 1시까지 통화했다. 마지막엔 둘 다 웃었다.';},'친밀도↑ 체력 조금↓'),
+      X('현실적인 조언을 한다',()=>{if(chance(0.5)){f.fr=clamp(f.fr+6,0,100);return '고맙다며, 덕분에 정리가 됐다고 했다.';}f.fr=clamp(f.fr-4,0,100);return '조언이 듣고 싶었던 건 아니라고 했다.';},'반반'),
+      X('내일 다시 통화하자고 한다',()=>{f.fr=clamp(f.fr-5,0,100);return '다음 날 연락은 오지 않았다.';},'친밀도↓')],true,'');
+  }else if(k==='loan'){
+    await resolve('돈 부탁',`${nm}${gi} 조심스럽게 300만 원만 빌려달라고 한다. 석 달 안에 갚겠다고 한다.`,[
+      X('빌려준다',()=>{E({money:-300});f.loan=S.mi;f.fr=clamp(f.fr+8,0,100);return '송금했다. 갚을지는 석 달 뒤에 알게 된다.';},'−300만원 · 친밀도↑'),
+      X('사정을 말하고 거절한다',()=>{f.fr=clamp(f.fr-8,0,100);return '알겠다고 했다. 목소리가 작아졌다.';},'친밀도↓')],true,'');
+  }else if(k==='trip'){
+    await resolve('여행 제안',`${nm}${gi} 다음 달 연휴에 둘이 여행을 가자고 한다.`,[
+      X('간다',()=>{E({money:-80,mn:6,hy:4,hp:1});f.fr=clamp(f.fr+10,0,100);return pick(['바다 앞 숙소에서 밤새 이야기했다.','산에 올라 사진을 백 장 찍었다.']);},'−80만원 · 멘탈↑ 행복↑'),
+      X('일 때문에 못 간다',()=>{f.fr=clamp(f.fr-4,0,100);return '사진만 받아봤다.';},'친밀도 조금↓')],true,'');
   }else{
-    f.fr=clamp(f.fr-1,0,100);
-    addLog(`${f.from} ${f.name} 근황: ${f.place}${pick([' 일을 하며 잘 지낸다고 한다.','. 단톡방에 사진이 올라왔다.',' 일을 한다. 다음 달에 결혼한다고 한다.'])}`,{kind:'peer',tag:'친구 '+f.name});
+    await resolve('동창회',`${f.from.replace(' 친구','').replace(' 동기','')} 동창회가 열린다. ${f.name}${gi} 꼭 오라고 했다.`,[
+      X('간다',()=>{E({money:-10,sc:2,hy:2});f.fr=clamp(f.fr+6,0,100);return pick(['다들 KSJ 어느 본부냐고 서로 물었다.','10년 만에 보는 얼굴이 많았다. 이름이 바로 안 떠올랐다.']);},'사교↑ 행복↑'),
+      X('안 간다',()=>{f.fr=clamp(f.fr-3,0,100);return '단톡방으로 사진을 봤다.';},'')],true,'');
   }
 }
 function renderFriends(){
@@ -347,6 +374,7 @@ async function cofoundEvent(f){
   await resolve('사내벤처 제안',`${f.from} ${f.name}${J(f.name,'이','가')} 술자리에서 진지하게 말했다. 같이 사내벤처를 해보자고 한다. 아이템은 ${FND_ITEM[f.int]||FND_ITEM.fnd}다.`,[
     X('같이 한다',()=>{found(f,f.int);return '다음 날 사내벤처 신청서를 냈다.';},'사내벤처 시작'),
     X('지금 부서에 남는다',()=>{f.fr=clamp(f.fr-3,0,100);return `${f.name}${J(f.name,'은','는')} 아쉽다며 웃었다.`;},'친밀도 조금↓')],true,'key');
+  await nameVenture();
 }
 async function foundFlow(){
   if(!S||S.ended)return;
@@ -358,7 +386,7 @@ async function foundFlow(){
   if(field){
     const fr=(S.friends||[]).filter(x=>x.co==='ksj').concat(cohort.filter(p=>!p.ended).map(p=>({name:p.name,from:'동기',fr:p.fr,int:field}))).filter(x=>x.fr>=40).sort((a,b)=>b.fr-a.fr).slice(0,3);
     const j=await ask('같이 할 사람','혼자 할까, 누구와 같이 할까?',fr.map(x=>X(`${x.from} ${x.name}${J(x.name,'과','와')} 같이 한다`,()=>x,`친밀도 ${Math.round(x.fr)}`)).concat([X('혼자 한다',()=>null,'지분은 많이, 일은 혼자')]));
-    found(j<fr.length?fr[j]:null,field);
+    found(j<fr.length?fr[j]:null,field);await nameVenture();
   }else addLog('사내벤처 계획서를 쓰다가 덮었다.',{kind:'sys'});
   settings.auto=prev;busy=false;render();schedule();
 }
@@ -408,6 +436,7 @@ async function proposeOk(){
   await resolve('결혼 이야기',`${w}${J(w,'이','가')} 조심스럽게 결혼 이야기를 꺼냈다. 만난 지 ${yrs}년이 됐다.`,[
     X('결혼하자',()=>{ok=true;PF(6);E({mn:4});return '둘 다 한참 웃었다. 양가에 인사드릴 날을 잡았다.';},'멘탈↑ · 예식 규모를 고른다'),
     X('조금 더 생각해 보자',()=>{S.propNo=(S.propNo||0)+1;PF(-8);E({mn:-1});if(S.propNo>=3&&chance(0.5)){S.dating=false;S.propNo=0;E({mn:-8});return `${w}${J(w,'은','는')} 더 기다릴 수 없다고 했다. 헤어졌다.`;}return `${w}${J(w,'은','는')} 알겠다고 했다. 표정이 조금 굳었다.`;},(S.propNo||0)>=2?'친밀도↓ · 헤어질 수도 있다':'친밀도↓ · 1년 뒤 다시 이야기')],true,'key');
+  if(ok){S.proposeLine=await askText('프로포즈',`${w}에게 건넬 한마디를 고른다.`,'평생 같이 밥 먹자',30);addLog(`반지를 내밀며 말했다. "${S.proposeLine}"`,{kind:'key',tag:'가족'});}
   return ok;
 }
 
@@ -415,3 +444,57 @@ async function proposeOk(){
 function newName(){let n,t=0;do{n=pick(SUR)+pick(GIVEN);t++;}while(t<30&&(n===S.name||(S.people||[]).some(p=>p.name===n)));return n;}
 function kidName(){const used=(S.kidsList||[]).map(k=>k.name);let n,t=0;do{n=pick(GIVEN);t++;}while(t<30&&used.includes(n));return n;}
 const kidNm=i=>{const k=(S.kidsList||[])[i];return k&&k.name?k.name:(S.kids>1?['첫째','둘째','셋째'][i]:'아이');};
+
+/* ---------- 직접 입력하는 이벤트 ---------- */
+const esc=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// 입력칸이 뜨는 선택창. 자동 선택 중이면 기본값으로 넘어간다.
+function askText(title,text,def,max=30){
+  if(settings.auto)return Promise.resolve(def);
+  return new Promise(res=>{
+    const {y,m}=ym(S.mi);
+    $('#mWhen').textContent=W(`${y}년 ${m}월 · ${deptLabel(S)}`);
+    $('#mTitle').textContent=title;$('#mText').textContent=text;
+    const box=$('#mChoices');box.innerHTML='';
+    const inp=document.createElement('input');inp.type='text';inp.maxLength=max;inp.placeholder=def;inp.className='tinput';inp.setAttribute('aria-label',title);
+    const cnt=document.createElement('div');cnt.className='tcount';cnt.textContent=`비워두면 "${def}" · 최대 ${max}자`;
+    const b=document.createElement('button');b.type='button';b.textContent='확인';
+    let done=false;
+    const fin=()=>{if(done)return;done=true;const v=(inp.value||'').replace(/\s+/g,' ').trim().slice(0,max)||def;$('#modal').hidden=true;$('#mResume').hidden=true;res(v);};
+    b.addEventListener('click',fin);inp.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.isComposing)fin();});
+    box.append(inp,cnt,b);$('#mPark').hidden=false;
+    $('#modal').hidden=false;setTimeout(()=>inp.focus(),30);
+  });
+}
+async function textMonth(){
+  if(S.mi===1&&!S.motto){
+    S.motto=await askText('첫 팀 회의','입사하고 처음 열린 팀 회의에서 돌아가며 자기소개를 한다. 마지막에 다짐 한 줄을 말하라고 한다.','시키는 일보다 한 발 더 하겠습니다',40);
+    addLog(`자기소개 끝에 다짐을 말했다. "${S.motto}"`,{kind:'key'});
+  }
+  if(S.motto&&S.mi===120&&!S.mottoBack){S.mottoBack=1;addLog(`서랍을 정리하다 입사 첫날 적어둔 메모를 찾았다. "${S.motto}" 10년 전의 나는 그렇게 말했다.`,{kind:'key'});E({mn:2,hy:1});}
+}
+async function nameVenture(){
+  if(!S.venture||S.venture.brand)return;
+  const def=pick(['다올','루미','온새','하랑','도담','새봄'])+pick(['랩','웍스','플러스','스튜디오']);
+  const n=await askText('사내벤처 이름',`${S.venture.item} 팀의 이름을 정한다. 사내 공지에 이 이름으로 나간다.`,def,16);
+  S.venture.brand=n;DEPTS.venture.name=`사내벤처 ${n}`;
+  addLog(`팀 이름을 "${n}"${J(n,'으로','로')} 정했다. 사내 공지에 이름이 올라갔다.`,{kind:'key',tag:'사내벤처'});render();
+}
+async function petName(){
+  if(!S.pet)return;
+  clearTimeout(timer);busy=true;
+  const n=await askText('반려동물 이름',`${S.pet}${J(S.pet,'을','를')} 데려왔다. 이름을 지어주자.`,S.petName,8);
+  S.petName=n;addLog(`${S.pet} 이름은 ${n}${J(n,'으로','로')} 지었다.`,{kind:'sys'});
+  busy=false;render();schedule();
+}
+// 팀 슬로건 공모·타운홀 질문은 입력형 이벤트로 돌아간다
+function buildInputEv(){return [
+  {id:'t_slogan',w:1.2,cool:72,when:()=>S.leave===0,input:async()=>{
+    const v=await askText('팀 슬로건 공모','본부에서 팀별 슬로건을 공모한다. 채택되면 사옥 로비에 걸린다.','함께 가면 멀리 간다',24);
+    const good=v.length>=6&&v.length<=20,p=clamp(0.25+(S.ar-50)/200+(good?0.1:0),0.05,0.8);
+    if(chance(p)){E({rp:4,ar:2,hy:2});addLog(`팀 슬로건으로 "${v}"${J(v,'을','를')} 냈다. 채택됐다. 사옥 로비에 현수막이 걸렸다.`,{kind:'key'});}
+    else addLog(`팀 슬로건으로 "${v}"${J(v,'을','를')} 냈다. 옆 팀 슬로건이 뽑혔다.`,{kind:'sys'});}},
+  {id:'t_townhall',w:1,cool:60,when:()=>S.leave===0,input:async()=>{
+    const v=await askText('타운홀 미팅','대표이사 타운홀 미팅이다. 사회자가 질문할 사람을 찾는다. 무엇을 물을까?','올해 성과급 기준은 어떻게 되나요?',40);
+    if(chance(0.5+(S.sc-50)/150)){E({rp:4,sc:2});addLog(`타운홀에서 손을 들고 물었다. "${v}" 대표이사가 좋은 질문이라며 메모했다.`,{kind:'key'});}
+    else{E({rp:-2});addLog(`타운홀에서 손을 들고 물었다. "${v}" 분위기가 잠깐 싸해졌다. 본부장이 뒤를 돌아봤다.`,{kind:'key'});}}},
+];}

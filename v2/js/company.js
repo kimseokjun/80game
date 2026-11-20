@@ -1,17 +1,12 @@
 "use strict";
-// v2.1 회사생활: 성장 단계에서 넘어온 캐릭터와 회사 종류에 맞춰 v1 틀(work.html)을 바꾼다.
-// work.html 안의 v1 코드보다 먼저 읽힌다. 함수는 호출될 때 v1 전역을 쓴다.
+// 회사생활(work.html): 이 세계에 남은 단 하나의 회사 KSJ. v1 틀을 KSJ에 맞게 바꾼다.
+// work.html 안의 v1 코드보다 먼저 읽힌다. 함수는 호출될 때 v1 전역을 쓴다. 부서 정의는 js/ksj.js.
 
-const COS={
-  big:{k:'big',name:'대기업',ceo:'대표이사',dir:'임원',city:'회사 근처',ranks:['사원','대리','과장','차장','팀장','임원','대표이사'],sal:[5000,5800,7000,8400,10000,14000,30000],minY:[4,4,4,4,4],pBase:[0.55,0.5,0.4,0.3,0.15],work:1.25,bonus:1.6,cohortN:6,layoff:0.15,teams:['haeng','sec','ai','mgmt'],staff:'임직원 수만 명',foot:'같은 날 입사한 동기가 많다. 연봉은 높고, 일도 많다.'},
-  pub:{k:'pub',name:'공기업',ceo:'원장',dir:'실장',city:'혁신도시',ranks:['주임','대리','과장','차장','팀장','실장','원장'],sal:[3700,4317,5300,6400,7400,8600,12500],minY:[4,5,5,4,4],pBase:[0.55,0.5,0.45,0.35,0.25],work:1,bonus:1,cohortN:4,layoff:0,teams:['haeng','sec','ai','mgmt'],staff:'임직원 약 500명',foot:'근무지는 지방 혁신도시 본사다. 정년까지 안정적이고, 순환보직이 있다.'},
-  mid:{k:'mid',name:'중견·IT기업',ceo:'대표',dir:'본부장',city:'회사 근처',ranks:['사원','대리','과장','차장','팀장','본부장','대표'],sal:[3600,4200,5000,6000,7000,9000,15000],minY:[3,3,4,4,4],pBase:[0.6,0.55,0.45,0.35,0.2],work:1.1,bonus:1,cohortN:3,layoff:0.08,teams:['haeng','sec','mgmt'],staff:'임직원 약 300명',foot:'팀이 작아서 팀장과의 관계가 크게 작용한다.'},
-  st:{k:'st',name:'스타트업',ceo:'대표',dir:'C레벨',city:'회사 근처',ranks:['매니저','시니어','리드','파트장','팀장','C레벨','대표'],sal:[3800,4500,5400,6400,7400,10000,14000],minY:[2,2,2,3,3],pBase:[0.65,0.6,0.5,0.4,0.25],work:1.35,bonus:0.5,cohortN:1,layoff:0,teams:['haeng','mgmt'],staff:'직원 약 30명',foot:'사람이 자주 바뀌고, 회사 운명이 해마다 갈린다. 대신 스톡옵션이 있다.'},
-};
-const TEAM_KEY={dev:'haeng',sec:'sec',res:'ai',biz:'mgmt'};
-const TEAM_NAME={haeng:'개발팀',sec:'보안팀',ai:'데이터·연구팀',mgmt:'경영기획팀'};
-// 경쟁사 이름은 모두 지어낸 것이다.
-const RIVALS={big:['한누리전자','청람그룹'],pub:[],mid:['바른숲시스템','온빛소프트'],st:['모아핀','스프링보드랩']};
+const CO={k:'ksj',name:'KSJ',ceo:'대표이사',dir:'본부장',city:'회사 근처',
+  ranks:['사원','대리','과장','차장','팀장','본부장','대표이사'],sal:[4600,5300,6400,7700,9000,12000,25000],
+  minY:[4,4,4,4,4],pBase:[0.55,0.5,0.42,0.32,0.18],work:1.15,bonus:1.2,cohortN:5,layoff:0.08,
+  staff:'임직원 수십만 명',foot:'이 세계에 남은 회사는 KSJ 하나뿐이다. 본부 7개, 부서 21개가 있다.'};
+const ATH_RANKS=['신인 선수','주전 선수','핵심 선수','베테랑','주장','코치','단장'];
 
 function readHandoff(){
   try{const m=location.hash.match(/#d=(.+)$/);if(m)return JSON.parse(decodeURIComponent(m[1]));}catch(_){}
@@ -23,96 +18,83 @@ const HAND=readHandoff();
 const CARRY=HAND?(HAND.log||(()=>{try{return localStorage.getItem('n1_log');}catch(_){return null;}})()):null;
 const eduLine=()=>HAND.univ?`${HAND.univ.tierName} ${HAND.univ.majorName}${HAND.gradDone?' · 석사':''}${HAND.gpa?` · 학점 ${HAND.gpa.toFixed(2)}`:''}`:`${HAND.school||'고등학교'} 졸업`;
 const wSpeed=()=>({0:1,1:1,3:4,8:16})[HAND.speed]||1;
-let CO=HAND?COS[HAND.co]||COS.mid:null;
-const PRIV=()=>CO&&CO.k!=='pub';
-let WORDS=[];
-function buildWords(){
-  const mg=CO.k==='st'?'사업팀':'경영기획팀';
-  WORDS=PRIV()?[['공공기관','회사'],['민간 IT기업','다른 IT기업'],['민간 이직','이직'],['민간 기업','다른 회사'],['다른 공기업','공기업'],['원장실',CO.ceo+'실'],['원장',CO.ceo],['실장',CO.dir],['혁신도시',CO.city],['원내','사내'],['기관','회사'],['경영평가','성과평가'],['정보화','기술'],['직렬','직무'],['공문','공지'],['경영지원팀',mg]]
-    :[['경영지원팀',mg]];
-}
-// 화면에 나가는 글자만 회사 종류에 맞게 바꾼다. 내부 키는 그대로 둔다.
-function W(t){if(t==null||!CO)return t;let s=String(t);for(const [a,b] of WORDS)s=s.split(a).join(b);return s;}
+const PRIV=()=>true;
+const WORDS=[['공공기관','회사'],['민간 IT기업','다른 회사'],['민간 이직','퇴사'],['공기업 이직','퇴사'],['동기 추천 이직','퇴사'],['민간 기업','개인 사업'],['다른 공기업','개인 사업'],
+  ['원장실','대표이사실'],['원장','대표이사'],['실장','본부장'],['혁신도시','회사 근처'],['원내','사내'],['기관','회사'],['경영평가','성과평가'],['정보화','기술'],['직렬','본부'],['공문','공지'],['경영지원팀','경영기획팀']];
+// 화면에 나가는 글자만 바꾼다. 내부 키는 그대로 둔다.
+function W(t){if(t==null)return t;let s=String(t);for(const [a,b] of WORDS)s=s.split(a).join(b);return s;}
 
-/* ---------- v1 데이터 바꾸기 ---------- */
-const PUB_ONLY=['h_requests','h_thanks','h_visit','h_center_call','a_budget','a_demo','a_model','m_audit','s_leak','x_assembly','x_eval','r_brief','r_conf'];
+/* ---------- v1 데이터를 KSJ로 바꾸기 ---------- */
+const PUB_ONLY=['h_requests','h_thanks','h_visit','h_center_call','a_budget','a_demo','a_model','m_audit','s_leak','x_assembly','x_eval','r_brief','r_conf','job_offer','other_pe'];
+const CERTS_HQ={tech:['정보처리기사','정보보안기사','SQLP','클라우드 자격증','PMP'],mgmt:['재경관리사','공인노무사 1차','CPA 1차'],biz:['무역영어 1급','비즈니스 영어 시험','유통관리사'],
+  crea:['컬러리스트기사','GTQ 1급','영상편집 자격증'],spt:['생활스포츠지도사','스포츠경영관리사'],life:['영양사','호텔서비스사','보건교육사'],ops:['물류관리사','지게차 운전기능사','산업안전기사']};
+const certsFor=()=>CERTS_HQ[hqOf(S.dept)]||CERTS_HQ.tech;
+function setHqDepts(){IT_DEPTS.splice(0,IT_DEPTS.length,...KDEPTS.filter(d=>d.hq===hqOf(S&&S.dept||'haeng')).map(d=>({k:d.k,w:1})));}
 function applyCompany(){
-  if(!CO)return;
-  buildWords();
+  if(!HAND)return;
   const rep=(a,b)=>a.splice(0,a.length,...b);
   rep(RANKS,CO.ranks);rep(SAL,CO.sal);rep(MIN_Y,CO.minY);rep(P_BASE,CO.pBase);
-  for(const k of Object.keys(DEPTS))if(!CO.teams.includes(k))delete DEPTS[k];
-  for(const k of CO.teams)DEPTS[k].name=TEAM_NAME[k];
-  if(DEPTS.mgmt&&CO.k==='st')DEPTS.mgmt.name='사업팀';
-  rep(IT_DEPTS,['haeng','sec','ai'].filter(k=>CO.teams.includes(k)).map(k=>({k,w:1})));
-  rep(SEATS,['ceo','d:it','d:ms',...CO.teams.map(k=>'t:'+k)]);
-  if(PRIV()){
-    for(let i=EV.length-1;i>=0;i--)if(PUB_ONLY.includes(EV[i].id))EV.splice(i,1);
-    rep(ORGS,['계열사','협력사','투자사']);
-  }
-  for(let i=EV.length-1;i>=0;i--)if(EV[i].id==='job_offer')EV.splice(i,1);
-  EV.push(...buildCoEv());
+  for(const k of Object.keys(DEPTS))if(!KD[k])delete DEPTS[k];
+  for(const d of KDEPTS)DEPTS[d.k]={name:d.name,...d.m};
+  rep(SEATS,['ceo',...Object.keys(HQS).map(h=>'d:'+h),...KDEPTS.map(d=>'t:'+d.k)]);
+  setHqDepts();
+  for(let i=EV.length-1;i>=0;i--)if(PUB_ONLY.includes(EV[i].id))EV.splice(i,1);
+  rep(ORGS,['KSJ 해외법인','KSJ 재단','KSJ 연구원']);
+  EV.push(...buildCoEv(),...(typeof buildKsjEv==='function'?buildKsjEv():[]));
   ACTIONS.push(...CO_ACTIONS);
-  Object.assign(STYLE,CO_STYLE);
-  GOALS.chief.name=`${CO.ceo}까지`;GOALS.chief.hint=`${CO.dir} 이상이면 달성, ${CO.ceo}이면 완전 달성.`;
-  GOALS.exit.hint='다른 회사로 옮기면 달성.';
-  GOALS.fnd={name:'창업',hint:'내 회사를 차리면 달성, 엑싯까지 하면 완전 달성.',w:{}};
-  if(PRIV())$('#help').innerHTML=W($('#help').innerHTML);
+  Object.assign(STYLE,CO_STYLE,typeof KSJ_STYLE==='object'?KSJ_STYLE:{});
+  Object.assign(STAT_NAMES,{ar:'감성',hy:'행복'});
+  GOALS.chief.name='대표이사까지';GOALS.chief.hint='본부장 이상이면 달성, 대표이사면 완전 달성.';
+  GOALS.exit.name='원하는 부서로';GOALS.exit.hint='한 번 이상 다른 부서로 옮기면 달성.';
+  GOALS.fnd={name:'사내벤처',hint:'사내벤처를 이끌면 달성, 자회사로 분사하면 완전 달성.',w:{}};
+  $('#help').innerHTML=W($('#help').innerHTML);
 }
 
 /* ---------- 넘어온 캐릭터로 사람 만들기 ---------- */
-function homeOf(){
-  const r=HAND.region;
-  if(PRIV())return r==='metro'?{home:'near',name:'서울',zone:'근거리',moved:true}:{home:'far',name:HAND.regionName,zone:'장거리',moved:true};
-  return r==='metro'?{home:'metro',name:'서울',zone:'수도권',moved:false}:r==='city'?{home:'mid',name:'인근 광역시',zone:'중거리',moved:false}:{home:'near',name:'혁신도시 인근 군',zone:'근거리',moved:true};
-}
+function homeOf(){return HAND.region==='metro'?{home:'near',name:'서울',zone:'근거리',moved:true}:{home:'far',name:HAND.regionName,zone:'장거리',moved:true};}
 function makeFromHand(){
-  const p=makePerson(),h=homeOf(),team=TEAM_KEY[HAND.team]||'haeng',dept=CO.teams.includes(team)?team:CO.teams[0];
-  const fit=HAND.team==='biz'?(HAND.fc.biz||0)+(HAND.fc.fnd||0):(HAND.fc[HAND.team]||0);
+  const p=makePerson(),h=homeOf(),dept=KD[HAND.team]?HAND.team:'haeng',d=KD[dept];
+  const fit=d.f.reduce((a,f)=>a+((HAND.fc||{})[f]||0),0);
   Object.assign(p,{
     name:HAND.name,gender:HAND.gender==='m'?'남':'여',
-    track:dept==='mgmt'?'admin':'it',trackName:dept==='mgmt'?(PRIV()?'경영':'경영사무'):(PRIV()?'기술':'정보화'),trackP:100,
-    typeName:`${CO.name} 정규직`,typeP:100,type:'reg',rank:CO.k==='pub'&&HAND.univ&&!HAND.jc?1:0,
-    dept,deptP:100,deptHist:[DEPTS[dept].name],
+    track:'it',trackName:HQS[d.hq],trackP:100,
+    typeName:'KSJ 정규직',typeP:100,type:'reg',rank:0,
+    dept,deptP:100,deptHist:[d.name],
     home:h.home,homeName:h.name,homeZone:h.zone,homeP:100,moved:h.moved,
     birthMi:-(HAND.age*12+randint(0,11)),
-    sk:clamp(Math.round(15+HAND.ac*0.35+fit*3+(HAND.gradDone?5:0)),15,72),rp:randint(42,52),
-    sc:clamp(HAND.sc,5,95),hp:clamp(HAND.hp+8,30,92),mn:clamp(HAND.mn,20,95),
+    sk:clamp(Math.round(15+HAND.ac*0.25+(Object.entries(d.w).reduce((a,[k,w])=>a+w*((HAND[k]??50)-50),0))*0.25+fit*3+(HAND.gradDone?5:0)),15,72),rp:randint(42,52),
+    sc:clamp(HAND.sc,5,95),hp:clamp(HAND.hp+8,30,95),mn:clamp(HAND.mn,20,95),ar:clamp(HAND.ar??45,5,95),hy:clamp(HAND.hy??60,5,95),
     money:Math.round((HAND.money||0)-(HAND.loan||0)),
   });
   return p;
 }
 function makePeer(){
-  const p=makePerson();
-  if(p.track==='research'||!DEPTS[p.dept]){p.track='it';p.trackName='정보화';}
-  if(!DEPTS[p.dept]){const d=IT_DEPTS.length?wpick(IT_DEPTS).k:'mgmt';p.dept=d;p.deptHist=[DEPTS[d].name];}
-  if(p.track==='admin'&&!DEPTS.mgmt){p.track='it';p.dept=IT_DEPTS[0].k;p.deptHist=[DEPTS[p.dept].name];}
-  if(PRIV()){
-    p.type='reg';p.typeName=`${CO.name} 정규직`;p.rank=0;p.contractEnd=null;
-    p.birthMi=-(randint(24,30)*12+randint(0,11));
-  }
+  const p=makePerson(),d=pick(KDEPTS);
+  Object.assign(p,{track:'admin',trackName:HQS[d.hq],dept:d.k,deptHist:[d.name],type:'reg',typeName:'KSJ 정규직',rank:0,contractEnd:null,birthMi:-(randint(24,30)*12+randint(0,11))});
   return p;
 }
 function companyInit(){
-  S.coHist=[CO.name];S.coJoin=0;
+  S.coHist=['KSJ'];S.hySum=0;S.hyN=0;S.flags={};S.myHq=hqOf(S.dept);
+  if(S.dept==='athlete')S.coRanks=ATH_RANKS;
+  setHqDepts();
   S.coScore=randint(45,60);
-  S.rivals=RIVALS[CO.k].map(n=>({name:n,score:randint(40,68)}));
-  S.round=0;S.so=0;
+  S.rivals=Object.keys(HQS).filter(h=>h!==hqOf(S.dept)).map(h=>({h,name:HQS[h],score:randint(40,65)}));
   S.friends=(HAND.friends||[]).slice(0,4).map(f=>{
-    const r=R(),rv=S.rivals.length?pick(S.rivals).name:null;
-    const at=r<0.15?{co:'same',place:'같은 회사'}:r<0.5&&rv?{co:'rival',place:rv}:{co:'other',place:pick(['공기업','은행','대기업','스타트업','대학원','프리랜서','공무원 시험 준비'])};
+    const r=R(),d=pick(KDEPTS);
+    const at=r<0.18?{co:'same',place:'KSJ 입사 동기'}:r<0.6?{co:'ksj',dept:d.k,place:`KSJ ${d.name}`}:{co:'other',place:pick(['대학원','프리랜서','개인 카페','공무원','유튜버','KSJ 협력 학교 교사'])};
     return {name:f.name,from:f.from,fr:Math.round(f.fr),int:f.int,...at};
   });
 }
+// 본부 평가 순위 (내 본부 vs 다른 본부)
 const coRank=()=>1+S.rivals.filter(r=>r.score>S.coScore).length;
-const bonusMult=()=>PRIV()?CO.bonus*clamp(1+(S.coScore-50)/80,0.5,1.6):1;
+const bonusMult=()=>CO.bonus*clamp(1+(S.coScore-50)/80,0.5,1.6);
+function rebaseHq(){
+  const my=hqOf(S.dept),old=S.rivals.find(r=>r.h===my);
+  if(old){S.rivals=S.rivals.filter(r=>r.h!==my);S.rivals.push({h:S.myHq,name:HQS[S.myHq],score:S.coScore});S.coScore=old.score;}
+  S.myHq=my;setHqDepts();
+}
 
-/* ---------- 회사 종류별 이벤트 ---------- */
-const CO_STYLE={
-  '다음 날 아침에 본다':'avoid','하나씩 고치고 이유를 묻는다':'skill','회의를 잡아 기준을 맞춘다':'social','중요한 것만 고친다':'safe',
-  '개발팀장을 직접 만나 일정을 잡는다':'social','위험도를 보고서로 올린다':'safe','직접 패치 방안을 만든다':'skill',
-  '원하는 대로 정리한다':'avoid','새 방향에 올라탄다':'hard','반대 의견을 정리해 낸다':'social',
-};
+/* ---------- 부서 이벤트 (개발·보안·AI·경영기획) ---------- */
 function buildCoEv(){return [
   {id:'pv_outage',dept:['haeng'],title:'서비스 장애',text:'저녁 8시, 결제 화면에서 오류가 쏟아지기 시작했다. 고객 문의가 분 단위로 늘고 있다.',choices:[
     X('원인부터 찾는다',()=>(E({sk:2,rp:3,hp:-3}),'30분 만에 원인을 찾았다. 전날 바뀐 설정 하나가 문제였다.')),
@@ -151,153 +133,7 @@ function buildCoEv(){return [
   {id:'pv_cost',dept:['mgmt'],title:'비용 절감',text:'위에서 부서별 비용을 10% 줄이라는 지시가 내려왔다.',choices:[
     X('규정 개정안을 직접 만든다',()=>(E({sk:2,rp:2,sc:-1}),'출장비 기준을 바꿨다. 몇몇 팀장이 불만을 말했다.')),
     X('위에서 정한 안대로 문서화한다',()=>(E({mn:-1}),'모든 팀이 똑같이 10%씩 줄였다.'))]},
-  {id:'pv_ir',dept:['mgmt'],when:()=>CO.k==='st',title:'투자자 미팅',text:'투자사 미팅 자료를 내일까지 만들어야 한다.',choices:[
-    X('밤새 정리한다',()=>(E({hp:-4,rp:3}),'대표가 자료를 보고 고개를 끄덕였다.')),
-    X('확인된 숫자만 낸다',()=>(E({rp:1}),'숫자는 정직했다. 투자사 반응은 조용했다.'))]},
-  {id:'pv_big_report',when:()=>CO.k==='big',text:'같은 보고서를 팀장, 상무, 전무 버전으로 세 번 만들었다.',auto:()=>{E({mn:-1});return '';}},
-  {id:'pv_big_dispatch',when:()=>CO.k==='big'&&S.rank<=2,title:'계열사 파견',text:'계열사로 1년 파견을 가라는 제안이 왔다.',choices:[
-    X('간다',()=>(E({sk:3,rp:3,hp:-2}),'새 사무실에서 명함을 다시 팠다.')),
-    X('다른 팀원에게 양보한다',()=>(E({mn:1}),'동기가 대신 갔다.'))]},
-  {id:'pv_mid_multi',when:()=>CO.k==='mid',text:'사람이 부족해 옆 팀 업무까지 맡았다.',auto:()=>{E({hp:-2,sk:1});return '';}},
-  {id:'pv_st_pivot',when:()=>CO.k==='st',title:'피벗',text:'대표가 주력 서비스를 접고 방향을 바꾸자고 한다.',choices:[
-    X('새 방향에 올라탄다',()=>(E({hp:-3,rp:3}),'두 달 만에 새 서비스를 열었다.')),
-    X('반대 의견을 정리해 낸다',()=>(E({sc:1,rp:-1}),'대표는 끝까지 들었다. 결론은 바뀌지 않았다.'))]},
-  {id:'pv_st_allhands',when:()=>CO.k==='st',text:'전사 미팅에서 이번 달 매출이 공개됐다. 박수가 짧았다.',auto:()=>{E({mn:-1});return '';}},
-  {id:'pv_st_hire',when:()=>CO.k==='st',text:'채용이 급해 면접관을 맡았다. 일주일에 면접이 여섯 개였다.',auto:()=>{E({hp:-1,sc:1});return '';}},
 ];}
-
-/* ---------- 매달: 경쟁·스타트업·희망퇴직·학교 친구 ---------- */
-async function companyMonth(m){
-  if(!CO)return;
-  const a=age();
-  if(m===1&&PRIV()){
-    const before=S.lastRank||coRank();
-    S.coScore=clamp(S.coScore+randn()*5+(S.sk-55)*0.04+(S.rank>=4?(S.rp-50)*0.05:0),10,95);
-    S.rivals.forEach(r=>r.score=clamp(r.score+randn()*5,10,95));
-    const rk=coRank();S.lastRank=rk;
-    if(S.rivals.length&&S.mi>0){
-      const top=[{name:'우리 회사',score:S.coScore},...S.rivals].sort((x,y)=>y.score-x.score).map((x,i)=>`${i+1}위 ${x.name}`).join(', ');
-      addLog(`올해 업계 순위가 나왔다. ${top}.`+(rk<before?' 순위가 올랐다. 사내 분위기가 밝다.':rk>before?' 순위가 내려갔다. 위에서 압박이 심해졌다.':''),{kind:'sys',tag:'업계'});
-      if(rk>before)E({mn:-2});else if(rk<before)E({mn:2});
-    }
-  }
-  if(PRIV()&&S.leave===0&&S.rivals.length&&S.mi-(S.rvMi??-99)>=24&&chance(0.025)){S.rvMi=S.mi;await rivalEvent();}
-  if(CO.k==='st'&&m===1&&S.mi>0){await startupYear();if(S.ended)return;}
-  if(CO.layoff&&m===1&&a>=50&&S.rank<5&&S.leave===0&&chance(CO.layoff)){
-    const pay=Math.round(salary(S,S.mi)*2);
-    await resolve('희망퇴직',`희망퇴직 신청을 받는다는 공지가 올라왔다. 팀장이 조용히 면담을 잡았다. 위로금은 연봉의 2배라고 한다.`,[
-      X('위로금을 받고 나간다',()=>{E({money:pay});endGame('희망퇴직',`희망퇴직했다. 위로금 ${fmtMoney(pay)}원을 받았다. 근속 ${tenureStr(S.mi)}.`);return '';},`+${fmtMoney(pay)}원 · 게임 종료`),
-      X('버틴다',()=>(E({mn:-6,rp:-2}),'신청하지 않았다. 다음 달 자리 배치가 바뀌었다.'),'멘탈↓ 평판 조금↓')],true,'key');
-    if(S.ended)return;
-  }
-  if(S.friends&&S.friends.length&&S.leave===0&&chance(0.035))await friendEvent();
-  const hunting=S.huntUntil&&S.mi<S.huntUntil;
-  if(!S.founder&&S.leave===0&&a<52&&(hunting?(S.sk>=50||S.rp>=55):(S.sk>=62||S.rp>=66))&&S.mi-(S.scoutMi??-99)>=(hunting?3:24)&&chance(hunting?0.2:0.015)){S.scoutMi=S.mi;await scoutEvent();if(S.ended)return;}
-  if(!S.founder&&S.leave===0&&a>=27&&a<=45&&S.mi-(S.coFoundAsk??-99)>=36&&chance(0.006)){const f=(S.friends||[]).filter(x=>x.fr>=55).sort((x,y)=>y.fr-x.fr)[0];if(f){S.coFoundAsk=S.mi;await cofoundEvent(f);}}
-}
-// 경쟁 이벤트는 선택 없이 역량·사교로 결과가 정해진다.
-const RIVAL_TX={
-  bid:[['큰 고객사 사업을 두고 {r}{와} 수주 경쟁을 했다.','수주했다. 팀장이 회식을 잡았다.','근소한 차이로 졌다. 발표장에서 나오는 경쟁사 사람들 표정이 밝았다.'],
-       ['공공 사업 입찰에서 {r}{와} 마지막 두 곳에 남았다.','최종 사업자로 선정됐다. 제안서에 이름을 올린 사람들끼리 저녁을 먹었다.','기술 점수는 앞섰다. 가격에서 밀렸다.'],
-       ['오래 거래하던 고객사가 {r} 쪽으로 넘어가려 한다.','고객사를 지켰다. 담당자가 다음 해 계약서를 먼저 보내왔다.','고객사가 넘어갔다. 월요일 회의가 길어졌다.'],
-       ['해외 고객사 계약을 두고 {r}{와} 맞붙었다.','계약을 따냈다. 출장 일정이 잡혔다.','계약은 {r}에게 갔다. 번역해 둔 제안서만 남았다.']],
-  launch:[['{r}에서 우리와 비슷한 서비스를 먼저 내놨다.','차별점을 잡아 다시 냈다. 이용자가 돌아왔다.','따라 하는 서비스라는 기사가 났다.'],
-          ['{r}{와} 같은 주에 신제품을 냈다.','첫 달 이용자 수에서 앞섰다.','첫 달 이용자 수가 절반에 그쳤다.'],
-          ['{r}{이} 우리 핵심 기능을 그대로 베꼈다는 말이 돈다.','먼저 특허를 내둔 덕에 정리가 됐다.','대응이 늦었다. 고객 문의만 늘었다.']],
-  price:[['{r}{이} 가격을 20% 내렸다.','서비스를 묶어 가격을 지켰다.','고객 일부가 넘어갔다. 영업팀 분위기가 가라앉았다.'],
-         ['{r}{이} 무료 체험 기간을 석 달로 늘렸다.','기존 고객 재계약률이 오히려 올랐다.','신규 가입이 눈에 띄게 줄었다.'],
-         ['{r}에서 우리 고객사에 할인 제안서를 돌렸다.','고객사 담당자가 그 제안서를 우리에게 보여줬다.','고객사 두 곳이 계약을 미뤘다.']],
-  talent:[['{r}에서 우리 팀 핵심 인력에게 연락했다는 소문이 돈다.','팀원들과 이야기를 나눴다. 아무도 떠나지 않았다.','팀 선임 한 명이 {r}{으로} 옮겼다. 일이 늘었다.']],
-};
-async function rivalEvent(){
-  const rv=pick(S.rivals),intel=S.intelUntil&&S.mi<S.intelUntil?0.12:0;
-  const kind=pick(S.dept==='mgmt'?['bid','price','price','talent']:['bid','launch','launch','talent']);
-  S.rvUsed=S.rvUsed||{};
-  const list=RIVAL_TX[kind].map((t,i)=>({t,i})).filter(x=>!S.rvUsed[kind+x.i]);
-  const it=(list.length?pick(list):pick(RIVAL_TX[kind].map((t,i)=>({t,i}))));S.rvUsed[kind+it.i]=1;
-  const f=x=>x.replace(/\{r\}/g,rv.name).replace('{와}',J(rv.name,'과','와')).replace('{이}',J(rv.name,'이','가')).replace('{으로}',J(rv.name,'으로','로'));
-  const p=clamp(0.25+(S.sk-50)/120+(S.sc-50)/200+intel,0.05,0.9);
-  if(chance(p)){
-    S.coScore=clamp(S.coScore+5,0,100);rv.score=clamp(rv.score-3,0,100);E({rp:4,mn:3});rel(boss(),4,`${rv.name}${J(rv.name,'과','와')}의 경쟁에서 이겼다`);
-    addLog(f(it.t[0])+' '+f(it.t[1])+(intel?' 친구에게 들은 이야기가 도움이 됐다.':''),{kind:'key',tag:'경쟁'});
-  }else{
-    S.coScore=clamp(S.coScore-3,0,100);rv.score=clamp(rv.score+3,0,100);E({rp:-3,mn:-3});
-    addLog(f(it.t[0])+' '+f(it.t[2]),{kind:'key',tag:'경쟁'});
-  }
-}
-async function startupYear(){
-  if(S.founder){await founderYear();return;}
-  const p=clamp(0.18+(S.coScore-50)/200,0.05,0.4);
-  if(S.round<3&&S.mi-(S.roundMi??-99)>=24&&chance(p)){
-    S.round++;S.roundMi=S.mi;const nm=['시리즈 A','시리즈 B','시리즈 C'][S.round-1];
-    S.so+=randint(500,1500)*S.round;S.coScore=clamp(S.coScore+6,0,100);E({mn:4});
-    addLog(`${nm} 투자를 받았다. 스톡옵션을 추가로 받았다. 지금 가치로 약 ${fmtMoney(S.so)}원이다.`,{kind:'key',tag:'회사'});
-    return;
-  }
-  if(S.round>=2&&chance(0.08)){
-    const v=Math.round(S.so*(1+R()*1.5));S.money+=v;E({mn:8});
-    addLog(`회사가 대기업에 인수됐다. 스톡옵션을 행사해 ${fmtMoney(v)}원이 들어왔다.`,{kind:'key',tag:'회사'});
-    switchCompany('big');addLog(`이제 대기업 ${DEPTS[S.dept].name} 소속이다. 직급 체계가 바뀌어 ${rankTitle(S)}${J(rankTitle(S),'이','가')} 됐다.`,{kind:'key',tag:'회사'});
-    return;
-  }
-  const q=clamp(0.06+(S.round===0?0.05:0)-S.round*0.015+(S.coScore<40?0.08:0),0.02,0.3);
-  if(chance(q)){
-    S.so=0;
-    await resolve('회사 폐업','대표가 전 직원을 회의실에 모았다. 다음 투자를 받지 못했다고 한다. 회사는 문을 닫는다.',[
-      X('다른 회사로 재취업한다',()=>{switchCompany(chance(0.25+S.sk/300)?'mid':'st');return `${CO.name} ${DEPTS[S.dept].name}에 다시 입사했다.`;},'중견·IT기업이나 다른 스타트업'),
-      X('여기서 멈춘다',()=>{endGame('회사 폐업',`다니던 스타트업이 문을 닫았다. 근속 ${tenureStr(S.mi)}.`);return '';},'게임 종료')],true,'key');
-  }else if(S.round<3&&chance(0.4))addLog(pick(['투자 유치가 미뤄졌다. 대표가 런웨이가 1년 남았다고 했다.','이번 분기 목표 매출을 겨우 맞췄다.']),{kind:'sys',tag:'회사'});
-}
-function switchCompany(k){
-  // 예전 회사 동기는 그 회사 직급·팀 이름을 그대로 쓴다.
-  const names={};for(const t of Object.keys(DEPTS))names[t]=DEPTS[t].name;
-  cohort.forEach(p=>{if(!p.coRanks){p.coRanks=RANKS.slice();p.coDepts=names;p.coName=CO.name;}});
-  CO=COS[k];buildWords();
-  const rep=(a,b)=>a.splice(0,a.length,...b);
-  rep(RANKS,CO.ranks);rep(SAL,CO.sal);rep(MIN_Y,CO.minY);rep(P_BASE,CO.pBase);
-  for(const t of CO.teams)if(!DEPTS[t])DEPTS[t]={haeng:{hp:-0.9,mn:-0.6,sk:0.35,rp:0.2},sec:{hp:-1.1,mn:-0.6,sk:0.4,rp:0.15},ai:{hp:-0.7,mn:-0.9,sk:0.5,rp:0.3},mgmt:{hp:-0.6,mn:-1.0,sk:0.25,rp:0.35}}[t];
-  // 예전 회사 동기가 남아 있을 수 있어서 팀 정의는 지우지 않는다.
-  for(const t of CO.teams)DEPTS[t].name=t==='mgmt'&&k==='st'?'사업팀':TEAM_NAME[t];
-  rep(IT_DEPTS,['haeng','sec','ai'].filter(t=>CO.teams.includes(t)).map(t=>({k:t,w:1})));
-  rep(SEATS,['ceo','d:it','d:ms',...CO.teams.map(t=>'t:'+t)]);
-  if(!CO.teams.includes(S.dept))S.dept=S.track==='admin'&&DEPTS.mgmt?'mgmt':IT_DEPTS[0].k;
-  changeDept(S.dept);S.rank=Math.min(S.rank,3);S.rankSince=S.mi;S.acting=null;
-  S.coHist.push(CO.name);S.coJoin=S.mi;S.round=0;S.so=0;
-  S.coScore=randint(45,60);S.rivals=RIVALS[k].map(n=>({name:n,score:randint(40,68)}));
-  S.people=[];syncSeats();rel(boss(),randint(3,8),'첫 출근 날 인사를 잘했다');
-}
-
-/* ---------- 학교 친구 ---------- */
-async function friendEvent(){
-  const f=pick(S.friends.filter(x=>x.fr>=10)||[]);if(!f)return;
-  if(f.co==='rival'){
-    await resolve('친구 연락',`${f.from} ${f.name}에게서 연락이 왔다. 경쟁사 ${f.place}에 다닌다. 저녁이나 먹자고 한다.`,[
-      X('만나서 근황을 나눈다',()=>{f.fr=clamp(f.fr+10,0,100);E({mn:3,money:-5});if(chance(0.5)){S.intelUntil=S.mi+12;return `${f.name}${J(f.name,'이','가')} ${f.place} 분위기를 슬쩍 이야기했다. 다음 경쟁 때 도움이 될 것 같다.`;}return '회사 이야기는 거의 안 했다. 옛날 이야기만 세 시간 했다.';},'친밀도↑ 멘탈↑ · 업계 정보를 들을 수도'),
-      X('회사 이야기는 피한다',()=>{f.fr=clamp(f.fr+4,0,100);return '근황만 짧게 나눴다.';},'친밀도 조금↑'),
-      X('바쁘다고 미룬다',()=>{f.fr=clamp(f.fr-6,0,100);return '다음에 보자고 답했다.';},'친밀도↓')],true,'');
-  }else if(f.co==='same'){
-    f.fr=clamp(f.fr+6,0,100);E({sc:1,rp:1});
-    addLog(`같은 회사 다른 팀에 있는 ${f.from} ${f.name}${J(f.name,'과','와')} 점심을 먹었다. 그 팀 사정을 들었다.`,{kind:'peer',tag:'친구 '+f.name});
-  }else{
-    f.fr=clamp(f.fr-1,0,100);
-    addLog(`${f.from} ${f.name} 근황: ${f.place}${pick(['에서 잘 지낸다고 한다.','에 있다. 단톡방에 사진이 올라왔다.','에 다닌다. 다음 달에 결혼한다고 한다.'])}`,{kind:'peer',tag:'친구 '+f.name});
-  }
-}
-function renderFriends(){
-  const el=$('#schoolList');if(!el)return;
-  el.innerHTML=(S.friends||[]).map((f,i)=>{const w=f.lastMi!==undefined&&S.mi-f.lastMi<3;return `<button type="button" class="peer-card" data-f="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">${f.place}${f.co==='rival'?' · 경쟁사':''}</div><div class="st">${w?`${3-(S.mi-f.lastMi)}개월 뒤에 다시 만날 수 있다`:'눌러서 만나기'}</div><div class="fr"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill" style="width:${Math.round(f.fr)}%"></div></div></div></button>`;}).join('')||'<p class="meta">연락하는 학교 친구가 없다.</p>';
-}
-async function schoolMenu(i){
-  const f=S.friends[i];if(!f||!S||S.ended||busy||!$('#modal').hidden)return;
-  if(f.lastMi!==undefined&&S.mi-f.lastMi<3)return;
-  clearTimeout(timer);busy=true;const prev=settings.auto;settings.auto=false;
-  const ch=[X('밥 먹기',()=>{E({money:-5,mn:3});f.fr=clamp(f.fr+8,0,100);return `${f.name}${J(f.name,'과','와')} 저녁을 먹었다. ${pick(['학교 다닐 때 이야기만 했다.','서로 회사 욕을 실컷 했다.','다음엔 다 같이 모이자고 했다.'])}`;},'−5만원 · 친밀도↑ 멘탈↑')];
-  if(f.co==='rival')ch.push(X('업계 이야기를 듣는다',()=>{f.fr=clamp(f.fr+3,0,100);if(chance(0.55)){S.intelUntil=S.mi+12;return `${f.place}에서 준비 중인 사업 이야기를 들었다. 다음 경쟁 때 도움이 될 것 같다.`;}return `${f.name}${J(f.name,'은','는')} 회사 이야기는 웃으며 넘겼다.`;},'친밀도 조금↑ · 경쟁에서 유리해질 수도'));
-  ch.push(X('그냥 둔다',()=>null));
-  const k=await ask(f.name,`${f.from} · ${f.place} · 친밀도 ${Math.round(f.fr)}`,ch);
-  if(ch[k].t!=='그냥 둔다'){f.lastMi=S.mi;addLog(ch[k].f(),{kind:'act',tag:'친구 '+f.name});}
-  settings.auto=prev;busy=false;render();schedule();
-}
 
 /* ---------- 동문·아는 동기 (이스터에그) ---------- */
 // 윗사람 중 일부는 몰래 같은 학교 출신이다. 처음 같이 밥을 먹을 때 드러난다.
@@ -305,7 +141,6 @@ function rollAlum(){
   if(!HAND)return false;
   const k=HAND.univ&&HAND.univ.k;
   let p=!HAND.univ?0.06:{top:0.22,seoul:0.15,natl:0.12,local:0.08,jc:0.05}[k]||0.08;
-  if(k==='top'&&CO.k==='big')p+=0.08;
   if(HAND.gradDone)p+=0.03;
   return chance(p);
 }
@@ -336,112 +171,233 @@ function linkCohort(){
 }
 function cohortTieLogs(){tieLogs.forEach(t=>addLog(t,{kind:'peer',tag:'동기'}));}
 
-/* ---------- v2.2: 스카웃·이직 ---------- */
-const typeLabel=k=>COS[k].name;
-// 회사를 옮긴다. 게임은 끝나지 않는다.
-function moveCompany(k,o={}){
-  const prev=CO.name,oldSal=salary(S,S.mi),oldRank=S.rank;
-  switchCompany(k);
-  S.rank=clamp(o.rank??Math.min(oldRank+(o.up?1:0),4),0,4);S.rankSince=S.mi;S.promoFails=0;S.chiefTried=false;S.founder=false;
-  S.salMul=1;const base=salary(S,S.mi);S.salMul=clamp(oldSal*(1+(o.bump||0))/base,0.7,2.5);
-  if(o.rivalName){S.rivals=S.rivals.filter(r=>r.name!==o.rivalName);S.rivals.push({name:`${prev}(전 직장)`,score:randint(45,60)});if(S.rivals.length>2)S.rivals.shift();}
-  S.moves=(S.moves||0)+1;
-  addLog(`${prev}에 사직서를 냈다. ${o.rivalName||CO.name} ${DEPTS[S.dept].name} ${rankTitle(S)}(으)로 옮겼다. 연봉은 ${fmtMoney(salary(S,S.mi))}원이다.`,{kind:'key',tag:'이직'});
+
+/* ---------- 매달: 본부 평가·본부 경쟁·희망퇴직·친구·스카웃·사내벤처·감성·행복 ---------- */
+async function companyMonth(m){
+  if(!HAND)return;
+  const a=age();
+  monthlyFeel();
+  if(m===1&&S.mi>0){
+    const before=S.lastRank||coRank();
+    S.coScore=clamp(S.coScore+randn()*5+(S.sk-55)*0.04+(S.rank>=4?(S.rp-50)*0.05:0),10,95);
+    S.rivals.forEach(r=>r.score=clamp(r.score+randn()*5,10,95));
+    const rk=coRank();S.lastRank=rk;
+    const top=[{name:HQS[hqOf(S.dept)],score:S.coScore},...S.rivals].sort((x,y)=>y.score-x.score).slice(0,3).map((x,i)=>`${i+1}위 ${x.name}`).join(', ');
+    addLog(`올해 본부 평가가 나왔다. ${top}. 우리 본부는 ${rk}위다.`+(rk<before?' 순위가 올랐다. 성과급 이야기가 돈다.':rk>before?' 순위가 내려갔다. 본부장 얼굴이 굳었다.':''),{kind:'sys',tag:'본부'});
+    if(rk>before)E({mn:-2});else if(rk<before)E({mn:2});
+  }
+  if(S.leave===0&&S.mi-(S.rvMi??-99)>=24&&chance(0.025)){S.rvMi=S.mi;await hqEvent();}
+  if(m===1&&S.venture){await ventureYear();if(S.ended)return;}
+  if(m===1&&S.dept==='athlete'&&!S.coach&&(a>=36||(a>=32&&chance(0.35)))){await athleteRetire();if(S.ended)return;}
+  if(CO.layoff&&m===1&&a>=50&&S.rank<5&&S.leave===0&&chance(CO.layoff)){
+    const pay=Math.round(salary(S,S.mi)*2);
+    await resolve('희망퇴직',`희망퇴직 신청을 받는다는 공지가 올라왔다. 팀장이 조용히 면담을 잡았다. 위로금은 연봉의 2배라고 한다.`,[
+      X('위로금을 받고 나간다',()=>{E({money:pay});endGame('희망퇴직',`희망퇴직했다. 위로금 ${fmtMoney(pay)}원을 받았다. 근속 ${tenureStr(S.mi)}.`);return '';},`+${fmtMoney(pay)}원 · 게임 종료`),
+      X('버틴다',()=>(E({mn:-6,rp:-2,hy:-3}),'신청하지 않았다. 다음 달 자리 배치가 바뀌었다.'),'멘탈↓ 평판 조금↓ 행복 조금↓')],true,'key');
+    if(S.ended)return;
+  }
+  if(S.friends&&S.friends.length&&S.leave===0&&chance(0.035))await friendEvent();
+  const hunting=S.huntUntil&&S.mi<S.huntUntil;
+  if(!S.venture&&S.leave===0&&a<55&&(hunting?(S.sk>=50||S.rp>=55):(S.sk>=62||S.rp>=66))&&S.mi-(S.scoutMi??-99)>=(hunting?3:24)&&chance(hunting?0.2:0.015)){S.scoutMi=S.mi;await scoutEvent();if(S.ended)return;}
+  if(!S.venture&&S.leave===0&&a>=27&&a<=48&&S.mi-(S.coFoundAsk??-99)>=36&&chance(0.006)){
+    const f=(S.friends||[]).filter(x=>x.fr>=55&&x.co!=='other').concat(cohort.filter(p=>!p.ended&&p.fr>=55).map(p=>({name:p.name,from:'동기',fr:p.fr,int:pick(Object.keys(FIELDS))}))).sort((x,y)=>y.fr-x.fr)[0];
+    if(f){S.coFoundAsk=S.mi;await cofoundEvent(f);}
+  }
+}
+// 감성·행복: 매달 조금씩 움직인다
+function monthlyFeel(){
+  const d=KD[S.dept]||KD.haeng,crea=['design','media','mkt','pr','fnb'].includes(S.dept);
+  S.ar=clamp(S.ar+(crea?0.12:-0.03)+(S.focus==='self'?0.04:0),5,100);
+  if(crea)E({sk:(S.ar-50)/400});
+  const fit=d.f.some(f=>(HAND.fc||{})[f]>0)?3:0;
+  const kids=Math.min(S.kids||0,2);
+  const target=48+(S.married?8:S.dating?5:0)+kids*4+(S.mn-50)*0.25+(['rel','health'].includes(S.focus)?4:0)+(S.money<0?-6:0)+(S.leave>0&&S.leaveType==='parental'?6:0)+fit-(S.hp<40?4:0)+(S.venture?3:0);
+  S.hy=clamp(S.hy+(target-S.hy)*0.06,0,100);
+  if(S.hy<30)E({mn:-0.5});else if(S.hy>70)E({mn:0.3});
+  S.hySum+=S.hy;S.hyN++;
+}
+
+/* ---------- 본부끼리 경쟁 (선택 없이 역량·사교로 결과) ---------- */
+const HQ_TX={
+  budget:[['내년 예산 배정을 두고 {r}{와} 맞붙었다.','예산을 원하는 만큼 따냈다. 팀장이 회식을 잡았다.','예산이 30% 깎였다. 하려던 사업 두 개를 접었다.'],
+          ['신규 인력 열 명을 두고 {r}{와} 줄다리기를 했다.','인력 여섯 명을 받아왔다.','인력은 {r}{으로} 갔다. 야근이 늘었다.']],
+  project:[['대표이사 직속 신사업 TF 주도권을 두고 {r}{와} 경쟁했다.','우리 본부가 TF를 맡게 됐다. 본부장이 직접 칭찬했다.','TF는 {r}{으로} 넘어갔다. 우리 쪽 아이디어도 같이 넘어갔다.'],
+           ['사내 혁신 공모전 결선에서 {r}{와} 붙었다.','대상을 받았다. 상금으로 팀 전체가 고기를 먹었다.','근소한 차이로 2등이었다.'],
+           ['같은 고객사 건을 두고 {r}{와} 서로 자기 일이라고 주장했다.','조정 회의에서 우리 본부 일로 정리됐다.','결국 {r} 일이 됐다. 우리가 만든 자료는 넘겨줬다.']],
+  talent:[['{r}에서 우리 팀 에이스에게 사내 공모 제안을 했다는 소문이 돈다.','팀원들과 이야기를 나눴다. 아무도 떠나지 않았다.','팀 선임 한 명이 {r}{으로} 옮겼다. 일이 늘었다.']],
+  review:[['연말 전사 발표회에서 {r}{와} 같은 날 발표를 했다.','발표가 끝나자 박수가 길었다.','앞 순서인 {r} 발표가 너무 좋았다. 우리 발표는 묻혔다.']],
+};
+async function hqEvent(){
+  const rv=pick(S.rivals),intel=S.intelUntil&&S.mi<S.intelUntil?0.12:0;
+  const kind=pick(['budget','project','project','talent','review']);
+  S.rvUsed=S.rvUsed||{};
+  const all=HQ_TX[kind].map((t,i)=>({t,i})),list=all.filter(x=>!S.rvUsed[kind+x.i]);
+  const it=list.length?pick(list):pick(all);S.rvUsed[kind+it.i]=1;
+  const f=x=>x.replace(/\{r\}/g,rv.name).replace('{와}',J(rv.name,'과','와')).replace('{이}',J(rv.name,'이','가')).replace('{으로}',J(rv.name,'으로','로'));
+  const p=clamp(0.25+(S.sk-50)/120+(S.sc-50)/200+intel,0.05,0.9);
+  if(chance(p)){
+    S.coScore=clamp(S.coScore+5,0,100);rv.score=clamp(rv.score-3,0,100);E({rp:4,mn:3});rel(boss(),4,`${rv.name}${J(rv.name,'과','와')}의 경쟁에서 이겼다`);
+    addLog(f(it.t[0])+' '+f(it.t[1])+(intel?' 친구에게 들은 이야기가 도움이 됐다.':''),{kind:'key',tag:'본부 경쟁'});
+  }else{
+    S.coScore=clamp(S.coScore-3,0,100);rv.score=clamp(rv.score+3,0,100);E({rp:-3,mn:-3});
+    addLog(f(it.t[0])+' '+f(it.t[2]),{kind:'key',tag:'본부 경쟁'});
+  }
+}
+
+/* ---------- 학교 친구 (모두 KSJ 세계에 산다) ---------- */
+async function friendEvent(){
+  const f=pick(S.friends.filter(x=>x.fr>=10)||[]);if(!f)return;
+  if(f.co==='ksj'){
+    await resolve('친구 연락',`${f.from} ${f.name}에게서 연락이 왔다. ${f.place}에 있다. 저녁이나 먹자고 한다.`,[
+      X('만나서 근황을 나눈다',()=>{f.fr=clamp(f.fr+10,0,100);E({mn:3,hy:2,money:-5});if(chance(0.5)){S.intelUntil=S.mi+12;return `${f.name}${J(f.name,'이','가')} 그 본부 분위기를 슬쩍 이야기했다. 다음 본부 경쟁 때 도움이 될 것 같다.`;}return '회사 이야기는 거의 안 했다. 옛날 이야기만 세 시간 했다.';},'친밀도↑ 멘탈↑ 행복↑ · 사내 정보를 들을 수도'),
+      X('회사 이야기는 피한다',()=>{f.fr=clamp(f.fr+4,0,100);return '근황만 짧게 나눴다.';},'친밀도 조금↑'),
+      X('바쁘다고 미룬다',()=>{f.fr=clamp(f.fr-6,0,100);return '다음에 보자고 답했다.';},'친밀도↓')],true,'');
+  }else{
+    f.fr=clamp(f.fr-1,0,100);
+    addLog(`${f.from} ${f.name} 근황: ${f.place}${pick([' 일을 하며 잘 지낸다고 한다.','. 단톡방에 사진이 올라왔다.',' 일을 한다. 다음 달에 결혼한다고 한다.'])}`,{kind:'peer',tag:'친구 '+f.name});
+  }
+}
+function renderFriends(){
+  const el=$('#schoolList');if(!el)return;
+  el.innerHTML=(S.friends||[]).map((f,i)=>{const w=f.lastMi!==undefined&&S.mi-f.lastMi<3;return `<button type="button" class="peer-card" data-f="${i}"><b>${f.name}</b> <span class="meta">${f.from}</span><div class="meta">${f.place}</div><div class="st">${w?`${3-(S.mi-f.lastMi)}개월 뒤에 다시 만날 수 있다`:'눌러서 만나기'}</div><div class="fr"><span>친밀도 ${Math.round(f.fr)}</span><div class="track"><div class="fill" style="width:${Math.round(f.fr)}%"></div></div></div></button>`;}).join('')||'<p class="meta">연락하는 학교 친구가 없다.</p>';
+}
+async function schoolMenu(i){
+  const f=S.friends[i];if(!f||!S||S.ended||busy||!$('#modal').hidden)return;
+  if(f.lastMi!==undefined&&S.mi-f.lastMi<3)return;
+  clearTimeout(timer);busy=true;const prev=settings.auto;settings.auto=false;
+  const ch=[X('밥 먹기',()=>{E({money:-5,mn:3,hy:2});f.fr=clamp(f.fr+8,0,100);return `${f.name}${J(f.name,'과','와')} 저녁을 먹었다. ${pick(['학교 다닐 때 이야기만 했다.','서로 회사 욕을 실컷 했다.','다음엔 다 같이 모이자고 했다.'])}`;},'−5만원 · 친밀도↑ 멘탈↑ 행복↑')];
+  if(f.co==='ksj')ch.push(X('그 부서 이야기를 듣는다',()=>{f.fr=clamp(f.fr+3,0,100);f.told=true;if(chance(0.55)){S.intelUntil=S.mi+12;return `${f.place} 사정을 자세히 들었다. 사내 공모나 본부 경쟁 때 도움이 될 것 같다.`;}return `${f.name}${J(f.name,'은','는')} 회사 이야기는 웃으며 넘겼다.`;},'친밀도 조금↑ · 그 부서로 옮길 때 유리'));
+  ch.push(X('그냥 둔다',()=>null));
+  const k=await ask(f.name,`${f.from} · ${f.place} · 친밀도 ${Math.round(f.fr)}`,ch);
+  if(ch[k].t!=='그냥 둔다'){f.lastMi=S.mi;addLog(ch[k].f(),{kind:'act',tag:'친구 '+f.name});}
+  settings.auto=prev;busy=false;render();schedule();
+}
+
+/* ---------- 부서 이동 (사내 공모·본부 스카웃) ---------- */
+function moveDept(k,o={}){
+  const from=DEPTS[S.dept].name,oldSal=salary(S,S.mi);
+  changeDept(k);S.deptSince=S.mi;rebaseHq();
+  if(S.coRanks&&k!=='athlete'){delete S.coRanks;}
+  if(k==='athlete')S.coRanks=ATH_RANKS;
+  if(o.up&&S.rank<4){S.rank++;S.rankSince=S.mi;}
+  S.salMul=1;const base=salary(S,S.mi);S.salMul=clamp(oldSal*(1+(o.bump||0))/base,0.85,2);
+  S.moves=(S.moves||0)+1;S.trackName=HQS[hqOf(k)];
+  S.people=S.people||[];syncSeats();
+  addLog(`${from}에서 ${HQS[hqOf(k)]} ${DEPTS[k].name}${J(DEPTS[k].name,'으로','로')} 옮겼다.${o.why?' '+o.why:''}`,{kind:'key',tag:'부서 이동'});
   render();
 }
+const moveP=d=>{
+  const f=(S.friends||[]).find(x=>x.co==='ksj'&&x.dept===d.k&&x.fr>=50);
+  const L=seatOf('t:'+d.k);
+  return clamp(deptFit(d,{ac:S.sk,hp:S.hp,sc:S.sc,mn:S.mn,ar:S.ar,fc:HAND.fc||{},edu:0})+(S.rp-50)/200+(L?L.rel/300:0)+(f?0.1:0)-(age()>=45?(age()-45)*0.02:0),0.03,0.9);
+};
 function scoutTargets(){
-  const out=[];
-  if(S.rivals.length&&!S.rivals[0].name.includes('전 직장'))out.push({k:CO.k,rival:pick(S.rivals.filter(r=>!r.name.includes('전 직장'))).name});
-  for(const k of ['big','mid','st'])if(k!==CO.k)out.push({k});
-  return out;
+  const fc=HAND.fc||{};
+  const pool=KDEPTS.filter(d=>d.k!==S.dept&&d.hq!==hqOf(S.dept)&&(d.f.some(f=>fc[f]>0)||chance(0.3)));
+  return pool.length?pool:KDEPTS.filter(d=>d.k!==S.dept);
 }
 async function scoutEvent(){
-  const t=pick(scoutTargets()),bump=t.k==='big'&&CO.k!=='big'?0.3:t.k==='st'?0.1:0.2;
-  const ref=(S.friends||[]).find(f=>f.fr>=60&&(f.place===t.rival||(!t.rival&&f.place===typeLabel(t.k))));
-  const who=t.rival?`경쟁사 ${t.rival}`:`한 ${typeLabel(t.k)}`;
-  const so=t.k==='st'?' 스톡옵션도 준다고 한다.':'';
-  await resolve('스카웃 제의',`${who}에서 연락이 왔다.${ref?` ${ref.from} ${ref.name}${J(ref.name,'이','가')} 추천했다고 한다.`:''} ${rankTitle({...S,rank:Math.min(S.rank+1,4),type:'reg'})} 자리, 연봉은 지금보다 ${Math.round(bump*100)}% 더 주겠다고 한다.${so}`,[
-    X('옮긴다',()=>{moveCompany(t.k,{up:true,bump,rivalName:t.rival});if(t.k==='st')S.so=randint(800,2500);if(ref)ref.fr=clamp(ref.fr+8,0,100);return '면접은 두 번이었다. 처우 협의는 일주일 걸렸다.';},`직급 한 단계↑ 연봉 +${Math.round(bump*100)}%`),
-    X('연봉 협상 카드로 쓴다',()=>{if(chance(0.4+S.rp/300)){S.salMul=(S.salMul||1)*1.08;rel(boss(),2,'붙잡을 만한 사람이라고 봤다');return '팀장이 위에 이야기해 연봉을 8% 올려줬다.';}rel(boss(),-8,'이직 제안을 들고 와서 흥정했다');E({mn:-2});return '협상은 통하지 않았다. 팀장 표정이 굳었다.';},'잘되면 연봉↑ · 안 되면 팀장 관계↓',()=>0.4+S.rp/300,'통할 가능성'),
-    X('거절한다',()=>(E({mn:1}),'답장을 쓰는 데 사흘이 걸렸다.'),'멘탈 조금↑')],true,'key');
-}
-function hireP(k){
-  const base={big:-0.1,pub:-0.05,mid:0.25,st:0.4}[k];
-  return clamp(base+(S.sk-50)/90+(S.rp-50)/250-(age()>=40?(age()-40)*0.02:0)+(k==='pub'?Math.min(S.selfdev,12)*0.01:0),0.03,0.9);
+  const d=pick(scoutTargets());
+  const ref=(S.friends||[]).find(f=>f.co==='ksj'&&f.dept===d.k&&f.fr>=60);
+  await resolve('본부 스카웃',`${HQS[d.hq]}에서 연락이 왔다.${ref?` ${ref.from} ${ref.name}${J(ref.name,'이','가')} 추천했다고 한다.`:''} ${d.name}에서 같이 일하자고 한다. 직급을 한 단계 올려주겠다고 한다.`,[
+    X('옮긴다',()=>{moveDept(d.k,{up:true,bump:0.08,why:'본부 스카웃이었다.'});if(ref)ref.fr=clamp(ref.fr+8,0,100);return '인사 발령이 났다. 짐은 상자 두 개였다.';},'직급 한 단계↑ · 새 부서'),
+    X('지금 팀장에게 말하고 남는다',()=>{if(chance(0.4+S.rp/300)){S.salMul=(S.salMul||1)*1.06;rel(boss(),3,'붙잡을 만한 사람이라고 봤다');return '팀장이 위에 이야기해 연봉을 6% 올려줬다.';}rel(boss(),-6,'다른 본부 제안을 흘렸다');E({mn:-2});return '팀장 표정이 굳었다. 이야기는 거기서 끝났다.';},'잘되면 연봉↑ · 안 되면 팀장 관계↓',()=>0.4+S.rp/300,'통할 가능성'),
+    X('거절한다',()=>(E({mn:1}),'정중하게 거절했다.'),'멘탈 조금↑')],true,'key');
 }
 async function jobHuntFlow(){
   if(!S||S.ended)return;
   clearTimeout(timer);busy=true;const prev=settings.auto;settings.auto=false;
-  const ks=['big','pub','mid','st'].filter(k=>k!==CO.k||S.rivals.length);
-  const ch=ks.map(k=>X(k===CO.k?`경쟁사 ${S.rivals[0].name}에 지원한다`:`${typeLabel(k)} 경력직에 지원한다`,()=>{
-    if(chance(hireP(k))){moveCompany(k,{bump:k==='pub'?-0.1:0.12,rivalName:k===CO.k?S.rivals[0].name:null});return '최종 합격 연락을 받았다.';}
-    E({mn:-3});return pick(['서류에서 떨어졌다.','최종 면접까지 갔다. 연락이 없었다.','면접관이 나이를 두 번 물었다. 떨어졌다.']);
-  },k==='pub'?'안정적 · 연봉↓':k==='big'?'연봉↑ 업무 강도↑':k==='st'?'스톡옵션 · 불안정':'무난',()=>hireP(k),'합격 가능성'));
+  const fc=HAND.fc||{};
+  const list=KDEPTS.filter(d=>d.k!==S.dept).sort((a,b)=>moveP(b)-moveP(a));
+  const opts=[...list.slice(0,3)];
+  for(const d of list)if(opts.length<5&&!opts.includes(d)&&d.f.some(f=>fc[f]>0))opts.push(d);
+  const fr=(S.friends||[]).find(f=>f.co==='ksj'&&f.told);if(fr&&KD[fr.dept]&&!opts.includes(KD[fr.dept])&&fr.dept!==S.dept)opts.push(KD[fr.dept]);
+  const ch=opts.map(d=>X(`${d.name}에 지원한다`,()=>{
+    if(chance(moveP(d))){moveDept(d.k,{why:'사내 공모에 붙었다.'});return '면접 결과 발표가 났다. 합격이었다.';}
+    E({mn:-3});return pick(['서류에서 떨어졌다.','면접까지 갔다. 연락이 없었다.','지금 팀장이 보내주지 않았다.']);
+  },`${HQS[d.hq]} · ${d.desc}`,()=>moveP(d),'합격 가능성'));
   ch.push(X('이번엔 그만둔다',()=>'공고 창을 닫았다.'));
-  const i=await ask('이직 준비','채용 공고를 훑어봤다. 어디에 지원해 볼까?',ch);
-  addLog('채용 공고를 훑어봤다.',{pick:ch[i].t,res:ch[i].f(),kind:'key'});
+  const i=await ask('사내 공모','사내 공모 게시판을 열었다. 어느 부서에 지원해 볼까?',ch);
+  addLog('사내 공모 게시판을 훑어봤다.',{pick:ch[i].t,res:ch[i].f(),kind:'key'});
   settings.auto=prev;busy=false;render();schedule();
 }
 
-/* ---------- v2.2: 친구들과 창업 ---------- */
-const FND_ITEM={dev:'개발 외주 플랫폼',sec:'보안 솔루션',res:'데이터 분석 서비스',biz:'B2B 구독 서비스',fnd:'동네 상권 앱'};
+/* ---------- 스포츠단 선수 은퇴 ---------- */
+async function athleteRetire(){
+  await resolve('은퇴 기로',`몸이 예전 같지 않다. 감독이 다음 시즌 이야기를 하자며 불렀다.`,[
+    X('코치로 남는다',()=>{S.coach=true;S.rank=Math.max(S.rank,5);S.rankSince=S.mi;E({mn:2});return '은퇴식을 했다. 다음 주부터 코치 조끼를 입었다.';},'스포츠단에 남는다'),
+    X('스포츠마케팅팀으로 옮긴다',()=>{moveDept('sportsmkt',{why:'선수 생활을 마쳤다.'});E({hy:3});return '은퇴식을 했다. 이제 경기를 관중석에서 본다.';},'선수 경험을 살린다'),
+    X('한 시즌 더 뛴다',()=>{E({hp:-6,mn:-2});return '재계약서에 사인했다. 무릎 보호대를 하나 더 샀다.';},'체력↓')],true,'key');
+}
+
+/* ---------- 사내벤처 ---------- */
+const FND_ITEM={dev:'개발자 협업 툴',sec:'보안 진단 서비스',res:'데이터 분석 서비스',biz:'B2B 구독 서비스',fnd:'동네 상권 앱',spt:'스포츠 레슨 플랫폼',art:'디자인 굿즈 브랜드',med:'숏폼 콘텐츠 스튜디오',ppl:'상담 매칭 서비스',fld:'물류 자동화 장비'};
 function found(partner,field){
-  const prevName=CO.name;
-  switchCompany('st');
-  Object.assign(S,{founder:true,rank:6,rankSince:S.mi,founderPay:3000,equity:partner?0.45:0.8,val:5000,round:0,so:0,partner:partner?partner.name:null,item:FND_ITEM[field]||FND_ITEM.fnd,salMul:1});
-  S.foundCount=(S.foundCount||0)+1;S.coHist[S.coHist.length-1]=`창업 (${S.item})`;
-  if(partner){const p=seatOf('d:it')||seatOf('d:ms');if(p){p.name=partner.name;p.rel=clamp(partner.fr,0,100);p.hist=[{mi:S.mi,d:0,why:'같이 회사를 차렸다'}];}}
-  addLog(`${prevName}에 사직서를 냈다. ${partner?`${partner.from} ${partner.name}${J(partner.name,'과','와')} `:''}${S.item} 회사를 차렸다. 사무실은 공유오피스 책상 두 개다.`,{kind:'key',tag:'창업'});
+  const from=S.dept;
+  S.venture={item:FND_ITEM[field]||FND_ITEM.fnd,partner:partner?partner.name:null,val:3000,round:0,equity:partner?0.15:0.25,from};
+  S.foundCount=(S.foundCount||0)+1;
+  DEPTS.venture={name:`사내벤처 ${S.venture.item}`,hp:-1.0,mn:-0.8,sk:0.45,rp:0.3};
+  if(!SEATS.includes('t:venture'))SEATS.push('t:venture');
+  changeDept('venture');S.deptSince=S.mi;syncSeats();
+  const L=seatOf('t:venture');if(L&&partner){L.name=partner.name;L.rel=clamp(partner.fr,0,100);L.hist=[{mi:S.mi,d:0,why:'같이 사내벤처를 차렸다'}];}
+  addLog(`사내벤처 심사를 통과했다. ${partner?`${partner.from} ${partner.name}${J(partner.name,'과','와')} `:''}${S.venture.item} 팀을 꾸렸다. 사무실은 본사 지하 1층 공유 공간이다.`,{kind:'key',tag:'사내벤처'});
   render();
 }
 async function cofoundEvent(f){
-  await resolve('같이 창업하자',`${f.from} ${f.name}${J(f.name,'이','가')} 술자리에서 진지하게 말했다. 같이 회사를 차려보자고 한다. 아이템은 ${FND_ITEM[f.int]||FND_ITEM.fnd}다.`,[
-    X('같이 한다',()=>{if(S.money<2000){E({mn:-2});return '모아둔 돈이 모자랐다. 다음을 기약했다.';}E({money:-2000});found(f,f.int);return '자본금 2,000만 원을 보탰다.';},'−2,000만원 · 창업'),
-    X('회사에 남는다',()=>{f.fr=clamp(f.fr-3,0,100);return `${f.name}${J(f.name,'은','는')} 아쉽다며 웃었다.`;},'친밀도 조금↓')],true,'key');
+  await resolve('사내벤처 제안',`${f.from} ${f.name}${J(f.name,'이','가')} 술자리에서 진지하게 말했다. 같이 사내벤처를 해보자고 한다. 아이템은 ${FND_ITEM[f.int]||FND_ITEM.fnd}다.`,[
+    X('같이 한다',()=>{found(f,f.int);return '다음 날 사내벤처 신청서를 냈다.';},'사내벤처 시작'),
+    X('지금 부서에 남는다',()=>{f.fr=clamp(f.fr-3,0,100);return `${f.name}${J(f.name,'은','는')} 아쉽다며 웃었다.`;},'친밀도 조금↓')],true,'key');
 }
 async function foundFlow(){
   if(!S||S.ended)return;
   clearTimeout(timer);busy=true;const prev=settings.auto;settings.auto=false;
   const fc=HAND.fc||{};
   const fields=Object.keys(FND_ITEM).sort((a,b)=>(fc[b]||0)-(fc[a]||0)).slice(0,3);
-  const i=await ask('창업 아이템','회사를 차린다. 무엇으로 시작할까?',fields.map(k=>X(FND_ITEM[k],()=>k,(fc[k]||0)>0?'해본 분야':'')).concat([X('그만둔다',()=>null)]));
+  const i=await ask('사내벤처 아이템','사내벤처 공모에 낼 아이템을 고른다.',fields.map(k=>X(FND_ITEM[k],()=>k,(fc[k]||0)>0?'해본 분야':'')).concat([X('그만둔다',()=>null)]));
   const field=i<fields.length?fields[i]:null;
   if(field){
-    const fr=(S.friends||[]).concat(cohort.filter(p=>!p.ended).map(p=>({name:p.name,from:'동기',fr:p.fr,int:field}))).filter(x=>x.fr>=40).sort((a,b)=>b.fr-a.fr).slice(0,3);
-    const j=await ask('공동 창업자','혼자 할까, 누구와 같이 할까?',fr.map(x=>X(`${x.from} ${x.name}${J(x.name,'과','와')} 같이 한다`,()=>x,`친밀도 ${Math.round(x.fr)}`)).concat([X('혼자 한다',()=>null,'지분은 많이, 일은 혼자')]));
-    const partner=j<fr.length?fr[j]:null;
-    E({money:-3000});found(partner,field);
-  }else addLog('창업 계획서를 쓰다가 덮었다.',{kind:'sys'});
+    const fr=(S.friends||[]).filter(x=>x.co==='ksj').concat(cohort.filter(p=>!p.ended).map(p=>({name:p.name,from:'동기',fr:p.fr,int:field}))).filter(x=>x.fr>=40).sort((a,b)=>b.fr-a.fr).slice(0,3);
+    const j=await ask('같이 할 사람','혼자 할까, 누구와 같이 할까?',fr.map(x=>X(`${x.from} ${x.name}${J(x.name,'과','와')} 같이 한다`,()=>x,`친밀도 ${Math.round(x.fr)}`)).concat([X('혼자 한다',()=>null,'지분은 많이, 일은 혼자')]));
+    found(j<fr.length?fr[j]:null,field);
+  }else addLog('사내벤처 계획서를 쓰다가 덮었다.',{kind:'sys'});
   settings.auto=prev;busy=false;render();schedule();
 }
-async function founderYear(){
-  const fc=(HAND.fc||{}).fnd||0;
-  const p=clamp(0.2+fc*0.04+(S.sk-55)/150+(S.sc-55)/200+(S.partner?0.05:0)+(S.coScore-50)/200,0.05,0.55);
-  if(S.round<3&&chance(p)){
-    S.round++;S.val=Math.round(S.val*randint(3,5));S.founderPay+=1200;S.equity*=0.8;S.coScore=clamp(S.coScore+6,0,100);E({mn:5,rp:3});
-    addLog(`${['시드','시리즈 A','시리즈 B'][S.round-1]} 투자를 받았다. 기업가치 ${fmtMoney(S.val)}원, 내 지분 ${Math.round(S.equity*100)}%. 월급을 조금 올렸다.`,{kind:'key',tag:'창업'});
+function ventureBack(why){
+  const v=S.venture;S.venture=null;
+  moveDept(KD[v.from]?v.from:'haeng',{why});
+  SEATS.splice(SEATS.indexOf('t:venture'),1);S.people=S.people.filter(p=>p.seat!=='t:venture');delete DEPTS.venture;S.moves=Math.max(0,(S.moves||1)-1);
+}
+async function ventureYear(){
+  const v=S.venture,fc=(HAND.fc||{}).fnd||0;
+  const p=clamp(0.22+fc*0.04+(S.sk-55)/150+(S.sc-55)/200+(v.partner?0.05:0),0.05,0.6);
+  if(v.round<3&&chance(p)){
+    v.round++;v.val=Math.round(v.val*randint(3,5));E({mn:5,rp:3,hy:3});
+    addLog(`${['사내 투자 심사','외부 투자 유치','분사 준비 심사'][v.round-1]}를 통과했다. 기업가치 ${fmtMoney(v.val)}원, 내 지분 ${Math.round(v.equity*100)}%.`,{kind:'key',tag:'사내벤처'});
     return;
   }
-  if(S.round>=2&&chance(0.1)){
-    const v=Math.round(S.val*S.equity*(1+R()));
-    await resolve('엑싯',`대기업에서 우리 회사를 인수하겠다고 한다. 내 몫은 약 ${fmtMoney(v)}원이다.`,[
-      X('팔고 쉰다',()=>{E({money:v});S.exited=true;endGame('엑싯',`창업한 회사를 팔았다. ${fmtMoney(v)}원이 통장에 들어왔다.`);return '';},'게임 종료'),
-      X('팔고 인수한 회사에 남는다',()=>{E({money:Math.round(v*0.7)});S.exited=true;moveCompany('big',{rank:4,bump:0});return '잔류 조건으로 일부는 3년 뒤에 받기로 했다.';},'대기업 팀장으로 · 일부만 지금 받음'),
-      X('팔지 않는다',()=>(E({mn:2}),'더 키워보기로 했다.'),'')],true,'key');
+  if(v.round>=2&&chance(0.15)){
+    const pay=Math.round(v.val*v.equity);
+    await resolve('분사',`이사회가 ${v.item}의 분사를 승인했다. KSJ 자회사로 독립한다. 내 지분 가치는 약 ${fmtMoney(pay)}원이다.`,[
+      X('자회사 대표가 된다',()=>{E({money:Math.round(pay*0.3)});S.exited=true;endGame('자회사 대표',`${v.item}가 KSJ 자회사로 분사했다. 대표가 됐다. 지분 일부를 팔아 ${fmtMoney(Math.round(pay*0.3))}원을 받았다.`);return '';},'게임 종료 · 지분 일부 현금화'),
+      X('지분을 팔고 KSJ로 돌아온다',()=>{E({money:pay,hy:4});S.exited=true;ventureBack('분사를 마치고 원래 자리로 돌아왔다.');if(S.rank<4){S.rank++;S.rankSince=S.mi;}return `${fmtMoney(pay)}원이 통장에 들어왔다.`;},`+${fmtMoney(pay)}원 · 직급↑`)],true,'key');
     return;
   }
-  const q=clamp(0.12-S.round*0.025+(S.coScore<40?0.08:0)-fc*0.01,0.03,0.3);
+  const q=clamp(0.14-v.round*0.03-fc*0.01,0.03,0.3);
   if(chance(q)){
-    await resolve('폐업 위기','통장 잔고로 버틸 수 있는 시간이 석 달 남았다. 다음 투자는 오지 않는다.',[
-      X('문을 닫고 다시 취업한다',()=>{moveCompany(chance(0.3+S.sk/300)?'mid':'st',{rank:2,bump:-0.2});return '사업자 등록증을 반납했다.';},'중견·IT기업이나 스타트업으로'),
-      X('한 번 더 버틴다',()=>{if(chance(0.35)){S.coScore=clamp(S.coScore+10,0,100);E({mn:-4});return '마지막 달에 큰 계약 하나를 따냈다.';}E({mn:-10,money:-1000});moveCompany('mid',{rank:1,bump:-0.3});return '버티지 못했다. 빚 1,000만 원을 안고 재취업했다.';},'성공하면 회사가 산다',()=>0.35,'살아날 가능성'),
-      X('여기서 멈춘다',()=>{endGame('창업 실패',`창업한 회사가 문을 닫았다. 근속 ${tenureStr(S.mi)}.`);return '';},'게임 종료')],true,'key');
-  }else addLog(pick(['이번 달도 월급날을 겨우 맞췄다.','첫 고객사가 재계약을 해줬다.','직원 한 명이 더 큰 회사로 떠났다.','데모데이 발표를 마쳤다. 명함을 스무 장 받았다.']),{kind:'sys',tag:'창업'});
+    await resolve('사내벤처 정리','사내벤처 중간 평가에서 정리 결정이 났다. 원래 부서로 돌아가야 한다.',[
+      X('받아들인다',()=>{E({mn:-6,hy:-4});ventureBack('사내벤처가 정리됐다.');return '팀원들과 마지막 회식을 했다.';},'멘탈↓ 행복↓'),
+      X('한 번만 더 기회를 달라고 한다',()=>{if(chance(0.35)){E({mn:-3});return '석 달 연장을 받았다. 그 사이 큰 계약 하나를 따냈다.';}E({mn:-8,rp:-3,hy:-5});ventureBack('연장 끝에 사내벤처가 정리됐다.');return '연장도 소용없었다.';},'성공하면 계속',()=>0.35,'살아날 가능성')],true,'key');
+  }else addLog(pick(['이번 분기 목표를 겨우 맞췄다.','첫 고객사가 재계약을 해줬다.','사내 데모데이에서 발표했다. 대표이사가 질문을 두 개 했다.']),{kind:'sys',tag:'사내벤처'});
 }
 const CO_ACTIONS=[
-  {k:'jobhunt',name:'이직 알아보기',cost:0,cd:12,when:()=>!S.founder&&age()<55&&S.leave===0,why:'지금은 어렵다',run:()=>{S.huntUntil=S.mi+6;setTimeout(jobHuntFlow,0);return '이직 사이트에 이력서를 올렸다. 한동안 연락이 올 수도 있다.';}},
-  {k:'found',name:'창업하기',cost:3000,cd:24,when:()=>!S.founder&&age()<50&&S.leave===0,why:'지금은 어렵다',run:()=>{E({money:3000});setTimeout(foundFlow,0);return '창업을 진지하게 고민하기 시작했다.';}},
+  {k:'jobhunt',name:'사내 공모 지원',cost:0,cd:12,when:()=>!S.venture&&age()<58&&S.leave===0,why:'지금은 어렵다',run:()=>{S.huntUntil=S.mi+6;setTimeout(jobHuntFlow,0);return '사내 공모 게시판을 열었다. 한동안 다른 본부에서 연락이 올 수도 있다.';}},
+  {k:'found',name:'사내벤처 지원',cost:0,cd:24,when:()=>!S.venture&&age()<52&&S.leave===0,why:'지금은 어렵다',run:()=>{setTimeout(foundFlow,0);return '사내벤처 공모 공고를 읽었다.';}},
 ];
+const CO_STYLE={
+  '다음 날 아침에 본다':'avoid','하나씩 고치고 이유를 묻는다':'skill','회의를 잡아 기준을 맞춘다':'social','중요한 것만 고친다':'safe',
+  '개발팀장을 직접 만나 일정을 잡는다':'social','위험도를 보고서로 올린다':'safe','직접 패치 방안을 만든다':'skill',
+  '원하는 대로 정리한다':'avoid',
+};
 
 /* ---------- 결혼: 하겠다고 고른 뒤에 예식 규모를 고른다 ---------- */
 async function proposeOk(){
@@ -454,3 +410,8 @@ async function proposeOk(){
     X('조금 더 생각해 보자',()=>{S.propNo=(S.propNo||0)+1;PF(-8);E({mn:-1});if(S.propNo>=3&&chance(0.5)){S.dating=false;S.propNo=0;E({mn:-8});return `${w}${J(w,'은','는')} 더 기다릴 수 없다고 했다. 헤어졌다.`;}return `${w}${J(w,'은','는')} 알겠다고 했다. 표정이 조금 굳었다.`;},(S.propNo||0)>=2?'친밀도↓ · 헤어질 수도 있다':'친밀도↓ · 1년 뒤 다시 이야기')],true,'key');
   return ok;
 }
+
+/* ---------- 연인·배우자·아이 이름 ---------- */
+function newName(){let n,t=0;do{n=pick(SUR)+pick(GIVEN);t++;}while(t<30&&(n===S.name||(S.people||[]).some(p=>p.name===n)));return n;}
+function kidName(){const used=(S.kidsList||[]).map(k=>k.name);let n,t=0;do{n=pick(GIVEN);t++;}while(t<30&&used.includes(n));return n;}
+const kidNm=i=>{const k=(S.kidsList||[])[i];return k&&k.name?k.name:(S.kids>1?['첫째','둘째','셋째'][i]:'아이');};

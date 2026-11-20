@@ -14,12 +14,22 @@ const MAJORS=[
   {k:'stat',name:'통계학과',jc:'빅데이터과',f:'res'},
   {k:'bus',name:'경영학과',jc:'경영과',f:'biz'},
   {k:'vent',name:'창업학과',jc:'창업경영과',f:'fnd'},
-  {k:'hum',name:'인문·사회계열',jc:'사회복지과',f:null},
-  {k:'pe',name:'체육학과',jc:'스포츠재활과',f:null,pe:true},
+  {k:'design',name:'디자인학과',jc:'시각디자인과',f:'art'},
+  {k:'mediaM',name:'미디어영상학과',jc:'방송영상과',f:'med'},
+  {k:'nurse',name:'간호·보건학과',jc:'간호과',f:'ppl'},
+  {k:'mech',name:'기계·산업공학과',jc:'기계과',f:'fld'},
+  {k:'hotel',name:'호텔·조리학과',jc:'호텔조리과',f:'fld'},
+  {k:'hum',name:'인문·사회계열',jc:'사회복지과',f:'ppl'},
+  {k:'pe',name:'체육학과',jc:'스포츠재활과',f:'spt',pe:true},
 ];
 const tierIdx=g=>g<=2?0:g<=3?1:g<=4?2:g<=6?3:4;
 
 const UNIV_ACTS=[
+  {id:'u_spt',f:'spt',t:'대학 운동부에서 뛴다',eff:{hp:4,sc:1},exp:'대학 운동부',go:['대학 리그 결승에 나갔다.','전지훈련을 다녀왔다.']},
+  {id:'u_art',f:'art',t:'디자인 공모전을 준비한다',eff:{ar:3,mn:-1},exp:'디자인 공모전 준비',go:['공모전 마감 전날 밤을 새웠다.','포트폴리오를 새로 묶었다.']},
+  {id:'u_med',f:'med',t:'유튜브 채널을 운영한다',eff:{ar:2,sc:1},exp:'유튜브 채널 운영',go:['구독자가 만 명을 넘었다.','편집하느라 수업을 두 번 빠졌다.']},
+  {id:'u_ppl',f:'ppl',t:'교육 봉사를 한다',eff:{sc:2,hy:2},exp:'교육 봉사',go:['봉사하던 아이가 편지를 줬다.','멘토링 학생이 원하던 학교에 붙었다.']},
+  {id:'u_fld',f:'fld',t:'메이커 스페이스에서 뭔가 만든다',eff:{hp:1,ac:1},exp:'메이커 스페이스 활동',go:['전동 킥보드를 직접 조립했다.','학교 축제 무대 조명을 설치했다.']},
   {id:'gpa',t:'학점 관리에 집중한다',eff:{ac:6,mn:-3},go:['전공 수업 맨 앞자리에 앉았다.','중간고사 전 일주일을 도서관에서 살았다.']},
   {id:'u_sec',f:'sec',t:'보안 동아리에서 CTF를 준비한다',eff:{ac:1,mn:-1},exp:'대학 보안 동아리 CTF 활동',go:['동아리 선배들과 해킹방어대회 예선을 풀었다.','웹 취약점 스터디 발표를 맡았다.']},
   {id:'u_dev',f:'dev',t:'개발 동아리에서 프로젝트를 한다',eff:{sc:2,mn:-1},exp:'개발 동아리 프로젝트',go:['학교 수강신청 도우미 앱을 만들었다.','해커톤에서 밤을 새웠다.']},
@@ -30,7 +40,7 @@ const UNIV_ACTS=[
   {id:'tutor',minAc:55,t:'과외를 한다',eff:{ac:1},money:400,go:['고등학생 수학 과외를 두 명 맡았다.','과외 학생 성적이 올랐다.']},
   {id:'web',f:'dev',t:'웹사이트 외주 알바를 한다',eff:{mn:-2},money:350,exp:'웹 외주 아르바이트',go:['동네 가게 홈페이지를 만들어줬다.','외주 수정 요청이 열두 번 왔다.']},
   {id:'lab',f:'res',t:'연구실 보조 알바를 한다',eff:{ac:1},money:200,exp:'연구실 보조 아르바이트',go:['설문 데이터를 엑셀로 정리했다.','실험 기자재를 관리했다.']},
-  {id:'fun',t:'연애하고 실컷 논다',eff:{sc:4,mn:4,ac:-3},go:['축제 기간 내내 주점에 있었다.','동기들과 제주도 여행을 다녀왔다.']},
+  {id:'fun',t:'연애하고 실컷 논다',eff:{sc:4,mn:4,ac:-3,hy:4},go:['축제 기간 내내 주점에 있었다.','동기들과 제주도 여행을 다녀왔다.']},
   {id:'gym',t:'운동에 빠진다',eff:{hp:6,mn:2},go:['학교 헬스장을 매일 갔다.','교내 축구 리그에서 우승했다.']},
   {id:'intern',f:'biz',minSem:5,t:'방학 인턴을 한다',eff:{sc:2,mn:-2},money:500,exp:'기업 방학 인턴',go:['인턴 마지막 날 팀장님이 졸업하면 연락하라고 했다.','회의록 정리를 두 달 동안 했다.']},
   {id:'exch',f:'biz',onlySem:5,t:'교환학생을 간다',eff:{mn:4,sc:3},cost:800,exp:'해외 교환학생',go:['기숙사 룸메이트와 주말마다 여행했다.','현지 수업에서 첫 발표를 영어로 했다.']},
@@ -48,16 +58,21 @@ async function afterHigh(){
   const voc=S.school==='voc'||S.school==='meister';
   const g=voc?clamp(Math.round(9-(S.ac-15)/8),2,9):S.sat;
   const ti=tierIdx(g)+(voc?1:0),tier=UNIV_TIERS[Math.min(ti,4)];
-  const peOk=S.peTrack;
+  const peOk=S.peTrack||S.talent==='spt';
   const ch=[];
-  if(voc)ch.push(X('고졸 채용으로 바로 취업한다',()=>{S.route='work';return '졸업식 다음 주부터 취업 준비를 시작했다.';},S.school==='meister'?'공기업·대기업 고졸 채용에 지원할 수 있다':'지역 회사 고졸 채용에 지원할 수 있다'));
+  if(voc)ch.push(X('KSJ 고졸 공채로 바로 취업한다',()=>{S.route='work';return '졸업식 다음 주부터 취업 준비를 시작했다.';},S.school==='meister'?'KSJ 고졸 공채에 강하다':'KSJ 고졸 공채에 지원할 수 있다'));
   ch.push(X(`${tier.name}에 진학한다`,()=>{S.route='univ';S.tierPick=Math.min(ti,4);return '';},`등록금 학기당 약 ${tier.tuition}만원`));
   if(peOk){const pt=UNIV_TIERS[Math.max(0,Math.min(ti,4)-(S.hp>=85?2:1))];ch.push(X(`체대 입시로 ${pt.name} 체육학과에 간다`,()=>{S.route='univ';S.tierPick=UNIV_TIERS.indexOf(pt);S.majorPick='pe';return '실기 시험에서 제자리멀리뛰기 만점을 받았다.';},'체력이 높아 열린 길'));}
+  // 재능 루트: 수능과 상관없이 열린다
+  if(S.talent==='spt')ch.push(X('KSJ 스포츠단에 고졸로 입단한다',()=>{S.route='athlete';return '입단 계약서에 사인했다. 등번호는 직접 골랐다.';},'바로 선수 생활 시작 · 수능 무관'));
+  if(S.talent==='art'||S.talent==='med'){const t=UNIV_TIERS[Math.max(0,Math.min(4,4-Math.floor((S.ar-50)/10)))],mj=S.talent==='art'?'design':'mediaM';
+    ch.push(X(`실기 전형으로 ${t.name} ${MAJORS.find(m=>m.k===mj).name}에 간다`,()=>{S.route='univ';S.tierPick=UNIV_TIERS.indexOf(t);S.majorPick=mj;return '실기 시험장에서 손이 떨리지 않았다. 합격했다.';},'감성으로 가는 길 · 수능 무관'));}
   if(voc&&tier.k!=='jc')ch.push(X('전문대에 진학한다',()=>{S.route='univ';S.tierPick=4;return '동일계열 전형으로 합격했다.';},`등록금 학기당 약 ${UNIV_TIERS[4].tuition}만원 · 2년제`));
   if(!voc&&!S.retook&&g>=3)ch.push(X('재수한다',()=>{S.route='retake';return '재수학원에 등록했다. 아침 7시 셔틀을 탔다.';},'1년 더 공부한다 · 멘탈−'));
   if(!voc)ch.push(X('대학 대신 바로 취업 준비를 한다',()=>{S.route='work';return '대학 대신 일을 먼저 해보기로 했다.';}));
-  ch.wAuto=c=>c.t.includes('진학')||c.t.includes('체대')?4:1;
+  ch.wAuto=c=>c.t.includes('스포츠단')||c.t.includes('실기')?5:c.t.includes('진학')||c.t.includes('체대')?4:1;
   await resolve('졸업 후 진로',voc?'바로 일을 시작할까, 공부를 더 할까?':`수능 평균 ${g}등급. 갈 수 있는 곳이 어느 정도 정해졌다. 어떻게 할까?`,ch,'key',voc?NOTES.voc_after:NOTES.univ,{big:true});
+  if(S.route==='athlete'){S.phase='done';hired(KD.athlete);return;}
   if(S.route==='work'){S.phase='done';endStage2('고등학교를 졸업하고 바로 취업 준비를 시작한다.');return;}
   if(S.route==='retake'){S.phase='retake';S.tutor=S.tutorWas;S.retakeLeft=2;S.retook=true;return;}
   await chooseMajor();
@@ -88,6 +103,7 @@ async function semTick(){
   else if(S.phase==='retake')await retakeSem();
   else if(S.phase==='job')await jobSem();
   S.mn=clamp(S.mn+(62-S.mn)*0.1,0,100);
+  S.hy=clamp(S.hy+(58+(S.mn-55)*0.3-S.hy)*0.08,0,100);
   friendYear2();
 }
 function friendYear2(){if(S.semAbs%2===0)friendYear();}
@@ -162,7 +178,7 @@ function continueUniv(){
   if(a.id==='exch'){addLog('교환학생 학기를 마치고 돌아왔다.');S.cur=null;return;}
   addLog(a.go[(S.goI+1)%a.go.length]);
   // 동아리 활동은 가끔 대회 입상으로 이어진다
-  if(a.id.startsWith('u_')&&chance(0.3)){const nm={u_sec:'해킹방어대회',u_dev:'해커톤',u_res:'학부생 학술대회',u_biz:'경영 사례 공모전',u_fnd:'창업 경진대회'}[a.id];E({ac:2});S.awards.push(nm+' 입상');addLog(`${nm}에서 입상했다.`,{kind:'key'});}
+  if(a.id.startsWith('u_')&&chance(0.3)){const nm={u_sec:'해킹방어대회',u_dev:'해커톤',u_res:'학부생 학술대회',u_biz:'경영 사례 공모전',u_fnd:'창업 경진대회',u_spt:'대학 리그',u_art:'디자인 공모전',u_med:'영상 공모전',u_ppl:'봉사 대상',u_fld:'창의 설계 경진대회'}[a.id];E({[{u_spt:'hp',u_art:'ar',u_med:'ar',u_ppl:'sc',u_fld:'hp'}[a.id]||'ac']:2});S.awards.push(nm+' 입상');addLog(`${nm}에서 입상했다.`,{kind:'key'});}
 }
 
 /* ---------- 군 복무 ---------- */

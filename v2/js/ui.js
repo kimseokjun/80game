@@ -33,7 +33,7 @@ function showEnding(){
   const rows=[
     ['출생',`${S.birthY}년 · ${S.famName} · ${S.regionName} · ${S.sibName}`],
     ['고등학교',HIGH_SCHOOLS.find(h=>h.k===S.school)?.name||'-'],
-    [S.school==='gen'?'수능':'자격증',S.school==='gen'?`평균 ${S.sat}등급 (${univHint(S.sat)})`:`${S.cert}개`],
+    [isGen()?'수능':'자격증',isGen()?`평균 ${S.sat}등급 (${univHint(S.sat)})`:`${S.cert}개`],
     ['행동특성 및 종합의견',teacherComment()],
     ['성장 스탯',Object.entries(STATS).map(([k,n])=>`${n} ${Math.round(S[k])}`).join(' · ')],
     ['창의적 체험활동',S.exp.map(e=>`${e.when||gradeLabel(e.age)} ${e.text}`).join(' / ')||'-'],
@@ -93,7 +93,7 @@ $('#friendList').addEventListener('click',ev=>{const b=ev.target.closest('button
 /* ---------- 회사생활(work.html)로 넘기기 ---------- */
 function goWork(rows){
   const d={v:1,name:S.name,gender:S.gender,age:S.age,birthY:S.birthY,fam:S.fam,famName:S.famName,region:S.region,regionName:S.regionName,
-    ac:Math.round(S.ac),hp:Math.round(S.hp),sc:Math.round(S.sc),mn:Math.round(S.mn),money:Math.round(S.money),loan:Math.round(S.loan||0),
+    ac:Math.round(S.ac),hp:Math.round(S.hp),sc:Math.round(S.sc),mn:Math.round(S.mn),ar:Math.round(S.ar),hy:Math.round(S.hy),talent:S.talent||null,money:Math.round(S.money),loan:Math.round(S.loan||0),
     co:S.job.co,team:S.job.team,fc:S.fc,gradDone:!!S.gradDone,jc:!!(S.univ&&UNIV_TIERS[S.univ.tier].k==='jc'),
     univ:S.univ?{tierName:S.univ.tierName,majorName:S.univ.majorName,k:UNIV_TIERS[S.univ.tier].k}:null,
     friends:S.friends.slice().sort((a,b)=>b.fr-a.fr).slice(0,4).map(f=>({name:f.name,from:f.from,fr:Math.round(f.fr),int:f.int})),

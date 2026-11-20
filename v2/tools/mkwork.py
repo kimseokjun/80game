@@ -13,7 +13,7 @@ def R(a,b,cnt=1):
 
 # ---- 머리말·시작 화면 ----
 R('<title>직장생활 N분의 1</title>','<title>직장생활 N분의 1 · 회사생활</title>')
-R('<small>v1.8.4 · 비공식 팬메이드</small>','<small>v2.1 · 회사생활 · 비공식 팬메이드</small>')
+R('<small>v1.8.4 · 비공식 팬메이드</small>','<small>v2.3 · KSJ 회사생활 · 비공식 팬메이드</small>')
 a=s.index('<main id="start" class="screen">'); b=s.index('</main>',a)+len('</main>')
 s=s[:a]+'''<main id="start" class="screen">
   <div class="start">
@@ -62,7 +62,7 @@ R("    $('#mWhen').textContent=`${y}년 ${m}월 · ${deptLabel(S)}`;\n    $('#mT
   "    $('#mWhen').textContent=W(`${y}년 ${m}월 · ${deptLabel(S)}`);\n    $('#mTitle').textContent=W(title);$('#mText').textContent=W(text);")
 R("      b.textContent=c.t;\n      const h=hintFor(title,c);","      b.textContent=W(c.t);\n      const h=hintFor(title,c);")
 R("    const sp=document.createElement('span');sp.textContent=tk;\n    if(tk.includes('↑'))","    const sp=document.createElement('span');sp.textContent=W(tk);\n    if(tk.includes('↑'))")
-R("  $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');","  kv.splice(1,0,['회사',CO.name+(PRIV()&&S.rivals.length?` · 업계 ${coRank()}위`:'')+(CO.k==='st'&&S.round?` · ${['','시리즈 A','시리즈 B','시리즈 C'][S.round]}`:'')]);\n  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);\n  $('#pKv').innerHTML=W(kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join(''));")
+R("  $('#pKv').innerHTML=kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('');","  kv.splice(1,0,['회사',`KSJ · ${HQS[hqOf(S.dept)]} 본부 평가 ${coRank()}위`]);\n  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);\n  $('#pKv').innerHTML=W(kv.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join(''));")
 R("  $('#cohortList').innerHTML=cohort.map(","  $('#cohortList').innerHTML=W(cohort.map(")
 R("  }).join('');\n}\nfunction renderActions(){","  }).join(''));\n  renderFriends();\n}\nfunction renderActions(){")
 R("  $('#pBody').innerHTML=`<div class=\"pgroup\">경영진</div>","  $('#pBody').innerHTML=W(`<div class=\"pgroup\">경영진</div>")
@@ -73,15 +73,15 @@ R("  const others=IT_DEPTS.map(d=>d.k).filter(k=>k!==S.dept).sort(()=>R()-0.5).s
 R("if(p.track==='it'&&p.rank<=4&&mi-p.deptSince>=48){","if(p.track==='it'&&p.rank<=4&&mi-p.deptSince>=48&&IT_DEPTS.length>1){")
 R("if(tr.k==='it'){const d=wpick(IT_DEPTS);dept=d.k;deptP=pct(d,IT_DEPTS);}else dept=tr.k==='admin'?'mgmt':'research';","if(tr.k==='it'&&IT_DEPTS.length){const d=wpick(IT_DEPTS);dept=d.k;deptP=pct(d,IT_DEPTS);}else dept=tr.k==='admin'||!IT_DEPTS.length?'mgmt':IT_DEPTS[0].k;")
 R("function deptLabel(p){\n  if(p.rank>=6&&p.type==='reg')return '원장실';\n  if(p.rank===5&&p.type==='reg')return ({it:'정보화',admin:'경영',research:'연구'})[p.track]+' 부문 실';",
-  "function deptLabel(p){\n  if(p.rank>=6&&p.type==='reg')return '원장실';\n  if(p.rank===5&&p.type==='reg')return PRIV()?({it:'기술',admin:'경영'})[p.track]+' 부문':({it:'정보화',admin:'경영',research:'연구'})[p.track]+' 부문 실';")
+  "function deptLabel(p){\n  if(p.rank>=6&&p.type==='reg')return '원장실';\n  if(p.rank===5&&p.type==='reg')return HAND?HQS[hqOf(p.dept)]:({it:'정보화',admin:'경영',research:'연구'})[p.track]+' 부문 실';")
 R("function seatLabel(k){if(k==='ceo')return '원장';if(k==='d:it')return '실장 · 정보화';if(k==='d:ms')return '실장 · 경영·연구';",
-  "function seatLabel(k){if(k==='ceo')return '원장';if(k==='d:it')return PRIV()?'실장 · 기술':'실장 · 정보화';if(k==='d:ms')return PRIV()?'실장 · 경영':'실장 · 경영·연구';")
+  "function seatLabel(k){if(k==='ceo')return '원장';if(HAND&&k.startsWith('d:'))return '실장 · '+HQS[k.slice(2)];if(k==='d:it')return '실장 · 정보화';if(k==='d:ms')return '실장 · 경영·연구';")
 R("  if(S.rank===5)return '실장으로 승진했다. 결재 라인 맨 끝에서 두 번째가 됐다.';","  if(S.rank===5)return PRIV()?`${CO.dir}${J(CO.dir,'으로','로')} 승진했다. 결재 라인 맨 끝에서 두 번째가 됐다.`:'실장으로 승진했다. 결재 라인 맨 끝에서 두 번째가 됐다.';")
 R("  let hp=d.hp+0.65+f.hp,mn=d.mn+0.75+f.mn,","  let hp=d.hp*CO.work+0.65+f.hp,mn=d.mn*CO.work+0.75+f.mn,")
 R("    else{const sl=salary(S,S.mi),b=sl/12*g.r*(netPay(sl)/sl);","    else{const sl=salary(S,S.mi),b=sl/12*g.r*(netPay(sl)/sl)*bonusMult();")
 R("  if(m===10&&S.leave===0){\n    if(['chwi1'","  if(m===10&&S.leave===0&&!PRIV()){\n    if(['chwi1'")
 R("    vacate(k);gone=true;addLog(`${who}${J(who,'이','가')} ${pick(ORGS)} 상임이사로 영전했다. 송별회가 크게 열렸다.`+leaveReact(p),opt);",
-  "    vacate(k);gone=true;addLog(PRIV()?`${who}${J(who,'이','가')} ${pick(['계열사 임원으로 옮겼다','경쟁사로 이직했다','투자사로 자리를 옮겼다'])}. 송별회가 크게 열렸다.`+leaveReact(p):`${who}${J(who,'이','가')} ${pick(ORGS)} 상임이사로 영전했다. 송별회가 크게 열렸다.`+leaveReact(p),opt);")
+  "    vacate(k);gone=true;addLog(PRIV()?`${who}${J(who,'이','가')} ${pick(['KSJ 해외법인 대표로 옮겼다','퇴사하고 개인 사업을 시작했다','KSJ 재단 이사장으로 옮겼다'])}. 송별회가 크게 열렸다.`+leaveReact(p):`${who}${J(who,'이','가')} ${pick(ORGS)} 상임이사로 영전했다. 송별회가 크게 열렸다.`+leaveReact(p),opt);")
 # 최고 자리 도전: 스타트업은 없음, 민간은 이사회 추천
 R("  if(S.type==='reg'&&S.rank===5&&!S.chiefTried&&a>=52&&S.mi-S.rankSince>=24&&chance(0.04)){\n    S.chiefTried=true;\n    const t='원장 공모 공고가 났다.';",
   "  if(CO.k!=='st'&&S.type==='reg'&&S.rank===5&&!S.chiefTried&&a>=52&&S.mi-S.rankSince>=24&&chance(0.04)){\n    S.chiefTried=true;\n    const t=PRIV()?`${CO.ceo} 후보로 추천됐다. 이사회 심사가 열린다.`:'원장 공모 공고가 났다.';")
@@ -93,7 +93,7 @@ R("    <h3>같은 날 입사한 동기들</h3>\n    <div class=\"rows\">${peers}
 R("    <div id=\"fallback\"></div>\n  </div>`;","    <div id=\"fallback\"></div>\n  </div>`);")
 R("<button type=\"button\" class=\"btn primary\" id=\"btnAgain\">다시 입사하기</button>","<button type=\"button\" class=\"btn primary\" id=\"btnAgain\">0살부터 다시 태어나기</button>")
 R("  $('#btnAgain').addEventListener('click',()=>{w.hidden=true;$('#game').hidden=true;$('#start').hidden=false;$('#barDate').textContent='';window.scrollTo(0,0);});","  $('#btnAgain').addEventListener('click',()=>{location.href='index.html';});")
-R("    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.typeName}`],","    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.coHist[0]} 정규직`],\n    ...(S.coHist.length>1?[['거친 회사',S.coHist.join(' → ')]]:[]),\n    ...(PRIV()&&S.rivals.length?[['업계 순위',`퇴직할 때 ${coRank()}위`]]:[]),")
+R("    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.typeName}`],","    ['입사',`${j.y}.${String(j.m).padStart(2,'0')} · ${ageOf(S,0)}세 · ${S.coHist[0]} 정규직`],\n    ...(S.deptHist&&S.deptHist.length>1?[['거친 부서',S.deptHist.join(' → ')]]:[]),\n    ['본부 평가',`마지막 해 ${HQS[hqOf(S.dept)]} ${coRank()}위`],\n    ['평균 행복',`${Math.round(S.hySum/Math.max(1,S.hyN))} / 100`],")
 R("    const txt=`[직장생활 N분의 1]\\n","    const txt=W(`[직장생활 N분의 1 v2]\\n")
 R("${cohort.map(p=>`${p.name}: ${p.ended.title}, ${p.ended.kind} (${p.ended.age}세)`).join('\\n')}`;","${cohort.map(p=>`${p.name}: ${p.ended.title}, ${p.ended.kind} (${p.ended.age}세)`).join('\\n')}`);")
 
@@ -110,10 +110,10 @@ R("""    ['성명',S.name,''],['나이',ageOf(S,0)+'세',''],['성별',S.gender,
 R("  if(S.type==='temp')rows.splice(4,0,['계약 기간',S.contractEnd+'개월','']);\n  $('#noticeRows').innerHTML=rows","  $('#noticeRows').innerHTML=W(rows")
 R("<span class=\"p\">${p}</span></div>`).join('');\n  $('#noticeNo')","<span class=\"p\">${p}</span></div>`).join(''));\n  $('#noticeNo')")
 R("  $('#noticeFoot').textContent='임직원 약 500명 중 한 명이 된다. 같은 날 입사한 동기는 4명이다. 근무지는 지방 혁신도시 본사다.';","  $('#noticeFoot').textContent=`${CO.staff} 중 한 명이 된다. 같은 날 입사한 동기는 ${CO.cohortN}명이다. ${CO.foot}`;\n  $('#goalSeg').innerHTML=W($('#goalSeg').innerHTML);")
-R("  addLog(`${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});","  addLog(`${CO.name} ${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});\n  if(HAND.loan)addLog(`학자금 대출 ${fmtMoney(HAND.loan)}원을 통장에서 갚아 나가기로 했다.`,{kind:'sys'});\n  const rv=S.rivals.map(r=>r.name);if(rv.length)addLog(`업계 경쟁사는 ${rv.join(', ')}이다. 해마다 순위가 갈린다.`,{kind:'sys'});")
+R("  addLog(`${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});","  addLog(`${CO.name} ${DEPTS[S.dept].name}(으)로 첫 출근했다. 자리에는 모니터 두 대와 사원증이 놓여 있었다.`,{kind:'key'});\n  if(HAND.loan)addLog(`학자금 대출 ${fmtMoney(HAND.loan)}원을 통장에서 갚아 나가기로 했다.`,{kind:'sys'});\n  addLog(`${HQS[hqOf(S.dept)]} 소속이다. KSJ에는 본부가 일곱 개 있고, 해마다 본부 평가로 순위가 갈린다.`,{kind:'sys'});")
 R("  $('#goalSel').innerHTML=Object.entries(GOALS).map(([k,g])=>`<option value=\"${k}\">${g.name}</option>`).join('');","  $('#goalSel').innerHTML=W(Object.entries(GOALS).map(([k,g])=>`<option value=\"${k}\">${g.name}</option>`).join(''));")
 R("  $('#goalHint').textContent=GOALS[S.goal].hint+","  $('#goalHint').textContent=W(GOALS[S.goal].hint)+(0?'':'')+")
-R("$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});","$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});\n$('#schoolList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-f]');if(b)schoolMenu(+b.dataset.f);});\nif(HAND){\n  $('#stTitle').textContent=`${HAND.name}, ${CO.name} ${(DEPTS[TEAM_KEY[HAND.team]]||DEPTS[CO.teams[0]]).name} 입사`;\n  $('#stLead').textContent=`${HAND.age}살에 첫 직장을 얻었다. 지금까지 쌓은 학업·체력·사교·멘탈은 그대로 이어지고, 역량과 평판이 새로 생긴다. 한 달이 한 턴이다. 정년이나 퇴사까지 간다.`;\n  $('#stFacts').innerHTML=W(`<div class=\"fact\"><b>${CO.name}</b><span>회사</span></div><div class=\"fact\"><b>${CO.staff.replace('임직원 ','').replace('직원 ','')}</b><span>임직원</span></div><div class=\"fact\"><b>${fmtMoney(CO.sal[0])}</b><span>신입 초봉(원, 추정)</span></div><div class=\"fact\"><b>${CO.teams.length}개 팀</b><span>배치 가능 부서</span></div>`);\n}else{\n  $('#stTitle').textContent='먼저 태어나야 한다';\n  $('#stLead').textContent='회사생활은 0살부터 시작해 취업에 성공한 캐릭터로만 할 수 있다. 처음 화면에서 태어나 취업까지 가 보자.';\n  $('#btnJoin').hidden=true;document.querySelector('#start .opts').hidden=true;\n}")
+R("$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});","$('#cohortList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-i]');if(b)peerMenu(+b.dataset.i);});\n$('#schoolList').addEventListener('click',ev=>{const b=ev.target.closest('button[data-f]');if(b)schoolMenu(+b.dataset.f);});\nif(HAND){\n  $('#stTitle').textContent=`${HAND.name}, ${CO.name} ${(DEPTS[HAND.team]||DEPTS.haeng).name} 입사`;\n  $('#stLead').textContent=`${HAND.age}살에 첫 직장을 얻었다. 지금까지 쌓은 체력·사교·멘탈·감성·행복은 그대로 이어지고, 역량과 평판이 새로 생긴다. 한 달이 한 턴이다. 정년이나 퇴사까지 간다.`;\n  $('#stFacts').innerHTML=W(`<div class=\"fact\"><b>${CO.name}</b><span>회사</span></div><div class=\"fact\"><b>${CO.staff.replace('임직원 ','').replace('직원 ','')}</b><span>임직원</span></div><div class=\"fact\"><b>${fmtMoney(CO.sal[0])}</b><span>신입 초봉(원, 추정)</span></div><div class=\"fact\"><b>21개 부서</b><span>본부 7개</span></div>`);\n}else{\n  $('#stTitle').textContent='먼저 태어나야 한다';\n  $('#stLead').textContent='회사생활은 0살부터 시작해 취업에 성공한 캐릭터로만 할 수 있다. 처음 화면에서 태어나 취업까지 가 보자.';\n  $('#btnJoin').hidden=true;document.querySelector('#start .opts').hidden=true;\n}")
 R("  const months=Math.max(60,(60-ageOf(S,0))*12);","  const months=Math.max(60,(60-ageOf(S,0))*12);")
 # ---- 동문·아는 동기 ----
 R("return {seat,name:n,rel:randint(-5,5),hist:[],flat:0};}","return {seat,name:n,rel:randint(-5,5),hist:[],flat:0,alum:CO?rollAlum():false};}")
@@ -131,9 +131,9 @@ R("endGame('동기 추천 이직',`${rf.name}의 추천으로 ${rf.place}(으)�
 R("    case 'exit':return ['공기업 이직','민간 이직','동기 추천 이직'].includes(k)?'달성':'미달성';","    case 'exit':return (S.moves||0)>0||['공기업 이직','민간 이직','동기 추천 이직'].includes(k)?'달성':'미달성';\n    case 'fnd':return S.exited?'완전 달성 (엑싯)':S.foundCount?'달성':'미달성';")
 R('<div class="pname" id="pName"></div>','<div class="who"><div id="pAvatar"></div><div class="pname" id="pName"></div></div>')
 R("  $('#pName').textContent=S.name;","  $('#pName').textContent=S.name;\n  if(HAND)$('#pAvatar').innerHTML=avatarSVG(HAND.gender,age(),{suit:true,tie:CO.k==='st'?'#2F7D6B':'#8C2F27'});")
-R("  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);","  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);\n  if(S.founder)kv.push(['창업',`${S.item} · 지분 ${Math.round(S.equity*100)}% · 기업가치 ${fmtMoney(S.val)}원`]);")
-R("    ...(S.coHist.length>1?[['거친 회사',S.coHist.join(' → ')]]:[]),","    ...(S.coHist.length>1?[['거친 회사',S.coHist.join(' → ')]]:[]),\n    ...(S.moves?[['이직',`${S.moves}번`]]:[]),\n    ...(S.foundCount?[['창업',`${S.foundCount}번${S.exited?' · 엑싯':''}`]]:[]),")
-R('<script src="js/company.js"></script>','<script src="js/avatar.js"></script>\n<script src="js/company.js"></script>')
+R("  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);","  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);\n  if(S.venture)kv.push(['사내벤처',`${S.venture.item} · 지분 ${Math.round(S.venture.equity*100)}% · 기업가치 ${fmtMoney(S.venture.val)}원`]);\n  if(0)kv.push(['창업',`${S.item} · 지분 ${Math.round(S.equity*100)}% · 기업가치 ${fmtMoney(S.val)}원`]);")
+R("    ['평균 행복',","    ...(S.moves?[['부서 이동',`${S.moves}번`]]:[]),\n    ...(S.foundCount?[['사내벤처',`${S.foundCount}번${S.exited?' · 분사':''}`]]:[]),\n    ['평균 행복',")
+R('<script src="js/company.js"></script>','<script src="js/ksj.js"></script>\n<script src="js/avatar.js"></script>\n<script src="js/company.js"></script>\n<script src="js/ksj-events.js"></script>')
 R("</style>",".entry .tag{font-size:11px;border:1px solid var(--line);border-radius:3px;padding:0 5px;margin-right:6px;color:var(--muted)}.who{display:flex;gap:12px;align-items:center;margin-bottom:6px}.who .pname{margin:0}.avatar{width:56px;height:56px;flex:none;border-radius:50%;background:var(--paper);border:1px solid var(--line)}\n</style>")
 R("  return (p.track==='research'?RRANKS:RANKS)[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');","  return (p.coRanks||(p.track==='research'?RRANKS:RANKS))[p.rank]+(p===S&&S.acting?' (팀장 대행)':'');")
 R("  return DEPTS[p.dept].name;\n}","  if(p.coDepts)return `${p.coName} ${p.coDepts[p.dept]||''}`;\n  return DEPTS[p.dept].name;\n}")
@@ -150,9 +150,23 @@ R("  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&
   "  if(S.dating&&!S.married&&((S.weddingAt&&S.mi>=S.weddingAt)||(!S.weddingAt&&S.mi-(S.propMi??-99)>=12&&chance(0.006+(S.pfr??50)/5000+(recentDate()?0.006:0))))&&(await proposeOk())){")
 PARK="\n$('#mPark').addEventListener('click',()=>{$('#modal').hidden=true;$('#mResume').hidden=false;});\n$('#mResume').addEventListener('click',()=>{$('#modal').hidden=false;$('#mResume').hidden=true;});\n"
 R("  S.money+=inc-life-kid-cm-par-car;","  S.money+=inc-life-kid-cm-par-car;\n  if(HAND)addLog(S.leave>0&&S.leaveType==='parental'?`육아휴직 급여 ${fmtMoney(Math.round(inc))}원이 들어왔다.`:`월급날이다. ${fmtMoney(Math.round(inc))}원이 들어왔다.`,{kind:'sys'});")
+# ---- KSJ: 본부·부서 구조 ----
+R("const dirSeat=()=>S.track==='it'?'d:it':'d:ms';","const dirSeat=()=>HAND?'d:'+hqOf(S.dept):S.track==='it'?'d:it':'d:ms';")
+R("const c=pick(CERTS[S.track]);","const c=pick(HAND?certsFor():CERTS[S.track]);")
+R("  $('#pStats').innerHTML=['sk','rp','sc','hp','mn'].map(","  $('#pStats').innerHTML=(HAND?['sk','rp','sc','hp','mn','ar','hy']:['sk','rp','sc','hp','mn']).map(")
+R("  if(S.referral&&S.mi>=S.referral.at&&S.leave===0){","  if(HAND)S.referral=null;\n  if(S.referral&&S.mi>=S.referral.at&&S.leave===0){")
+R("  const teams=SEATS.filter(k=>k.startsWith('t:')&&k!==bs);","  const myHq=HAND?hqOf(S.dept):null;\n  const teams=SEATS.filter(k=>k.startsWith('t:')&&k!==bs&&(!HAND||hqOf(k.slice(2))===myHq));\n  const far=HAND?SEATS.filter(k=>k.startsWith('t:')&&k!==bs&&hqOf(k.slice(2))!==myHq):[];")
+R("`<div class=\"pgroup\">${mine.length?'다른 팀장들':'팀장들'}</div><div class=\"pgrid\">${teams.map(card).join('')}</div>`);","`<div class=\"pgroup\">${HAND?'같은 본부 팀장들':mine.length?'다른 팀장들':'팀장들'}</div><div class=\"pgrid\">${teams.map(card).join('')}</div>`+(far.length?`<details><summary class=\"pgroup\">다른 본부 팀장들 (${far.length}명)</summary><div class=\"pgrid\">${far.map(card).join('')}</div></details>`:''));")
+# ---- 연인·배우자·아이 이름 ----
+R("const pw=()=>S.married?(S.gender==='남'?'아내':'남편'):(S.gender==='남'?'여자친구':'남자친구');","const pw=()=>(S.married?(S.gender==='남'?'아내':'남편'):(S.gender==='남'?'여자친구':'남자친구'))+(HAND&&S.pname?' '+S.pname:'');")
+R("function startDating(){S.dating=true;","function startDating(){if(HAND)S.pname=newName();S.dating=true;")
+R("`${S.kids>1?ORD[i]:'아이'}가 친구들이 다니는","`${kidNm(i)}${J(kidNm(i),'이','가')} 친구들이 다니는")
+R("`고등학생이 된 ${S.kids>1?ORD[i]:'아이'}가 수학","`고등학생이 된 ${kidNm(i)}${J(kidNm(i),'이','가')} 수학")
+R("S.kids>1?ORD[i]:'아이'","kidNm(i)",cnt=0)
+R("    S.kids++;S.kidsList=S.kidsList||[];S.kidsList.push({born:S.mi,fr:60});\n    const t=S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`;",
+  "    S.kids++;S.kidsList=S.kidsList||[];const kn=HAND?kidName():null;S.kidsList.push({born:S.mi,fr:60,name:kn});\n    const t=(S.kids===1?'아이가 태어났다.':`${S.kids}째가 태어났다.`)+(kn?` 이름은 ${kn}${J(kn,'으로','로')} 지었다.`:'');")
 # ---- 성장기에서 바로 이어지기 ----
 R("const Y0=NOW.getFullYear(), M0=NOW.getMonth()+1;","const Y0=HAND?HAND.birthY+HAND.age:NOW.getFullYear(), M0=HAND?3:NOW.getMonth()+1;")
-R("if(rv.length)addLog(`업계 경쟁사는 ${rv.join(', ')}이다.","if(rv.length)addLog(`경쟁사는 ${rv.join(', ')}이다.")
 R("  $('#log').innerHTML='';lastYearHeader=null;","  $('#log').innerHTML=CARRY||'';lastYearHeader=null;")
 R("  speed=1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',b.dataset.speed==='1'?'true':'false'));","  speed=HAND&&HAND.auto?wSpeed():1;[...$('#gameCtrl').querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed',+b.dataset.speed===speed?'true':'false'));\n  if(CARRY){const w=$('#logWrap');w.scrollTop=w.scrollHeight;}")
 R("  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);","  if(S.so>0)kv.push(['스톡옵션',`약 ${fmtMoney(S.so)}원`]);\n  kv.splice(2,0,['학력',eduLine()]);if(HAND.army)kv.splice(3,0,['병역',HAND.army==='미필'?'미필 · 입대 예정':HAND.army]);")
